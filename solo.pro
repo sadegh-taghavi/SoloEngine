@@ -2,6 +2,7 @@ QT -= gui core
 
 CONFIG += c++11
 CONFIG -= app_bundle
+LIBS += -landroid
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which as been marked deprecated (the exact warnings
@@ -16,7 +17,8 @@ CONFIG -= app_bundle
 
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
 
-SOURCES += main.cpp
+SOURCES += main.cpp \
+    android_native_app_glue.c
 
 DISTFILES += \
     android/AndroidManifest.xml \
@@ -30,3 +32,6 @@ DISTFILES += \
     android/src/org/solo/core/AndroidBinding.java
 
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
+
+HEADERS += \
+    android_native_app_glue.h
