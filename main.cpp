@@ -40,39 +40,86 @@ void android_main(struct android_app* app)
 
 #elif __WIN32__
 
+struct SA
+{
+    int aaa;
+    double bbb;
+    char STr[25];
+    SA() {}
+};
 int main(int argc, char *argv[])
 {
+    S_Allocator al;
+//    int *dd = new int();
+//    delete dd;
 
-    S_Allocator allocator;
+    S_List<SA> lst;
+    std::list<SA> lst1;
+
 
     void *ttt[500000];
 
     QElapsedTimer et;
+
+
+
+
+    SA vv;
     et.restart();
     for( int i = 0; i < 500000; ++i )
     {
-        ttt[i] = allocator.allocate( (rand() % 64) + 10 );
+        lst.push_back( vv );
     }
-    qDebug()<<"ET-Al" << et.elapsed();
+    qDebug()<<"LST-CA-Al" << et.elapsed();
     et.restart();
     for( int i = 0; i < 500000; ++i )
     {
-        allocator.deAllocate( ttt[i] );
+        lst.pop_front();
     }
-    qDebug()<<"ET-De" << et.elapsed();
+    qDebug()<<"LST-CA-De" << et.elapsed();
+
+
+    et.restart();
+    for( int i = 0; i < 500000; ++i )
+    {
+        lst1.push_back( vv );
+    }
+    qDebug()<<"LST-ST-Al" << et.elapsed();
+    et.restart();
+    for( int i = 0; i < 500000; ++i )
+    {
+        lst1.pop_front();
+    }
+    qDebug()<<"LST-ST-De" << et.elapsed();
+
+
+    et.restart();
+    for( int i = 0; i < 500000; ++i )
+    {
+
+        ttt[i] = S_Allocator::singleton()->allocate( (rand() % 64) + 10 );
+    }
+    qDebug()<<"AL-CA-Al" << et.elapsed();
+    et.restart();
+    for( int i = 0; i < 500000; ++i )
+    {
+        S_Allocator::singleton()->deallocate( ttt[i] );
+    }
+    qDebug()<<"DA-CA-De" << et.elapsed();
+
 
     et.restart();
     for( int i = 0; i < 500000; ++i )
     {
         ttt[i] = malloc( (rand() % 64) + 10 );
     }
-    qDebug()<<"ET-Al" << et.elapsed();
+    qDebug()<<"AL-MA-Al" << et.elapsed();
     et.restart();
     for( int i = 0; i < 500000; ++i )
     {
         free( ttt[i] );
     }
-    qDebug()<<"ET-De" << et.elapsed();
+    qDebug()<<"AL-MA-De" << et.elapsed();
 
 
     return 0;

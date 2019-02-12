@@ -6,9 +6,14 @@ CONFIG -= app_bundle
 HEADERS += \
     Solo.h \
     core/memory/S_Allocator.h \
+    core/algorithm/S_AlgorithmAllocator.h \
+    core/algorithm/S_List.h \
+    core/algorithm/S_Vector.h \
+    core/algorithm/S_String.h \
     core/math/S_Math.h \
 
 SOURCES += \
+        core/algorithm/S_AlgorithmAllocator.cpp \
         core/memory/S_Allocator.cpp \
         main.cpp
 
