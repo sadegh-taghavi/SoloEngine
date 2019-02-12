@@ -2,22 +2,26 @@ QT -= gui core
 
 CONFIG += c++11
 CONFIG -= app_bundle
-LIBS += -landroid
 
-# The following define makes your compiler emit warnings if you use
-# any feature of Qt which as been marked deprecated (the exact warnings
-# depend on your compiler). Please consult the documentation of the
-# deprecated API in order to know how to port your code away from it.
-#DEFINES += QT_DEPRECATED_WARNINGS
+HEADERS += \
+    Solo.h \
+    core/memory/S_Allocator.h \
+    core/math/S_Math.h \
 
-# You can also make your code fail to compile if you use deprecated APIs.
-# In order to do so, uncomment the following line.
-# You can also select to disable deprecated APIs only up to a certain version of Qt.
-#DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
+SOURCES += \
+        core/memory/S_Allocator.cpp \
+        main.cpp
+
+android {
 
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
 
-SOURCES += main.cpp \
+LIBS += -landroid
+
+HEADERS += \
+    android_native_app_glue.h
+
+SOURCES += \
     android_native_app_glue.c
 
 DISTFILES += \
@@ -31,7 +35,4 @@ DISTFILES += \
     android/src/org/solo/test/MainActivity.java \
     android/src/org/solo/core/AndroidBinding.java
 
-ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
-
-HEADERS += \
-    android_native_app_glue.h
+}

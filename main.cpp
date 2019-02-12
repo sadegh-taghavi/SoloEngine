@@ -1,30 +1,49 @@
-#include <string.h>
-#include <jni.h>
-#include <android/log.h>
+#include "Solo.h"
 
+#ifdef __ANDROID__
 
-jint JNICALL JNI_OnLoad(JavaVM *vm, void *)
+#include "android_native_app_glue.h"
+
+void android_main(struct android_app* app)
 {
-    __android_log_print(ANDROID_LOG_VERBOSE, "Test1555553", "The value of 1 + 1 is %d", 1+1);
-//    JNIEnv *env;
+    android_poll_source* lSource;
+    android_app* application= app;
+//    application->onAppCmd= activity_event_callback;
+//    application->onInputEvent = callback_input;
 
-//    if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_4) != JNI_OK)
-//        return JNI_FALSE;
+    app_dummy();
 
-////    JNINativeMethod methods[] = {
-////        {"backKeyPressed", "()V", reinterpret_cast<void *>(CJniHandler::backKeyPressed)},
+    while (true) {
+     // Loop the events accumulated (it can be several)
+     int lResult;
+     int lEvents;
+     while ((lResult = ALooper_pollAll(16, NULL, &lEvents, (void**)&lSource)) >= 0)
+     {
+       if (lSource != NULL) {// Lifecycle or input event
+        // Launch event app processing via application->onAppCmd
+        // or application->onInputEvent
+        lSource->process(application, lSource);
+       }
 
-////    };
+       // Check if we are exiting.
+       if (application->destroyRequested) {
+         return;
+       }
+     }
 
-//    jclass clazz = env->FindClass("org/solo/AndroidBinding");
+    // DO TASKS
 
-//    if (env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(methods[0])) < 0)
-//        return JNI_FALSE;
-
-    return JNI_VERSION_1_4;
+    }
 }
+
+#elif __WIN32__
 
 int main(int argc, char *argv[])
 {
-    __android_log_print(ANDROID_LOG_VERBOSE, "Test123123123", "The value of 1 + 1 is %d", 1+1);
+    S_Allocator allocator;
+
+    return 0;
 }
+
+#endif
+
