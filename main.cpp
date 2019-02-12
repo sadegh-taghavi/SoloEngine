@@ -1,3 +1,5 @@
+#include <QDebug>
+#include <QElapsedTimer>
 #include "Solo.h"
 
 #ifdef __ANDROID__
@@ -42,17 +44,21 @@ int main(int argc, char *argv[])
 {
     S_Allocator allocator;
 
-    void *ttt[64];
+    void *ttt[128];
 
-    for( int i = 0; i < 16; ++i )
+    QElapsedTimer et;
+    et.start();
+    for( int i = 0; i < 1; ++i )
     {
-        ttt[i] = allocator.allocate( 8 );
+        ttt[i] = allocator.allocate( 2 );
     }
-
-    for( int i = 0; i < 16; ++i )
+    qDebug()<<"ET-Al" << et.elapsed();
+    et.restart();
+    for( int i = 1; i >= 0; --i )
     {
-        allocator.deAllocate( ttt[i] );
+        allocator.deAllocate( &ttt[i] );
     }
+    qDebug()<<"ET-De" << et.elapsed();
 
 
     return 0;
