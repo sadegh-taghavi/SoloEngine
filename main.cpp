@@ -42,6 +42,19 @@ int main(int argc, char *argv[])
 {
     S_Allocator allocator;
 
+    void *ttt[64];
+
+    for( int i = 0; i < 16; ++i )
+    {
+        ttt[i] = allocator.allocate( 8 );
+    }
+
+    for( int i = 0; i < 16; ++i )
+    {
+        allocator.deAllocate( ttt[i] );
+    }
+
+
     return 0;
 }
 
