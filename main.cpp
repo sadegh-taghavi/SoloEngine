@@ -42,21 +42,35 @@ void android_main(struct android_app* app)
 
 int main(int argc, char *argv[])
 {
+
     S_Allocator allocator;
 
-    void *ttt[128];
+    void *ttt[500000];
 
     QElapsedTimer et;
-    et.start();
-    for( int i = 0; i < 1; ++i )
+    et.restart();
+    for( int i = 0; i < 500000; ++i )
     {
-        ttt[i] = allocator.allocate( 2 );
+        ttt[i] = allocator.allocate( (rand() % 64) + 10 );
     }
     qDebug()<<"ET-Al" << et.elapsed();
     et.restart();
-    for( int i = 1; i >= 0; --i )
+    for( int i = 0; i < 500000; ++i )
     {
-        allocator.deAllocate( &ttt[i] );
+        allocator.deAllocate( ttt[i] );
+    }
+    qDebug()<<"ET-De" << et.elapsed();
+
+    et.restart();
+    for( int i = 0; i < 500000; ++i )
+    {
+        ttt[i] = malloc( (rand() % 64) + 10 );
+    }
+    qDebug()<<"ET-Al" << et.elapsed();
+    et.restart();
+    for( int i = 0; i < 500000; ++i )
+    {
+        free( ttt[i] );
     }
     qDebug()<<"ET-De" << et.elapsed();
 

@@ -4,6 +4,7 @@
 
 S_Allocator::S_Allocator(uint64_t poolSize, uint64_t poolsCount)
 {
+    std::lock_guard<std::mutex> guard(m_mutex);
     m_poolSize = poolSize;
     m_poolsCount = poolsCount;
     m_allocatedMemory = malloc( m_poolSize * m_poolsCount + sizeof( Pool ) * m_poolsCount );
@@ -22,13 +23,14 @@ S_Allocator::S_Allocator(uint64_t poolSize, uint64_t poolsCount)
 
 void *S_Allocator::allocate(uint64_t size)
 {
+    std::lock_guard<std::mutex> guard(m_mutex);
     m_tSize = size + sizeof( MemoryHeader );
     for( m_tI = 0; m_tI < m_poolsCount ; ++m_tI )
     {
         m_tPool = &m_pools[m_tI];
         if( m_poolSize - m_tPool->m_allocated >= m_tSize )
         {
-            m_tHeader = reinterpret_cast<MemoryHeader *>( m_tPool->m_memory + m_tPool->m_allocated );
+            m_tHeader = reinterpret_cast<MemoryHeader *>( reinterpret_cast<uint64_t>( m_tPool->m_memory ) + m_tPool->m_allocated );
             m_tHeader->m_poolIndex = m_tI;
 //            m_tHeader->m_signature[0] = 'S';
 //            m_tHeader->m_signature[1] = 'E';
@@ -42,6 +44,7 @@ void *S_Allocator::allocate(uint64_t size)
 
 void S_Allocator::deAllocate(void *rawMemory)
 {
+    std::lock_guard<std::mutex> guard(m_mutex);
     m_tHeader = reinterpret_cast<MemoryHeader *>( reinterpret_cast<uint64_t>( rawMemory ) - sizeof( MemoryHeader ) );
     m_tPool = &m_pools[m_tHeader->m_poolIndex];
     m_tPool->m_stackCounter--;
@@ -51,6 +54,7 @@ void S_Allocator::deAllocate(void *rawMemory)
 
 S_Allocator::~S_Allocator()
 {
+    std::lock_guard<std::mutex> guard(m_mutex);
     free( m_allocatedMemory );
 }
 
