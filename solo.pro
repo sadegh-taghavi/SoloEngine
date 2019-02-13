@@ -5,6 +5,7 @@ CONFIG -= app_bundle
 
 HEADERS += \
     core/memory/S_Allocator.h \
+    core/algorithm/S_Algorithm.h \
     core/algorithm/S_AlgorithmAllocator.h \
     core/algorithm/S_List.h \
     core/algorithm/S_Vector.h \
