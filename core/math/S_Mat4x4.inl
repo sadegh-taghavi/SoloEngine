@@ -1,7 +1,7 @@
-#define GLM_ENABLE_EXPERIMENTAL
+//#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/matrix_decompose.hpp>
+//#include <glm/gtx/matrix_decompose.hpp>
 #include "S_Mat4x4.h"
 #include "S_Vec3.h"
 #include "S_Quat.h"
@@ -39,7 +39,7 @@ inline float& S_Mat4x4::operator()( size_t i_row, size_t i_column )
 
 inline S_Mat4x4& S_Mat4x4::operator=( const S_Mat4x4& i_mat44 )
 {
-    memcpy( &m_data[0], &i_mat44.m_data[0], sizeof(float) * 16);
+    m_data = i_mat44.m_data;
     return *this;
 }
 
@@ -173,18 +173,17 @@ inline S_Mat4x4& S_Mat4x4::identity()
 
 inline S_Mat4x4& S_Mat4x4::rotationQuaternion( const S_Quat *i_q )
 {
-    m_data = glm::mat4_cast( i_q );
+    m_data = glm::mat4_cast( i_q->m_data );
     return *this;
 }
 
-inline void S_Mat4x4::decompose( S_Vec3 *i_outPosition, S_Quat *i_outRotation, S_Vec3 *i_outScale,  S_Vec3 *i_outSkew,  S_Vec3 *i_outPerspective )
-{
-    glm::decompose( m_data, i_outScale->m_data, i_outRotation->m_data, i_outPosition->m_data, i_outSkew->m_data, i_outPerspective->m_data );
-}
+//inline void S_Mat4x4::decompose( S_Vec3 *i_outPosition, S_Quat *i_outRotation, S_Vec3 *i_outScale,  S_Vec3 *i_outSkew,  S_Vec3 *i_outPerspective )
+//{
+//    glm::decompose( m_data, i_outScale->m_data, i_outRotation->m_data, i_outPosition->m_data, i_outSkew->m_data, i_outPerspective->m_data );
+//}
 
-
-inline S_Mat4x4& S_Mat4x4::transformation2D( const S_Vec2 *i_scaleCenter, float i_scalingRotation, const S_Vec2 *i_scale, const S_Vec2 *i_rotationCenter, float i_rotation, const S_Vec2 *i_position )
-{
+//inline S_Mat4x4& S_Mat4x4::transformation2D( const S_Vec2 *i_scaleCenter, float i_scalingRotation, const S_Vec2 *i_scale, const S_Vec2 *i_rotationCenter, float i_rotation, const S_Vec2 *i_position )
+//{
 //    DirectX::XMStoreFloat4x4((DirectX::XMFLOAT4X4*)this,
 //        DirectX::XMMatrixTransformation2D(
 //        DirectX::XMLoadFloat2((DirectX::XMFLOAT2*)i_scaleCenter),
@@ -196,5 +195,5 @@ inline S_Mat4x4& S_Mat4x4::transformation2D( const S_Vec2 *i_scaleCenter, float 
 //        )
 //        );
 
-    return *this;
-}
+//    return *this;
+//}

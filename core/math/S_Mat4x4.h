@@ -45,11 +45,11 @@ public:
     S_Mat4x4&	transpose();
     S_Mat4x4&	transposeBy(const S_Mat4x4 *i_mat);
     void		transposeOut(S_Mat4x4 *i_out);
-    void		decompose(S_Vec3 *i_outPosition, S_Quat *i_outRotation, S_Vec3 *i_outScale , S_Vec3 *i_outSkew, S_Vec3 *i_outPerspective);
+//    void		decompose(S_Vec3 *i_outPosition, S_Quat *i_outRotation, S_Vec3 *i_outScale , S_Vec3 *i_outSkew, S_Vec3 *i_outPerspective);
     S_Mat4x4&	identity();
     S_Mat4x4&	rotationQuaternion(const S_Quat *i_q);
-    S_Mat4x4&	transformation2D(const S_Vec2 *i_scaleCenter, float i_scalingRotation, const S_Vec2 *i_scale,
-        const S_Vec2 *i_rotationCenter, float i_rotation, const S_Vec2 *i_position);
+//    S_Mat4x4&	transformation2D(const S_Vec2 *i_scaleCenter, float i_scalingRotation, const S_Vec2 *i_scale,
+//        const S_Vec2 *i_rotationCenter, float i_rotation, const S_Vec2 *i_position);
 };
 
 #include "S_Mat4x4.inl"
