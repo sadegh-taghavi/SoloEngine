@@ -1,167 +1,147 @@
-#include "GE_Quat.h"
-#include "GE_Math.h"
+#include "S_Vec3.h"
+#include "S_Quat.h"
 
-inline GE_Quat::GE_Quat(float i_x, float i_y, float i_z, float i_w) : 
-	x(i_x), y(i_y), z(i_z), w(i_w) 
+inline S_Quat::S_Quat(float i_x, float i_y, float i_z, float i_w) : m_data( i_x, i_y, i_z, i_w )
 {
 }
 
-inline GE_Quat::GE_Quat(const float *i_array) :
-	x(i_array[0]), y(i_array[1]), z(i_array[2]), w(i_array[3])
+inline S_Quat::S_Quat(const float *i_array) : m_data( i_array[0], i_array[1], i_array[2], i_array[3] )
 {
 }
 
-inline GE_Quat::GE_Quat(const GE_Quat &i_q)
+inline S_Quat::S_Quat(const S_Quat &i_q)
 {
 	*this = i_q;
 }
 
-inline bool GE_Quat::operator==(const GE_Quat &i_q)
+
+inline float S_Quat::x()
 {
-	if(x != i_q.x)
-		return false;
-	if(y != i_q.y)
-		return false;
-	if(z != i_q.z)
-		return false;
-	if(w != i_q.w)
-		return false;
-	return true;
+    return m_data.x;
 }
 
-inline bool GE_Quat::operator!=(const GE_Quat &i_q)
+inline void S_Quat::setX(float x)
+{
+    m_data[0] = x;
+}
+
+inline float S_Quat::y()
+{
+    return m_data.y;
+}
+
+inline void S_Quat::setY(float y)
+{
+    m_data.y = y;
+}
+
+inline float S_Quat::z()
+{
+    return m_data.z;
+}
+
+inline void S_Quat::setZ(float z)
+{
+    m_data.z = z;
+}
+
+inline float S_Quat::w()
+{
+    return m_data.w;
+}
+
+inline void S_Quat::setW(float w)
+{
+    m_data.w = w;
+}
+
+inline bool S_Quat::operator==(const S_Quat &i_q)
+{
+    if( m_data == i_q.m_data )
+        return false;
+    return true;
+}
+
+inline bool S_Quat::operator!=(const S_Quat &i_q)
 {
 	return !(*this == i_q);
 }
 
 
-inline GE_Quat& GE_Quat::operator*=( const GE_Quat &i_q )
+inline S_Quat& S_Quat::operator*=( const S_Quat &i_q )
 {
-	DirectX::XMStoreFloat4( ( DirectX::XMFLOAT4* )this, DirectX::XMQuaternionMultiply( DirectX::XMLoadFloat4( ( DirectX::XMFLOAT4* )this ),
-		DirectX::XMLoadFloat4( ( DirectX::XMFLOAT4* )&i_q ) ) );
-	return *this;
+    m_data *= i_q.m_data;
+    return *this;
 }
 
-inline GE_Quat GE_Quat::operator*( const GE_Quat &i_q )
+inline S_Quat S_Quat::operator*( const S_Quat &i_q )
 {
-	GE_Quat q = *this;
+    S_Quat q = *this;
 	q *= i_q;
 	return q;
 }
 
-inline GE_Quat& GE_Quat::identity()
+inline S_Quat& S_Quat::identity()
 {
-	x = 0.0f;
-	y = 0.0f;
-	z = 0.0f;
-	w = 1.0f;
+    m_data = glm::quat( 0.0f, 0.0f, 0.0f, 1.0f );
 	return *this;
 }
 
-inline GE_Quat& GE_Quat::multiply( const GE_Quat *i_q )
+inline S_Quat& S_Quat::multiply( const S_Quat *i_q )
 {
-	DirectX::XMStoreFloat4( ( DirectX::XMFLOAT4* )this, DirectX::XMQuaternionMultiply( DirectX::XMLoadFloat4( ( DirectX::XMFLOAT4* )this ),
-		DirectX::XMLoadFloat4( ( DirectX::XMFLOAT4* )&i_q ) ) );
+    m_data *= i_q->m_data;
 	return *this;
 }
 
-inline void GE_Quat::multiplyOut(GE_Quat *i_out, const GE_Quat *i_q)
+inline void S_Quat::multiplyOut(S_Quat *i_out, const S_Quat *i_q)
 {
-	DirectX::XMStoreFloat4( ( DirectX::XMFLOAT4* )i_out, DirectX::XMQuaternionMultiply( DirectX::XMLoadFloat4( ( DirectX::XMFLOAT4* )this ),
-		DirectX::XMLoadFloat4( ( DirectX::XMFLOAT4* )&i_q ) ) );
+    i_out->m_data = m_data * i_q->m_data;
 }
 
-inline GE_Quat& GE_Quat::rotationAxis(const GE_Vec3 *i_axis, float i_angle)
+inline S_Quat& S_Quat::angleAxis( float i_angle, const S_Vec3 *i_axis)
 {
-	DirectX::XMStoreFloat4((DirectX::XMFLOAT4*)this, DirectX::XMQuaternionRotationAxis(DirectX::XMLoadFloat3((DirectX::XMFLOAT3*)i_axis), i_angle));
+    m_data = glm::angleAxis( i_angle, i_axis->m_data );
 	return *this;
 }
 
-inline void GE_Quat::rotationAxisOut(GE_Quat *i_out, const GE_Vec3 *i_axis, float i_angle)
+inline void S_Quat::angleAxisOut(S_Quat *i_out, float i_angle, const S_Vec3 *i_axis)
 {
-	DirectX::XMStoreFloat4((DirectX::XMFLOAT4*)i_out, DirectX::XMQuaternionRotationAxis(DirectX::XMLoadFloat3((DirectX::XMFLOAT3*)i_axis), i_angle));
+    i_out->m_data = glm::angleAxis( i_angle, i_axis->m_data );
 }
 
-inline GE_Quat& GE_Quat::rotationYPR( const GE_Vec3 *i_ypr )
+inline S_Quat& S_Quat::fromEularAnglesPYR( const S_Vec3 *i_pyr )
 {
-	DirectX::XMStoreFloat4((DirectX::XMFLOAT4*)this, DirectX::XMQuaternionRotationRollPitchYaw(i_ypr->y, i_ypr->x, i_ypr->z));
+    m_data = glm::quat( i_pyr->m_data );
 	return *this;
 }
 
-inline void GE_Quat::rotationYPROut( GE_Quat *i_out, const GE_Vec3 *i_ypr )
+inline void S_Quat::fromEularAnglesPYROut( S_Quat *i_out, const S_Vec3 *i_pyr )
 {
-	DirectX::XMStoreFloat4((DirectX::XMFLOAT4*)i_out, DirectX::XMQuaternionRotationRollPitchYaw(i_ypr->y, i_ypr->x, i_ypr->z));
+    i_out->m_data = glm::quat( i_pyr->m_data );
 }
 
-inline GE_Quat& GE_Quat::normalize()
+inline S_Quat& S_Quat::normalize()
 {
-	DirectX::XMStoreFloat4((DirectX::XMFLOAT4*)this, DirectX::XMQuaternionNormalize(DirectX::XMLoadFloat4((DirectX::XMFLOAT4*)this)));
+    m_data = glm::normalize( m_data );
 	return *this;
 }
 
-inline void GE_Quat::normalizeOut(GE_Quat *i_out)
+inline void S_Quat::normalizeOut(S_Quat *i_out)
 {
-	DirectX::XMStoreFloat4((DirectX::XMFLOAT4*)i_out, DirectX::XMQuaternionNormalize(DirectX::XMLoadFloat4((DirectX::XMFLOAT4*)this)));
+    i_out->m_data = glm::normalize( m_data );
 }
 
-inline void GE_Quat::toYPR( GE_Vec3 *i_out )
+inline void S_Quat::toPYR( S_Vec3 *i_out )
 {
-	double sqw = this->w*this->w;
-	double sqx = this->x*this->x;
-	double sqy = this->y*this->y;
-	double sqz = this->z*this->z;
-	double unit = sqx + sqy + sqz + sqw;
-	double test = this->x*this->y + this->z*this->w;
-	if (test > 0.499*unit) 
-	{
-		i_out->x = 2 * atan2(this->x,this->w);
-		i_out->z = (float)GE_PI / 2;
-		i_out->y = 0;
-		return;
-	}
-	if (test < -0.499*unit) 
-	{
-		i_out->x = -2 * atan2(this->x,this->w);
-		i_out->z = (float)-GE_PI / 2;
-		i_out->y = 0;
-		return;
-	}
-	i_out->x = (float)atan2(2*this->y*this->w-2*this->x*this->z , sqx - sqy - sqz + sqw);
-	i_out->z = (float)asin(2*test / unit);
-	i_out->y = (float)atan2(2*this->x*this->w-2*this->y*this->z , -sqx + sqy - sqz + sqw);
+    i_out->m_data = glm::eulerAngles( m_data );
 }
 
-inline void GE_Quat::lerp( const GE_Quat *i_second, float i_amount )
+inline void S_Quat::lerp( const S_Quat *i_second, float i_amount )
 {
-	DirectX::XMStoreFloat4( ( DirectX::XMFLOAT4* )this, DirectX::XMQuaternionSlerp( DirectX::XMLoadFloat4( ( DirectX::XMFLOAT4* )this ),
-		DirectX::XMLoadFloat4( ( DirectX::XMFLOAT4* )i_second ), i_amount ) );
+    glm::lerp( m_data, i_second->m_data, i_amount );
 }
 
-inline void GE_Quat::lerpOut( GE_Quat *i_out, const GE_Quat *i_second, float i_amount )
+inline void S_Quat::lerpOut( S_Quat *i_out, const S_Quat *i_second, float i_amount )
 {
-	DirectX::XMStoreFloat4( ( DirectX::XMFLOAT4* )i_out, DirectX::XMQuaternionSlerp( DirectX::XMLoadFloat4( ( DirectX::XMFLOAT4* )this ),
-		DirectX::XMLoadFloat4( ( DirectX::XMFLOAT4* )i_second ), i_amount ) );
-}
-
-//global functions-----------------------------------------------------
-inline void GE_QuatRotationAxis(GE_Quat *i_out, const GE_Vec3 *i_axis, float i_angle)
-{
-	DirectX::XMStoreFloat4((DirectX::XMFLOAT4*)i_out, DirectX::XMQuaternionRotationAxis(DirectX::XMLoadFloat3((DirectX::XMFLOAT3*)i_axis), i_angle));
-}
-
-inline void GE_QuatNormalize(GE_Quat *i_out, const GE_Quat *i_q)
-{
-	DirectX::XMStoreFloat4((DirectX::XMFLOAT4*)i_out, DirectX::XMQuaternionNormalize(DirectX::XMLoadFloat4((DirectX::XMFLOAT4*)i_q)));
-}
-
-inline void GE_QuatLerp( GE_Quat *i_out, const GE_Quat *i_first, const GE_Quat *i_second, float i_amount )
-{
-	DirectX::XMStoreFloat4( ( DirectX::XMFLOAT4* )i_out, DirectX::XMQuaternionSlerp( DirectX::XMLoadFloat4( ( DirectX::XMFLOAT4* )i_first ),
-		DirectX::XMLoadFloat4( ( DirectX::XMFLOAT4* )i_second ), i_amount ) );
-}
-
-inline void GE_QuatMultiply( GE_Quat *i_out, const GE_Quat *i_q1, const GE_Quat *i_q2 )
-{
-	DirectX::XMStoreFloat4( ( DirectX::XMFLOAT4* )i_out, DirectX::XMQuaternionMultiply( DirectX::XMLoadFloat4( ( DirectX::XMFLOAT4* )i_q1 ),
-		DirectX::XMLoadFloat4( ( DirectX::XMFLOAT4* )&i_q2 ) ) );
+    glm::lerp( i_out->m_data, i_second->m_data, i_amount );
 }

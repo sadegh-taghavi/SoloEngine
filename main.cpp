@@ -49,6 +49,10 @@ struct SA
 };
 int main(int argc, char *argv[])
 {
+
+    S_Vec3 v3 = S_Vec3( 3.1415f, 0.1415f, 0.0f );
+    qDebug()<< S_Vec2(12, 10).length() << S_Vec3( 25, 10, 5 ).length() <<
+               S_Vec4( 25, 10, 5, 5 ).length() << S_Quat().fromEularAnglesPYR( &v3 ).x();
     S_Allocator al;
 //    int *dd = new int();
 //    delete dd;

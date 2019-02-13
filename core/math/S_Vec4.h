@@ -1,55 +1,55 @@
 #pragma once
-#include <DirectXMath.h>
+#include <glm/glm.hpp>
 
-struct GE_Vec4
+class S_Mat4x4;
+
+class S_Vec4
 {
-	float x;
-	float y;
-	float z;
-	float w;
+    friend class S_Vec2;
+    friend class S_Vec4;
+    friend class S_Vec4;
+    friend class S_Quat;
+    friend class S_Mat4x4;
 
-	GE_Vec4(){}
-	GE_Vec4(float i_x, float i_y, float i_z, float i_w);
-	GE_Vec4(const float *i_array);
-	GE_Vec4(const GE_Vec4 &i_vec);
+    glm::vec4 m_data;
 
-	GE_Vec4 operator+(const GE_Vec4 &i_v);
-	GE_Vec4& operator+=(const GE_Vec4 &i_v);
-	GE_Vec4 operator-();
-	GE_Vec4 operator-(const GE_Vec4 &i_v);
-	GE_Vec4& operator-=(const GE_Vec4 &i_v);
-	GE_Vec4 operator*(float i_scaler);
-	GE_Vec4& operator*=(float i_scaler);
-	GE_Vec4 operator/(float i_scaler);
-	GE_Vec4& operator/=(float i_scaler);
-	bool operator==(const GE_Vec4 &i_v);
-	bool operator!=(const GE_Vec4 &i_v);
-	float operator[](int i_index);
-	float length();
-	GE_Vec4& transform(const GE_Mat4x4 *i_mat);
-	void transform(GE_Vec4 *i_out, const GE_Mat4x4 *i_mat);
-	GE_Vec4& normalize();
-	void normalizeOut(GE_Vec4* i_out);
-	float dot(const GE_Vec4 *i_vec);
-	void To2DLeftUpPosition( const GE_Vec3 &i_position, const GE_Mat4x4 &i_viewProjection );
-	void To2DLeftUpPositionOut( GE_Vec4 &i_out, const GE_Vec3 &i_position, const GE_Mat4x4 &i_viewProjection );
+public:
 
-	/*GE_Vec4& cross(const GE_Vec4 *i_vec)
-	{
-		DirectX::XMStoreFloat4((DirectX::XMFLOAT4*)this, DirectX::XMVector4Cross(DirectX::XMLoadFloat4((DirectX::XMFLOAT4*)this), DirectX::XMLoadFloat4((DirectX::XMFLOAT4*)i_vec)));
-		return *this;
-	}*/
+    S_Vec4(){}
+    S_Vec4(float i_x, float i_y, float i_z, float i_w);
+    S_Vec4(const float *i_array);
+    S_Vec4(const S_Vec4 &i_vec);
 
-	/*void cross(GE_Vec4 *i_out, const GE_Vec4 *i_vec)
-	{
-		DirectX::XMStoreFloat4((DirectX::XMFLOAT4*)i_out, DirectX::XMVector4Cross(DirectX::XMLoadFloat4((DirectX::XMFLOAT4*)this), DirectX::XMLoadFloat4((DirectX::XMFLOAT4*)i_vec)));
-	}*/
+    float x();
+    void setX(float x);
+    float y();
+    void setY(float y);
+    float z();
+    void setZ(float z);
+    float w();
+    void setW(float w);
+
+    S_Vec4 operator+(const S_Vec4 &i_v);
+    S_Vec4& operator+=(const S_Vec4 &i_v);
+    S_Vec4 operator-();
+    S_Vec4 operator-(const S_Vec4 &i_v);
+    S_Vec4& operator-=(const S_Vec4 &i_v);
+    S_Vec4 operator*(float i_scaler);
+    S_Vec4& operator*=(float i_scaler);
+    S_Vec4 operator/(float i_scaler);
+    S_Vec4& operator/=(float i_scaler);
+    bool operator==(const S_Vec4 &i_v);
+    bool operator!=(const S_Vec4 &i_v);
+    float length();
+    S_Vec4& transform(const struct S_Mat4x4 *i_mat);
+    void transformOut( S_Vec4 *i_out, const S_Mat4x4 *i_mat );
+    S_Vec4& normalize();
+    S_Vec4& normalizeBy(const S_Vec4* i_vec);
+    void normalizeOut(S_Vec4* i_out);
+    float dot(const S_Vec4 *i_vec);
+    void lerp( const S_Vec4 *i_second, float i_amount );
+    void lerpOut( S_Vec4 *i_out, const S_Vec4 *i_second, float i_amount );
+    void To2DLeftUpPosition( const S_Vec4 &i_position, const S_Mat4x4 &i_viewProjection );
+    void To2DLeftUpPositionOut( S_Vec4 &i_out, const S_Vec4 &i_position, const S_Mat4x4 &i_viewProjection );
 };
-
-void GE_Vec4Transform(GE_Vec4 *i_out, const GE_Vec4 *i_vec, const GE_Mat4x4 *i_mat);
-float GE_Vec4Length(const GE_Vec4 *i_vec);
-void GE_Vec4Normalize(GE_Vec4 *i_out, const GE_Vec4 *i_vec);
-float GE_Vec4Dot(const GE_Vec4 *i_v1, const GE_Vec4 *i_v2);
-//void GE_Vec4Cross(GE_Vec4 *i_out, const GE_Vec4 *i_v1, const GE_Vec4 *i_v2);
-
 #include "S_Vec4.inl"

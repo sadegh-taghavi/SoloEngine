@@ -1,39 +1,51 @@
 #pragma once
-#include <DirectXMath.h>
-#include "GE_Vec3.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
-struct GE_Quat
+class S_Vec3;
+
+class S_Quat
 {
-	float x;
-	float y;
-	float z;
-	float w;
+    friend class S_Vec2;
+    friend class S_Vec4;
+    friend class S_Vec4;
+    friend class S_Quat;
+    friend class S_Mat4x4;
 
-	GE_Quat(){}
-	GE_Quat(float i_x, float i_y, float i_z, float i_w);
-	GE_Quat(const float *i_array);
-	GE_Quat(const GE_Quat &i_q);
+    glm::quat m_data;
 
-	bool operator==(const GE_Quat &i_q);
-	GE_Quat& operator*=(const GE_Quat &i_q);
-	GE_Quat operator*(const GE_Quat &i_q);
-	bool operator!=(const GE_Quat &i_q);
-	GE_Quat& multiply(const GE_Quat *i_mat44);
-	void	 multiplyOut(GE_Quat *i_out, const GE_Quat *i_q);
-	GE_Quat& identity();
-	GE_Quat& rotationAxis(const GE_Vec3 *i_axis, float i_angle);
-	void rotationAxisOut(GE_Quat *i_out, const GE_Vec3 *i_axis, float i_angle);
-	GE_Quat& rotationYPR(const GE_Vec3 *i_ypr);
-	void rotationYPROut(GE_Quat *i_out, const GE_Vec3 *i_ypr);
-	GE_Quat& normalize();
-	void normalizeOut(GE_Quat *i_out);
-	void toYPR(GE_Vec3 *i_out);
-	void lerp( const GE_Quat *i_second, float i_amount );
-	void lerpOut( GE_Quat *i_out, const GE_Quat *i_second, float i_amount );
+public:
+
+    S_Quat(){}
+    S_Quat(float i_x, float i_y, float i_z, float i_w);
+    S_Quat(const float *i_array);
+    S_Quat(const S_Quat &i_q);
+
+    float x();
+    void setX(float x);
+    float y();
+    void setY(float y);
+    float z();
+    void setZ(float z);
+    float w();
+    void setW(float w);
+
+    bool operator==(const S_Quat &i_q);
+    S_Quat& operator*=(const S_Quat &i_q);
+    S_Quat operator*(const S_Quat &i_q);
+    bool operator!=(const S_Quat &i_q);
+    S_Quat& multiply(const S_Quat *i_mat44);
+    void	 multiplyOut(S_Quat *i_out, const S_Quat *i_q);
+    S_Quat& identity();
+    S_Quat& angleAxis(float i_angle, const S_Vec3 *i_axis);
+    void angleAxisOut(S_Quat *i_out, float i_angle, const S_Vec3 *i_axis);
+    S_Quat& fromEularAnglesPYR(const S_Vec3 *i_pyr);
+    void fromEularAnglesPYROut(S_Quat *i_out, const S_Vec3 *i_pyr);
+    S_Quat& normalize();
+    void normalizeOut(S_Quat *i_out);
+    void toPYR(S_Vec3 *i_out);
+    void lerp( const S_Quat *i_second, float i_amount );
+    void lerpOut( S_Quat *i_out, const S_Quat *i_second, float i_amount );
 };
-void GE_QuatRotationAxis(GE_Quat *i_out, const GE_Vec3 *i_axis, float i_angle);
-void GE_QuatNormalize(GE_Quat *i_out, const GE_Quat *i_q);
-void GE_QuatLerp( GE_Quat *i_out, const GE_Quat *i_first, const GE_Quat *i_second, float i_amount );
-void GE_QuatMultiply(GE_Quat *i_out, const GE_Quat *i_q1, const GE_Quat *i_q2);
 
 #include "S_Quat.inl"

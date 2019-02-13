@@ -1,50 +1,58 @@
 #pragma once
-#include <DirectXMath.h>
-#include <DirectXCollision.h>
+#include <glm/glm.hpp>
 
-struct GE_Vec3
+class S_Mat4x4;
+
+class S_Vec3
 {
-	float x;
-	float y;
-	float z;
+    friend class S_Vec2;
+    friend class S_Vec3;
+    friend class S_Vec4;
+    friend class S_Quat;
+    friend class S_Mat4x4;
 
-	GE_Vec3(){}
-	GE_Vec3(float i_x, float i_y, float i_z);
-	GE_Vec3(const float *i_array);
-	GE_Vec3(const GE_Vec3 &i_vec);
+    glm::vec3 m_data;
 
-	GE_Vec3 operator+(const GE_Vec3 &i_v);
-	GE_Vec3& operator+=(const GE_Vec3 &i_v);
-	GE_Vec3 operator-();
-	GE_Vec3 operator-(const GE_Vec3 &i_v);
-	GE_Vec3& operator-=(const GE_Vec3 &i_v);
-	GE_Vec3 operator*(float i_scaler);
-	GE_Vec3& operator*=(float i_scaler);
-	GE_Vec3 operator/(float i_scaler);
-	GE_Vec3& operator/=(float i_scaler);
-	bool operator==(const GE_Vec3 &i_v);
-	bool operator!=(const GE_Vec3 &i_v);
+public:
+
+    S_Vec3(){}
+    S_Vec3(float i_x, float i_y, float i_z);
+    S_Vec3(const float *i_array);
+    S_Vec3(const S_Vec3 &i_vec);
+
+    float x();
+    void setX(float x);
+    float y();
+    void setY(float y);
+    float z();
+    void setZ(float z);
+
+    S_Vec3 operator+(const S_Vec3 &i_v);
+    S_Vec3& operator+=(const S_Vec3 &i_v);
+    S_Vec3 operator-();
+    S_Vec3 operator-(const S_Vec3 &i_v);
+    S_Vec3& operator-=(const S_Vec3 &i_v);
+    S_Vec3 operator*(float i_scaler);
+    S_Vec3& operator*=(float i_scaler);
+    S_Vec3 operator/(float i_scaler);
+    S_Vec3& operator/=(float i_scaler);
+    bool operator==(const S_Vec3 &i_v);
+    bool operator!=(const S_Vec3 &i_v);
 	float length();
-	GE_Vec3& transform(const struct GE_Mat4x4 *i_mat);
-	void transformOut( GE_Vec3 *i_out, const struct GE_Mat4x4 *i_mat );
-	GE_Vec3& normalize();
-	GE_Vec3& normalizeBy(const GE_Vec3* i_vec);
-	void normalizeOut(GE_Vec3* i_out);
-	float dot(const GE_Vec3 *i_vec);
-	GE_Vec3& cross(const GE_Vec3 *i_vec);
-	void crossOut(GE_Vec3 *i_out, const GE_Vec3 *i_vec);
-	void lerp( const GE_Vec3 *i_second, float i_amount );
-	void lerpOut( GE_Vec3 *i_out, const GE_Vec3 *i_second, float i_amount );
+    S_Vec3& transform(const struct S_Mat4x4 *i_mat);
+    void transformOut( S_Vec3 *i_out, const S_Mat4x4 *i_mat );
+    S_Vec3& normalize();
+    S_Vec3& normalizeBy(const S_Vec3* i_vec);
+    void normalizeOut(S_Vec3* i_out);
+    float dot(const S_Vec3 *i_vec);
+    S_Vec3& cross(const S_Vec3 *i_vec);
+    void crossOut(S_Vec3 *i_out, const S_Vec3 *i_vec);
+    void lerp( const S_Vec3 *i_second, float i_amount );
+    void lerpOut( S_Vec3 *i_out, const S_Vec3 *i_second, float i_amount );
 };
 
-void GE_Vec3Transform( GE_Vec3 *i_out, const GE_Vec3 *i_vec, const struct GE_Mat4x4 *i_mat );
-float GE_Vec3Length(const GE_Vec3 *i_vec);
-void GE_Vec3Normalize(GE_Vec3 *i_out, const GE_Vec3 *i_vec);
-float GE_Vec3Dot(const GE_Vec3 *i_v1, const GE_Vec3 *i_v2);
-void GE_Vec3Cross(GE_Vec3 *i_out, const GE_Vec3 *i_v1, const GE_Vec3 *i_v2);
-void GE_Vec3Lerp( GE_Vec3 *i_out, const GE_Vec3 *i_first, const GE_Vec3 *i_second, float i_amount );
-bool GE_Vec3RayIntersectToPlane(const GE_Vec3 *i_org, const GE_Vec3 *i_dir, const GE_Vec3 *i_verts, float &i_distance);
-bool GE_Vec3RayIntersectToBox( const GE_Vec3 *i_org, const GE_Vec3 *i_dir,
-	const GE_Vec3 *i_min, const GE_Vec3 *i_max, const GE_Mat4x4 *i_transform, float &i_distance );
+//bool S_Vec3RayIntersectToPlane(const S_Vec3 *i_org, const S_Vec3 *i_dir, const S_Vec3 *i_verts, float &i_distance);
+//bool S_Vec3RayIntersectToBox( const S_Vec3 *i_org, const S_Vec3 *i_dir,
+//    const S_Vec3 *i_min, const S_Vec3 *i_max, const S_Mat4x4 *i_transform, float &i_distance );
 
 #include "S_Vec3.inl"

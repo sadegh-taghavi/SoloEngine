@@ -23,6 +23,26 @@ inline S_Vec2 S_Vec2::operator+(const S_Vec2 &i_v)
     return ret;
 }
 
+inline float S_Vec2::x()
+{
+    return m_data.x;
+}
+
+inline void S_Vec2::setX(float x)
+{
+    m_data[0] = x;
+}
+
+inline float S_Vec2::y()
+{
+    return m_data.y;
+}
+
+inline void S_Vec2::setY(float y)
+{
+    m_data.y = y;
+}
+
 inline S_Vec2& S_Vec2::operator+=(const S_Vec2 &i_v)
 {
     m_data += i_v.m_data;
@@ -119,39 +139,13 @@ inline float S_Vec2::dot(const S_Vec2 *i_vec)
     return glm::dot( m_data, i_vec->m_data );
 }
 
-inline S_Vec2& S_Vec2::cross(const S_Vec2 *i_vec)
+inline void S_Vec2::lerp( const S_Vec2 *i_second, float i_amount )
 {
-    m_data = glm::cross( m_data, i_vec->m_data );
-    return *this;
+    m_data = glm::mix( m_data, i_second->m_data, i_amount );
 }
 
-inline void S_Vec2::crossOut(S_Vec2 *i_out, const S_Vec2 *i_vec)
+inline void S_Vec2::lerpOut( S_Vec2 *i_out, const S_Vec2 *i_second, float i_amount )
 {
-    i_out->m_data = glm::cross( m_data, i_vec->m_data );
+    i_out->m_data = glm::mix( m_data, i_second->m_data, i_amount );
 }
 
-//global functions-------------------------------------------------------------------
-//inline void S_Vec2Transform(S_Vec2 *i_out, const S_Vec2 *i_vec, const S_Mat4x4 *i_mat)
-//{
-//    i_out->m_data = i_mat->m_data * i_vec->m_data;
-//}
-
-inline float S_Vec2Length(const S_Vec2 *i_vec)
-{
-    return glm::length( i_vec->m_data );
-}
-
-inline void S_Vec2Normalize(S_Vec2 *i_out, const S_Vec2 *i_vec)
-{
-    i_out->m_data = glm::normalize( i_vec->m_data );
-}
-
-inline float S_Vec2Dot(const S_Vec2 *i_v1, const S_Vec2 *i_v2)
-{
-    return glm::dot( i_v1->m_data, i_v2->m_data );
-}
-
-inline void S_Vec2Cross(S_Vec2 *i_out, const S_Vec2 *i_v1, const S_Vec2 *i_v2)
-{
-    i_out->m_data = glm::cross( i_v1->m_data, i_v2->m_data );
-}

@@ -1,73 +1,56 @@
 #pragma once
-#include <DirectXMath.h>
-#include <memory.h>
-#include "GE_Vec3.h"
-#include "GE_Quat.h"
+#include <glm/glm.hpp>
 
-struct GE_Mat4x4
+class S_Quat;
+class S_Vec3;
+class S_Vec2;
+
+class S_Mat4x4
 {
-	union
-	{
-		struct
-		{
-			float _00, _01, _02, _03;
-			float _10, _11, _12, _13;
-			float _20, _21, _22, _23;
-			float _30, _31, _32, _33;
-		};
-		float _m[4][4];
-		float m[16];
-	};
-	GE_Mat4x4(){}
-	GE_Mat4x4(	float i_00, float i_01, float i_02, float i_03,
+    friend class S_Vec2;
+    friend class S_Vec4;
+    friend class S_Vec4;
+    friend class S_Quat;
+    friend class S_Mat4x4;
+
+    glm::vec4 m_data;
+
+public:
+
+    S_Mat4x4(){}
+    S_Mat4x4(	float i_00, float i_01, float i_02, float i_03,
 				float i_10, float i_11, float i_12, float i_13,
 				float i_20, float i_21, float i_22, float i_23,
 				float i_30, float i_31, float i_32, float i_33);
-	GE_Mat4x4(const float *i_array);
-	GE_Mat4x4(const GE_Mat4x4 &i_mat44);
+    S_Mat4x4(const float *i_array);
+    S_Mat4x4(const S_Mat4x4 &i_mat44);
 
 	float		operator()(size_t i_row, size_t i_column) const;
 	float&		operator()(size_t i_row, size_t i_column);
-	GE_Mat4x4&	operator= (const GE_Mat4x4& i_mat44);
-	GE_Mat4x4	operator*(const GE_Mat4x4 &i_mat44);
-	GE_Mat4x4&	operator*=(const GE_Mat4x4 &i_mat44);
-	GE_Mat4x4&	multiply(const GE_Mat4x4 *i_mat44);
-	void		multiplyOut(GE_Mat4x4 *i_out, const GE_Mat4x4 *i_mat44);
-	GE_Mat4x4&	srp(const GE_Vec3 &i_position, const GE_Quat &i_rotation, const GE_Vec3 &i_scale);
-	GE_Mat4x4&	spr( const GE_Vec3 &i_position, const GE_Quat &i_rotation, const GE_Vec3 &i_scale );
-	GE_Mat4x4&	transform( const GE_Vec3 &i_p );
-	void		transformOut( GE_Mat4x4 *i_out, const GE_Vec3 &i_p );
-	GE_Mat4x4&	lookAtRH(const GE_Vec3 *i_position, const GE_Vec3 *i_target, const GE_Vec3 *i_up);
-	GE_Mat4x4&	inverse();
-	GE_Mat4x4&	inverseBy(const GE_Mat4x4 *i_mat);
-	void		inverseOut(GE_Mat4x4 *i_out);
-	GE_Mat4x4&	orthoRH(float i_w, float i_h, float i_near, float i_far);
-	GE_Mat4x4&	orthoCenterRH( float i_wLeft, float i_wRight, float i_hBottom, float i_hTop, float i_near, float i_far );
-	GE_Mat4x4&	perspectiveFovRH(float i_fov, float i_aspect, float i_near, float i_far);
-	GE_Mat4x4&	transpose();
-	GE_Mat4x4&	transposeBy(const GE_Mat4x4 *i_mat);
-	void		transposeOut(GE_Mat4x4 *i_out);
-	void		decompose( GE_Vec3 *i_outPosition, GE_Quat *i_outRotation, GE_Vec3 *i_outScale );
-	GE_Mat4x4&	identity();
-	GE_Mat4x4&	RotationQuaternion(const GE_Quat *i_q);
-	GE_Mat4x4&	transformation2D(const GE_Vec2 *i_scaleCenter, float i_scalingRotation, const GE_Vec2 *i_scale, 
-		const GE_Vec2 *i_rotationCenter, float i_rotation, const GE_Vec2 *i_position);
+    S_Mat4x4&	operator= (const S_Mat4x4& i_mat44);
+    S_Mat4x4	operator*(const S_Mat4x4 &i_mat44);
+    S_Mat4x4&	operator*=(const S_Mat4x4 &i_mat44);
+    S_Mat4x4&	multiply(const S_Mat4x4 *i_mat44);
+    void		multiplyOut(S_Mat4x4 *i_out, const S_Mat4x4 *i_mat44);
+    S_Mat4x4&	srp(const S_Vec3 &i_position, const S_Quat &i_rotation, const S_Vec3 &i_scale);
+    S_Mat4x4&	spr( const S_Vec3 &i_position, const S_Quat &i_rotation, const S_Vec3 &i_scale );
+    S_Mat4x4&	transform( const S_Vec3 &i_p );
+    void		transformOut( S_Mat4x4 *i_out, const S_Vec3 &i_p );
+    S_Mat4x4&	lookAtRH(const S_Vec3 *i_position, const S_Vec3 *i_target, const S_Vec3 *i_up);
+    S_Mat4x4&	inverse();
+    S_Mat4x4&	inverseBy(const S_Mat4x4 *i_mat);
+    void		inverseOut(S_Mat4x4 *i_out);
+    S_Mat4x4&	orthoRH(float i_w, float i_h, float i_near, float i_far);
+    S_Mat4x4&	orthoCenterRH( float i_wLeft, float i_wRight, float i_hBottom, float i_hTop, float i_near, float i_far );
+    S_Mat4x4&	perspectiveFovRH(float i_fov, float i_aspect, float i_near, float i_far);
+    S_Mat4x4&	transpose();
+    S_Mat4x4&	transposeBy(const S_Mat4x4 *i_mat);
+    void		transposeOut(S_Mat4x4 *i_out);
+    void		decompose( S_Vec3 *i_outPosition, S_Quat *i_outRotation, S_Vec3 *i_outScale );
+    S_Mat4x4&	identity();
+    S_Mat4x4&	RotationQuaternion(const S_Quat *i_q);
+    S_Mat4x4&	transformation2D(const S_Vec2 *i_scaleCenter, float i_scalingRotation, const S_Vec2 *i_scale,
+        const S_Vec2 *i_rotationCenter, float i_rotation, const S_Vec2 *i_position);
 };
-
-void GE_Mat4x4Decompose(const GE_Mat4x4 *i_m, GE_Vec3 *i_outPosition, GE_Quat *i_outRotation, GE_Vec3 *i_outScale );
-void GE_Mat4x4Multiply(GE_Mat4x4 *i_out, const GE_Mat4x4 *i_m1, const GE_Mat4x4 *i_m2);
-void GE_Mat4x4SRP(GE_Mat4x4 *i_out, const GE_Vec3 &i_position, const GE_Quat &i_rotation, const GE_Vec3 &i_scale);
-void GE_Mat4x4Transform( GE_Mat4x4 *i_out, const GE_Vec3 &i_p );
-void GE_Mat4x4LookAtRH(GE_Mat4x4 *i_out, const GE_Vec3 *i_position, const GE_Vec3 *i_target, const GE_Vec3 *i_up);
-void GE_Mat4x4Inverse(GE_Mat4x4 *i_out, const GE_Mat4x4 *i_mat);
-void GE_Mat4x4OrthoRH(GE_Mat4x4 *i_out, float i_w, float i_h, float i_near, float i_far);
-void GE_Mat4x4OrthoCenterRH( GE_Mat4x4 *i_out, float i_wLeft, float i_wRight, float i_hBottom, float i_hTop, float i_near, float i_far );
-void GE_Mat4x4PerspectiveFovRH(GE_Mat4x4 *i_out, float i_fov, float i_aspect, float i_near, float i_far);
-void GE_Mat4x4Transpose(GE_Mat4x4 *i_out, const GE_Mat4x4 *i_mat);
-void GE_Mat4x4Identity(GE_Mat4x4 *i_mat);
-void GE_Mat4x4RotationQuaternion(GE_Mat4x4 *i_out, const GE_Quat *i_q);
-void GE_Mat4x4Transformation2D(GE_Mat4x4 *i_out, const GE_Vec2 *i_scaleCenter, float i_scalingRotation, const GE_Vec2 *i_scale, 
-							const GE_Vec2 *i_rotationCenter, float i_rotation, const GE_Vec2 *i_position);
-
 
 #include "S_Mat4x4.inl"
