@@ -1,4 +1,5 @@
 #include "core/memory/S_Allocator.h"
+#include "core/math/S_Math.h"
 #include "core/Algorithm/S_AlgorithmAllocator.h"
 #include "core/Algorithm/S_List.h"
 #include "core/Algorithm/S_Vector.h"

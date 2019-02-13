@@ -1,162 +1,157 @@
-#include "GE_Vec2.h"
+#include <glm/vec2.hpp>
+#include "S_Vec2.h"
 
-inline GE_Vec2::GE_Vec2(float i_x, float i_y) : 
-	x(i_x), y(i_y) 
+inline S_Vec2::S_Vec2(float i_x, float i_y) : m_data( i_x, i_y )
+{
+
+}
+
+inline S_Vec2::S_Vec2(const float *i_array) :
+    m_data(i_array[0], i_array[1])
 {
 }
 
-inline GE_Vec2::GE_Vec2(const float *i_array) :
-	x(i_array[0]), y(i_array[1]) 
+inline S_Vec2::S_Vec2(const S_Vec2 &i_vec)
 {
+    *this = i_vec;
 }
 
-inline GE_Vec2::GE_Vec2(const GE_Vec2 &i_vec)
+inline S_Vec2 S_Vec2::operator+(const S_Vec2 &i_v)
 {
-	*this = i_vec;
+    S_Vec2 ret;
+    ret.m_data = m_data + i_v.m_data;
+    return ret;
 }
 
-inline GE_Vec2 GE_Vec2::operator+(const GE_Vec2 &i_v)
+inline S_Vec2& S_Vec2::operator+=(const S_Vec2 &i_v)
 {
-	return GE_Vec2(x + i_v.x, y + i_v.y);
+    m_data += i_v.m_data;
+    return *this;
 }
 
-inline GE_Vec2& GE_Vec2::operator+=(const GE_Vec2 &i_v)
+inline S_Vec2 S_Vec2::operator-()
 {
-	x += i_v.x;
-	y += i_v.y;
-	return *this;
+    S_Vec2 ret;
+    ret.m_data = -m_data;
+    return ret;
 }
 
-inline GE_Vec2 GE_Vec2::operator-()
+inline S_Vec2 S_Vec2::operator-(const S_Vec2 &i_v)
 {
-	return GE_Vec2(-x, -y);
+    S_Vec2 ret;
+    ret.m_data = m_data - i_v.m_data;
+    return ret;
 }
 
-inline GE_Vec2 GE_Vec2::operator-(const GE_Vec2 &i_v)
+inline S_Vec2& S_Vec2::operator-=(const S_Vec2 &i_v)
 {
-	return GE_Vec2(x - i_v.x, y - i_v.y);
+    m_data -= i_v.m_data;
+    return *this;
 }
 
-inline GE_Vec2& GE_Vec2::operator-=(const GE_Vec2 &i_v)
+inline S_Vec2 S_Vec2::operator*(float i_scaler)
 {
-	x -= i_v.x;
-	y -= i_v.y;
-	return *this;
+    S_Vec2 ret;
+    ret.m_data = m_data * i_scaler;
+    return ret;
 }
 
-inline GE_Vec2 GE_Vec2::operator*(float i_scaler)
+inline S_Vec2& S_Vec2::operator*=(float i_scaler)
 {
-	return GE_Vec2(x * i_scaler, y * i_scaler);
+    m_data *= i_scaler;
+    return *this;
 }
 
-inline GE_Vec2& GE_Vec2::operator*=(float i_scaler)
+inline S_Vec2 S_Vec2::operator/(float i_scaler)
 {
-	x *= i_scaler;
-	y *= i_scaler;
-	return *this;
+    S_Vec2 ret;
+    ret.m_data = m_data / i_scaler;
+    return ret;
 }
 
-inline GE_Vec2 GE_Vec2::operator/(float i_scaler)
+inline S_Vec2& S_Vec2::operator/=(float i_scaler)
 {
-	return GE_Vec2(x / i_scaler, y / i_scaler);
+    m_data /= i_scaler;
+    return *this;
 }
 
-inline GE_Vec2& GE_Vec2::operator/=(float i_scaler)
+inline bool S_Vec2::operator==(const S_Vec2 &i_v)
 {
-	x /= i_scaler;
-	y /= i_scaler;
-	return *this;
+    if(m_data == i_v.m_data )
+        return false;
+    return true;
 }
 
-inline bool GE_Vec2::operator==(const GE_Vec2 &i_v)
+inline bool S_Vec2::operator!=(const S_Vec2 &i_v)
 {
-	if(x != i_v.x)
-		return false;
-	if(y != i_v.y)
-		return false;
-	return true;
+    return !(*this == i_v);
 }
 
-inline bool GE_Vec2::operator!=(const GE_Vec2 &i_v)
+inline float S_Vec2::length()
 {
-	return !(*this == i_v);
+    return glm::length( m_data );
 }
 
-inline float GE_Vec2::length()
+//inline S_Vec2& S_Vec2::transform(const S_Mat4x4 *i_mat)
+//{
+//    m_data = i_mat->m_data * m_data;
+//    return *this;
+//}
+
+//inline void S_Vec2::transformOut(S_Vec2 *i_out, const S_Mat4x4 *i_mat)
+//{
+//    i_out->m_data = i_mat.m_data * m_data;
+//}
+
+inline S_Vec2& S_Vec2::normalize()
 {
-	float l;
-	DirectX::XMStoreFloat(&l, DirectX::XMVector2Length(DirectX::XMLoadFloat2((DirectX::XMFLOAT2*)this)));
-	return l;
+    m_data = glm::normalize( m_data );
+    return *this;
 }
 
-inline GE_Vec2& GE_Vec2::transform(const GE_Mat4x4 *i_mat)
+inline void S_Vec2::normalizeOut(S_Vec2* i_out)
 {
-	DirectX::XMStoreFloat2((DirectX::XMFLOAT2*)this, DirectX::XMVector2Transform(DirectX::XMLoadFloat2((DirectX::XMFLOAT2*)this), 
-		DirectX::XMLoadFloat4x4((DirectX::XMFLOAT4X4*)i_mat)));
-	return *this;
+    i_out->m_data = glm::normalize( m_data );
 }
 
-inline void GE_Vec2::transformOut(GE_Vec2 *i_out, const GE_Mat4x4 *i_mat)
+inline float S_Vec2::dot(const S_Vec2 *i_vec)
 {
-	DirectX::XMStoreFloat2((DirectX::XMFLOAT2*)i_out, DirectX::XMVector2Transform(DirectX::XMLoadFloat2((DirectX::XMFLOAT2*)this), 
-		DirectX::XMLoadFloat4x4((DirectX::XMFLOAT4X4*)i_mat)));
+    return glm::dot( m_data, i_vec->m_data );
 }
 
-inline GE_Vec2& GE_Vec2::normalize()
+inline S_Vec2& S_Vec2::cross(const S_Vec2 *i_vec)
 {
-	DirectX::XMStoreFloat2((DirectX::XMFLOAT2*)this, DirectX::XMVector2Normalize(DirectX::XMLoadFloat2((DirectX::XMFLOAT2*)this)));
-	return *this;
+    m_data = glm::cross( m_data, i_vec->m_data );
+    return *this;
 }
 
-inline void GE_Vec2::normalizeOut(GE_Vec2* i_out)
+inline void S_Vec2::crossOut(S_Vec2 *i_out, const S_Vec2 *i_vec)
 {
-	DirectX::XMStoreFloat2((DirectX::XMFLOAT2*)i_out, DirectX::XMVector2Normalize(DirectX::XMLoadFloat2((DirectX::XMFLOAT2*)this)));
-}
-
-inline float GE_Vec2::dot(const GE_Vec2 *i_vec)
-{
-	float d;
-	DirectX::XMStoreFloat(&d, DirectX::XMVector2Dot(DirectX::XMLoadFloat2((DirectX::XMFLOAT2*)this), DirectX::XMLoadFloat2((DirectX::XMFLOAT2*)i_vec)));
-	return d;
-}
-
-inline GE_Vec2& GE_Vec2::cross(const GE_Vec2 *i_vec)
-{
-	DirectX::XMStoreFloat2((DirectX::XMFLOAT2*)this, DirectX::XMVector2Cross(DirectX::XMLoadFloat2((DirectX::XMFLOAT2*)this), DirectX::XMLoadFloat2((DirectX::XMFLOAT2*)i_vec)));
-	return *this;
-}
-
-inline void GE_Vec2::crossOut(GE_Vec2 *i_out, const GE_Vec2 *i_vec)
-{
-	DirectX::XMStoreFloat2((DirectX::XMFLOAT2*)i_out, DirectX::XMVector2Cross(DirectX::XMLoadFloat2((DirectX::XMFLOAT2*)this), DirectX::XMLoadFloat2((DirectX::XMFLOAT2*)i_vec)));
+    i_out->m_data = glm::cross( m_data, i_vec->m_data );
 }
 
 //global functions-------------------------------------------------------------------
-inline void GE_Vec2Transform(GE_Vec2 *i_out, const GE_Vec2 *i_vec, const GE_Mat4x4 *i_mat)
+//inline void S_Vec2Transform(S_Vec2 *i_out, const S_Vec2 *i_vec, const S_Mat4x4 *i_mat)
+//{
+//    i_out->m_data = i_mat->m_data * i_vec->m_data;
+//}
+
+inline float S_Vec2Length(const S_Vec2 *i_vec)
 {
-	DirectX::XMStoreFloat2((DirectX::XMFLOAT2*)i_out, DirectX::XMVector2Transform(DirectX::XMLoadFloat2((DirectX::XMFLOAT2*)i_vec), DirectX::XMLoadFloat4x4((DirectX::XMFLOAT4X4*)i_mat)));
+    return glm::length( i_vec->m_data );
 }
 
-inline float GE_Vec2Length(const GE_Vec2 *i_vec)
+inline void S_Vec2Normalize(S_Vec2 *i_out, const S_Vec2 *i_vec)
 {
-	float l;
-	DirectX::XMStoreFloat(&l, DirectX::XMVector2Length(DirectX::XMLoadFloat2((DirectX::XMFLOAT2*)i_vec)));
-	return l;
+    i_out->m_data = glm::normalize( i_vec->m_data );
 }
 
-inline void GE_Vec2Normalize(GE_Vec2 *i_out, const GE_Vec2 *i_vec)
+inline float S_Vec2Dot(const S_Vec2 *i_v1, const S_Vec2 *i_v2)
 {
-	DirectX::XMStoreFloat2((DirectX::XMFLOAT2*)i_out, DirectX::XMVector2Normalize(DirectX::XMLoadFloat2((DirectX::XMFLOAT2*)i_vec)));
+    return glm::dot( i_v1->m_data, i_v2->m_data );
 }
 
-inline float GE_Vec2Dot(const GE_Vec2 *i_v1, const GE_Vec2 *i_v2)
+inline void S_Vec2Cross(S_Vec2 *i_out, const S_Vec2 *i_v1, const S_Vec2 *i_v2)
 {
-	float d;
-	DirectX::XMStoreFloat(&d, DirectX::XMVector2Dot(DirectX::XMLoadFloat2((DirectX::XMFLOAT2*)i_v1), DirectX::XMLoadFloat2((DirectX::XMFLOAT2*)i_v2)));
-	return d;
-}
-
-inline void GE_Vec2Cross(GE_Vec2 *i_out, const GE_Vec2 *i_v1, const GE_Vec2 *i_v2)
-{
-	DirectX::XMStoreFloat2((DirectX::XMFLOAT2*)i_out, DirectX::XMVector2Cross(DirectX::XMLoadFloat2((DirectX::XMFLOAT2*)i_v1), DirectX::XMLoadFloat2((DirectX::XMFLOAT2*)i_v2)));
+    i_out->m_data = glm::cross( i_v1->m_data, i_v2->m_data );
 }

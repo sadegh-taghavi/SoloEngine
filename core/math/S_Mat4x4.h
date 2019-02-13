@@ -70,4 +70,4 @@ void GE_Mat4x4Transformation2D(GE_Mat4x4 *i_out, const GE_Vec2 *i_scaleCenter, f
 							const GE_Vec2 *i_rotationCenter, float i_rotation, const GE_Vec2 *i_position);
 
 
-#include "GE_Mat4x4.inl"
+#include "S_Mat4x4.inl"

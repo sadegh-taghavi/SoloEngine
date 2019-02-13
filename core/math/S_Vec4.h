@@ -52,4 +52,4 @@ void GE_Vec4Normalize(GE_Vec4 *i_out, const GE_Vec4 *i_vec);
 float GE_Vec4Dot(const GE_Vec4 *i_v1, const GE_Vec4 *i_v2);
 //void GE_Vec4Cross(GE_Vec4 *i_out, const GE_Vec4 *i_v1, const GE_Vec4 *i_v2);
 
-#include "GE_Vec4.inl"
+#include "S_Vec4.inl"

@@ -47,4 +47,4 @@ bool GE_Vec3RayIntersectToPlane(const GE_Vec3 *i_org, const GE_Vec3 *i_dir, cons
 bool GE_Vec3RayIntersectToBox( const GE_Vec3 *i_org, const GE_Vec3 *i_dir,
 	const GE_Vec3 *i_min, const GE_Vec3 *i_max, const GE_Mat4x4 *i_transform, float &i_distance );
 
-#include "GE_Vec3.inl"
+#include "S_Vec3.inl"

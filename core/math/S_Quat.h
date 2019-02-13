@@ -36,4 +36,4 @@ void GE_QuatNormalize(GE_Quat *i_out, const GE_Quat *i_q);
 void GE_QuatLerp( GE_Quat *i_out, const GE_Quat *i_first, const GE_Quat *i_second, float i_amount );
 void GE_QuatMultiply(GE_Quat *i_out, const GE_Quat *i_q1, const GE_Quat *i_q2);
 
-#include "GE_Quat.inl"
+#include "S_Quat.inl"
