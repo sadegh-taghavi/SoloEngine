@@ -48,7 +48,7 @@ public:
     float dot(const S_Vec4 *i_vec);
     void lerp( const S_Vec4 *i_second, float i_amount );
     void lerpOut( S_Vec4 *i_out, const S_Vec4 *i_second, float i_amount );
-    void To2DLeftUpPosition( const S_Vec4 &i_position, const S_Mat4x4 &i_viewProjection );
-    void To2DLeftUpPositionOut( S_Vec4 &i_out, const S_Vec4 &i_position, const S_Mat4x4 &i_viewProjection );
+//    void To2DLeftUpPosition( const S_Vec4 &i_position, const S_Mat4x4 &i_viewProjection );
+//    void To2DLeftUpPositionOut( S_Vec4 &i_out, const S_Vec4 &i_position, const S_Mat4x4 &i_viewProjection );
 };
 #include "S_Vec4.inl"

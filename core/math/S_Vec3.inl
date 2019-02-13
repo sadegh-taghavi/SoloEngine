@@ -1,5 +1,5 @@
 #include "S_Vec3.h"
-//#include "S_Mat4x4.h"
+#include "S_Mat4x4.h"
 
 inline S_Vec3::S_Vec3( float i_x, float i_y, float i_z ) : m_data( i_x, i_y, i_z )
 {
@@ -119,17 +119,6 @@ inline float S_Vec3::length()
 {
     return glm::length( m_data );
 }
-
-//inline S_Vec3& S_Vec3::transform(const S_Mat4x4 *i_mat)
-//{
-//    m_data = i_mat->m_data * m_data;
-//    return *this;
-//}
-
-//inline void S_Vec3::transformOut(S_Vec3 *i_out, const S_Mat4x4 *i_mat)
-//{
-//    i_out->m_data = i_mat.m_data * m_data;
-//}
 
 inline S_Vec3& S_Vec3::normalize()
 {

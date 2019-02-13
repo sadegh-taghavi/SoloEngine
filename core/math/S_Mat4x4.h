@@ -8,11 +8,11 @@ class S_Vec2;
 class S_Mat4x4
 {
     friend class S_Vec2;
-    friend class S_Vec4;
+    friend class S_Vec3;
     friend class S_Vec4;
     friend class S_Quat;
 
-    glm::vec4 m_data;
+    glm::mat4 m_data;
 
 public:
 
@@ -41,13 +41,13 @@ public:
     void		inverseOut(S_Mat4x4 *i_out);
     S_Mat4x4&	orthoRH(float i_w, float i_h, float i_near, float i_far);
     S_Mat4x4&	orthoCenterRH( float i_wLeft, float i_wRight, float i_hBottom, float i_hTop, float i_near, float i_far );
-    S_Mat4x4&	perspectiveFovRH(float i_fov, float i_aspect, float i_near, float i_far);
+    S_Mat4x4&	perspectiveFovRH( float i_fov, float i_width, float i_height, float i_near, float i_far );
     S_Mat4x4&	transpose();
     S_Mat4x4&	transposeBy(const S_Mat4x4 *i_mat);
     void		transposeOut(S_Mat4x4 *i_out);
-    void		decompose( S_Vec3 *i_outPosition, S_Quat *i_outRotation, S_Vec3 *i_outScale );
+    void		decompose(S_Vec3 *i_outPosition, S_Quat *i_outRotation, S_Vec3 *i_outScale , S_Vec3 *i_outSkew, S_Vec3 *i_outPerspective);
     S_Mat4x4&	identity();
-    S_Mat4x4&	RotationQuaternion(const S_Quat *i_q);
+    S_Mat4x4&	rotationQuaternion(const S_Quat *i_q);
     S_Mat4x4&	transformation2D(const S_Vec2 *i_scaleCenter, float i_scalingRotation, const S_Vec2 *i_scale,
         const S_Vec2 *i_rotationCenter, float i_rotation, const S_Vec2 *i_position);
 };

@@ -36,8 +36,6 @@ public:
     bool operator==(const S_Vec2 &i_v);
     bool operator!=(const S_Vec2 &i_v);
 	float length();
-    S_Vec2& transform(const S_Mat4x4 *i_mat);
-    void transformOut(S_Vec2 *i_out, const S_Mat4x4 *i_mat);
     S_Vec2& normalize();
     void normalizeOut(S_Vec2* i_out);
     float dot(const S_Vec2 *i_vec);

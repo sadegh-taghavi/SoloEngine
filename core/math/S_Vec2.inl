@@ -1,5 +1,6 @@
 #include <glm/vec2.hpp>
 #include "S_Vec2.h"
+#include "S_Mat4x4.h"
 
 inline S_Vec2::S_Vec2(float i_x, float i_y) : m_data( i_x, i_y )
 {
@@ -111,17 +112,6 @@ inline float S_Vec2::length()
 {
     return glm::length( m_data );
 }
-
-//inline S_Vec2& S_Vec2::transform(const S_Mat4x4 *i_mat)
-//{
-//    m_data = i_mat->m_data * m_data;
-//    return *this;
-//}
-
-//inline void S_Vec2::transformOut(S_Vec2 *i_out, const S_Mat4x4 *i_mat)
-//{
-//    i_out->m_data = i_mat.m_data * m_data;
-//}
 
 inline S_Vec2& S_Vec2::normalize()
 {

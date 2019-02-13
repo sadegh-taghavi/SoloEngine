@@ -38,8 +38,6 @@ public:
     bool operator==(const S_Vec3 &i_v);
     bool operator!=(const S_Vec3 &i_v);
 	float length();
-    S_Vec3& transform(const struct S_Mat4x4 *i_mat);
-    void transformOut( S_Vec3 *i_out, const S_Mat4x4 *i_mat );
     S_Vec3& normalize();
     S_Vec3& normalizeBy(const S_Vec3* i_vec);
     void normalizeOut(S_Vec3* i_out);

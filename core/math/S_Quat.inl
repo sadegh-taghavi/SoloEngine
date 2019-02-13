@@ -1,5 +1,6 @@
-#include "S_Vec3.h"
+#include <glm/gtc/quaternion.hpp>
 #include "S_Quat.h"
+#include "S_Vec3.h"
 
 inline S_Quat::S_Quat(float i_x, float i_y, float i_z, float i_w) : m_data( i_x, i_y, i_z, i_w )
 {
