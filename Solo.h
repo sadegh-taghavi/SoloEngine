@@ -1,6 +1,15 @@
 #include "core/memory/S_Allocator.h"
-#include "core/algorithm/S_Algorithm.h"
-#include "core/math/S_Math.h"
+#include "core/memory/S_AlgorithmAllocator.h"
+
+#include "core/math/S_Vec2.h"
+#include "core/math/S_Vec3.h"
+#include "core/math/S_Vec4.h"
+#include "core/math/S_Quat.h"
+#include "core/math/S_Mat4x4.h"
+
+#include "core/algorithm/S_List.h"
+#include "core/algorithm/S_Vector.h"
+#include "core/algorithm/S_String.h"
 
 
 void* operator new  (std::size_t count )

@@ -4,9 +4,8 @@ CONFIG += c++11
 CONFIG -= app_bundle
 
 HEADERS += \
-    core/memory/S_Allocator.h \
-    core/algorithm/S_Algorithm.h \
-    core/algorithm/S_AlgorithmAllocator.h \
+    core/memory/S_Allocator.h \  
+    core/memory/S_AlgorithmAllocator.h \
     core/algorithm/S_List.h \
     core/algorithm/S_Vector.h \
     core/algorithm/S_String.h \
@@ -20,12 +19,12 @@ HEADERS += \
 
 SOURCES += \
     core/memory/S_Allocator.cpp \
+    core/memory/S_AlgorithmAllocator.cpp \
     core/math/S_Vec2.inl \
     core/math/S_Vec3.inl \
     core/math/S_Vec4.inl \
     core/math/S_Quat.inl \
     core/math/S_Mat4x4.inl \
-    core/algorithm/S_AlgorithmAllocator.cpp \
     main.cpp
 
 INCLUDEPATH += $$PWD/3rdparty \
