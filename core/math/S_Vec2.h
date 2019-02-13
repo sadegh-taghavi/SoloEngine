@@ -5,7 +5,6 @@ class S_Mat4x4;
 
 class S_Vec2
 {
-    friend class S_Vec2;
     friend class S_Vec3;
     friend class S_Vec4;
     friend class S_Quat;

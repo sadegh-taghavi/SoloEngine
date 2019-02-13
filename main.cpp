@@ -72,13 +72,13 @@ int main(int argc, char *argv[])
     et.restart();
     for( int i = 0; i < 500000; ++i )
     {
-        lst.push_back( vv );
+        lst1.push_back( vv );
     }
     qDebug()<<"LST-CA-Al" << et.elapsed();
     et.restart();
     for( int i = 0; i < 500000; ++i )
     {
-        lst.pop_front();
+        lst1.pop_front();
     }
     qDebug()<<"LST-CA-De" << et.elapsed();
 
@@ -86,13 +86,13 @@ int main(int argc, char *argv[])
     et.restart();
     for( int i = 0; i < 500000; ++i )
     {
-        lst1.push_back( vv );
+        lst.push_back( vv );
     }
     qDebug()<<"LST-ST-Al" << et.elapsed();
     et.restart();
     for( int i = 0; i < 500000; ++i )
     {
-        lst1.pop_front();
+        lst.pop_front();
     }
     qDebug()<<"LST-ST-De" << et.elapsed();
 

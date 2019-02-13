@@ -11,7 +11,6 @@ class S_Mat4x4
     friend class S_Vec4;
     friend class S_Vec4;
     friend class S_Quat;
-    friend class S_Mat4x4;
 
     glm::vec4 m_data;
 
