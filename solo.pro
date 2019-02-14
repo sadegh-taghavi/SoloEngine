@@ -31,6 +31,13 @@ INCLUDEPATH += $$PWD/3rdparty \
 
 android {
 
+INCLUDEPATH += \
+    $$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/$$(ANDROID_NDK_TOOLCHAIN_VERSION)/include \
+    $$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/$$(ANDROID_NDK_TOOLCHAIN_VERSION)/include/backward \
+    $$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/$$(ANDROID_NDK_TOOLCHAIN_VERSION)/libs/armeabi-v7a/include
+
+LIBS += $$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/$$(ANDROID_NDK_TOOLCHAIN_VERSION)/libs/armeabi-v7a/libgnustl_shared.so
+
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
 
 LIBS += -landroid

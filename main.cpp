@@ -1,10 +1,12 @@
-#include <QDebug>
-#include <QElapsedTimer>
+//#include <QDebug>
+//#include <QElapsedTimer>
 #include "Solo.h"
 
 #ifdef __ANDROID__
 
 #include "android_native_app_glue.h"
+
+int main(int, char **);
 
 void android_main(struct android_app* app)
 {
@@ -14,6 +16,8 @@ void android_main(struct android_app* app)
 //    application->onInputEvent = callback_input;
 
     app_dummy();
+
+//    main( 0, nullptr );
 
     while (true) {
      // Loop the events accumulated (it can be several)
@@ -37,101 +41,102 @@ void android_main(struct android_app* app)
 
     }
 }
-
-#elif __WIN32__
-
-struct SA
-{
-    int aaa;
-    double bbb;
-    char STr[25];
-    SA() {}
-};
-int main(int, char **)
-{
-
-    S_Vec3 v3 = S_Vec3( 3.1415f, 0.1415f, 0.0f );
-    S_Mat4x4 m;
-    m.translate( S_Vec3( 0, 0, 0 ) );
-    m.identity();
-    qDebug()<< S_Vec2(12, 10).length() << S_Vec3( 25, 10, 5 ).length() <<
-               S_Vec4( 25, 10, 5, 5 ).length() << S_Quat().fromEularAnglesPYR( &v3 ).x() <<
-               m(1, 1);
-    S_Allocator al;
-//    int *dd = new int();
-//    delete dd;
-
-    S_List<SA> lst;
-    std::list<SA> lst1;
-
-
-    void *ttt[500000];
-
-    QElapsedTimer et;
-
-
-
-
-    SA vv;
-    et.restart();
-    for( int i = 0; i < 500000; ++i )
-    {
-        lst1.push_back( vv );
-    }
-    qDebug()<<"LST-CA-Al" << et.elapsed();
-    et.restart();
-    for( int i = 0; i < 500000; ++i )
-    {
-        lst1.pop_front();
-    }
-    qDebug()<<"LST-CA-De" << et.elapsed();
-
-
-    et.restart();
-    for( int i = 0; i < 500000; ++i )
-    {
-        lst.push_back( vv );
-    }
-    qDebug()<<"LST-ST-Al" << et.elapsed();
-    et.restart();
-    for( int i = 0; i < 500000; ++i )
-    {
-        lst.pop_front();
-    }
-    qDebug()<<"LST-ST-De" << et.elapsed();
-
-
-    et.restart();
-    for( int i = 0; i < 500000; ++i )
-    {
-
-        ttt[i] = S_Allocator::singleton()->allocate( (rand() % 64) + 10 );
-    }
-    qDebug()<<"AL-CA-Al" << et.elapsed();
-    et.restart();
-    for( int i = 0; i < 500000; ++i )
-    {
-        S_Allocator::singleton()->deallocate( ttt[i] );
-    }
-    qDebug()<<"DA-CA-De" << et.elapsed();
-
-
-    et.restart();
-    for( int i = 0; i < 500000; ++i )
-    {
-        ttt[i] = malloc( (rand() % 64) + 10 );
-    }
-    qDebug()<<"AL-MA-Al" << et.elapsed();
-    et.restart();
-    for( int i = 0; i < 500000; ++i )
-    {
-        free( ttt[i] );
-    }
-    qDebug()<<"AL-MA-De" << et.elapsed();
-
-
-    return 0;
-}
-
 #endif
+
+//#elif __WIN32__
+
+//struct SA
+//{
+//    int aaa;
+//    double bbb;
+//    char STr[25];
+//    SA() {}
+//};
+//int main(int, char **)
+//{
+
+//    S_Vec3 v3 = S_Vec3( 3.1415f, 0.1415f, 0.0f );
+//    S_Mat4x4 m;
+//    m.translate( S_Vec3( 0, 0, 0 ) );
+//    m.identity();
+//    qDebug()<< S_Vec2(12, 10).length() << S_Vec3( 25, 10, 5 ).length() <<
+//               S_Vec4( 25, 10, 5, 5 ).length() << S_Quat().fromEularAnglesPYR( &v3 ).x() <<
+//               m(1, 1);
+//    S_Allocator al;
+////    int *dd = new int();
+////    delete dd;
+
+//    S_List<SA> lst;
+//    std::list<SA> lst1;
+
+
+//    void *ttt[500000];
+
+//    QElapsedTimer et;
+
+
+
+
+//    SA vv;
+//    et.restart();
+//    for( int i = 0; i < 500000; ++i )
+//    {
+//        lst1.push_back( vv );
+//    }
+//    qDebug()<<"LST-CA-Al" << et.elapsed();
+//    et.restart();
+//    for( int i = 0; i < 500000; ++i )
+//    {
+//        lst1.pop_front();
+//    }
+//    qDebug()<<"LST-CA-De" << et.elapsed();
+
+
+//    et.restart();
+//    for( int i = 0; i < 500000; ++i )
+//    {
+//        lst.push_back( vv );
+//    }
+//    qDebug()<<"LST-ST-Al" << et.elapsed();
+//    et.restart();
+//    for( int i = 0; i < 500000; ++i )
+//    {
+//        lst.pop_front();
+//    }
+//    qDebug()<<"LST-ST-De" << et.elapsed();
+
+
+//    et.restart();
+//    for( int i = 0; i < 500000; ++i )
+//    {
+
+//        ttt[i] = S_Allocator::singleton()->allocate( (rand() % 64) + 10 );
+//    }
+//    qDebug()<<"AL-CA-Al" << et.elapsed();
+//    et.restart();
+//    for( int i = 0; i < 500000; ++i )
+//    {
+//        S_Allocator::singleton()->deallocate( ttt[i] );
+//    }
+//    qDebug()<<"DA-CA-De" << et.elapsed();
+
+
+//    et.restart();
+//    for( int i = 0; i < 500000; ++i )
+//    {
+//        ttt[i] = malloc( (rand() % 64) + 10 );
+//    }
+//    qDebug()<<"AL-MA-Al" << et.elapsed();
+//    et.restart();
+//    for( int i = 0; i < 500000; ++i )
+//    {
+//        free( ttt[i] );
+//    }
+//    qDebug()<<"AL-MA-De" << et.elapsed();
+
+
+//    return 0;
+//}
+
+////#endif
 
