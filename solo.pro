@@ -4,11 +4,11 @@ CONFIG += c++11
 CONFIG -= app_bundle
 
 HEADERS += \
-    core/memory/S_Allocator.h \  
+    core/memory/S_Allocator.h \
     core/memory/S_AlgorithmAllocator.h \
     core/algorithm/S_List.h \
     core/algorithm/S_Vector.h \
-    core/algorithm/S_String.h \  
+    core/algorithm/S_String.h \
     core/math/S_Vec2.h \
     core/math/S_Vec3.h \
     core/math/S_Vec4.h \
@@ -35,7 +35,8 @@ INCLUDEPATH += \
     $$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/$$(ANDROID_NDK_TOOLCHAIN_VERSION)/include/backward \
     $$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/$$(ANDROID_NDK_TOOLCHAIN_VERSION)/libs/armeabi-v7a/include
 
-LIBS += -Lquate($$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/$$(ANDROID_NDK_TOOLCHAIN_VERSION)/libs/armeabi-v7a) -lgnustl_shared
+
+#LIBS += -Lquate($$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/$$(ANDROID_NDK_TOOLCHAIN_VERSION)/libs/armeabi-v7a) -lgnustl_shared
 
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
 
@@ -58,4 +59,9 @@ DISTFILES += \
     android/src/org/solo/test/MainActivity.java \
     android/src/org/solo/core/AndroidBinding.java
 
+}
+
+contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
+    ANDROID_EXTRA_LIBS = \
+        $$PWD/../../../newComp/android-ndk-r10e/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/libgnustl_shared.so
 }
