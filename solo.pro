@@ -8,8 +8,7 @@ HEADERS += \
     core/memory/S_AlgorithmAllocator.h \
     core/algorithm/S_List.h \
     core/algorithm/S_Vector.h \
-    core/algorithm/S_String.h \
-    core/math/S_Math.h \
+    core/algorithm/S_String.h \  
     core/math/S_Vec2.h \
     core/math/S_Vec3.h \
     core/math/S_Vec4.h \
@@ -36,7 +35,7 @@ INCLUDEPATH += \
     $$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/$$(ANDROID_NDK_TOOLCHAIN_VERSION)/include/backward \
     $$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/$$(ANDROID_NDK_TOOLCHAIN_VERSION)/libs/armeabi-v7a/include
 
-LIBS += $$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/$$(ANDROID_NDK_TOOLCHAIN_VERSION)/libs/armeabi-v7a/libgnustl_shared.so
+LIBS += -Lquate($$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/$$(ANDROID_NDK_TOOLCHAIN_VERSION)/libs/armeabi-v7a) -lgnustl_shared
 
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
 
