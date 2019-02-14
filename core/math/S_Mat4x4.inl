@@ -1,9 +1,10 @@
-//#define GLM_ENABLE_EXPERIMENTAL
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-//#include <glm/gtx/matrix_decompose.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
 #include "S_Mat4x4.h"
 #include "S_Vec3.h"
+#include "S_Vec4.h"
 #include "S_Quat.h"
 
 inline S_Mat4x4::S_Mat4x4(	float i_00, float i_01, float i_02, float i_03,
@@ -53,12 +54,12 @@ inline S_Mat4x4 S_Mat4x4::operator*(const S_Mat4x4 &i_mat44)
 
 inline S_Mat4x4& S_Mat4x4::operator*=(const S_Mat4x4 &i_mat44)
 {
-    return multiply(&i_mat44);
+    return multiply( &i_mat44 );
 }
 
 inline S_Mat4x4& S_Mat4x4::multiply( const S_Mat4x4 *i_mat44 )
 {
-    m_data *= i_mat44;
+    m_data *= i_mat44->m_data;
     return *this;
 }
 
@@ -69,21 +70,19 @@ inline void S_Mat4x4::multiplyOut( S_Mat4x4 *i_out, const S_Mat4x4 *i_mat44 )
 
 inline S_Mat4x4& S_Mat4x4::srp( const S_Vec3 &i_position, const S_Quat &i_rotation, const S_Vec3 &i_scale )
 {
-    glm::mat4 identity = glm::mat4(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1);
-    glm::mat4 p = glm::translate( identity, glm::vec3( i_position.x, i_position.y, i_position.z ) );
-    glm::mat4 s = glm::scale( identity, glm::vec3( i_scale.x, i_scale.y, i_scale.z ) );
-    glm::mat4 r = glm::mat4_cast( i_rotation.m_data );
-    m_data = s * r * p;
+    m_data = glm::mat4(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1);
+    m_data = glm::scale( m_data, i_scale.m_data );
+    m_data *= glm::mat4_cast( i_rotation.m_data );
+    m_data = glm::translate( m_data, i_position.m_data );
     return *this;
 }
 
 inline S_Mat4x4& S_Mat4x4::spr( const S_Vec3 &i_position, const S_Quat &i_rotation, const S_Vec3 &i_scale )
 {
-    glm::mat4 identity = glm::mat4(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1);
-    glm::mat4 p = glm::translate( identity, glm::vec3( i_position.x, i_position.y, i_position.z ) );
-    glm::mat4 s = glm::scale( identity, glm::vec3( i_scale.x, i_scale.y, i_scale.z ) );
-    glm::mat4 r = glm::mat4_cast( i_rotation.m_data );
-    m_data = s * p * r;
+    m_data = glm::mat4(1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1);
+    m_data = glm::scale( m_data, i_scale.m_data );
+    m_data = glm::translate( m_data, i_position.m_data );
+    m_data *= glm::mat4_cast( i_rotation.m_data );
     return *this;
 }
 
@@ -177,10 +176,10 @@ inline S_Mat4x4& S_Mat4x4::rotationQuaternion( const S_Quat *i_q )
     return *this;
 }
 
-//inline void S_Mat4x4::decompose( S_Vec3 *i_outPosition, S_Quat *i_outRotation, S_Vec3 *i_outScale,  S_Vec3 *i_outSkew,  S_Vec3 *i_outPerspective )
-//{
-//    glm::decompose( m_data, i_outScale->m_data, i_outRotation->m_data, i_outPosition->m_data, i_outSkew->m_data, i_outPerspective->m_data );
-//}
+inline void S_Mat4x4::decompose( S_Vec3 *i_outPosition, S_Quat *i_outRotation, S_Vec3 *i_outScale,  S_Vec3 *i_outSkew,  S_Vec4 *i_outPerspective )
+{
+    glm::decompose( m_data, i_outScale->m_data, i_outRotation->m_data, i_outPosition->m_data, i_outSkew->m_data, i_outPerspective->m_data );
+}
 
 //inline S_Mat4x4& S_Mat4x4::transformation2D( const S_Vec2 *i_scaleCenter, float i_scalingRotation, const S_Vec2 *i_scale, const S_Vec2 *i_rotationCenter, float i_rotation, const S_Vec2 *i_position )
 //{

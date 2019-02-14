@@ -1,9 +1,10 @@
 #pragma once
 #include <glm/glm.hpp>
 
-class S_Quat;
-class S_Vec3;
 class S_Vec2;
+class S_Vec3;
+class S_Vec4;
+class S_Quat;
 
 class S_Mat4x4
 {
@@ -18,14 +19,14 @@ public:
 
     S_Mat4x4(){}
     S_Mat4x4(	float i_00, float i_01, float i_02, float i_03,
-				float i_10, float i_11, float i_12, float i_13,
-				float i_20, float i_21, float i_22, float i_23,
-				float i_30, float i_31, float i_32, float i_33);
+                float i_10, float i_11, float i_12, float i_13,
+                float i_20, float i_21, float i_22, float i_23,
+                float i_30, float i_31, float i_32, float i_33);
     S_Mat4x4(const float *i_array);
     S_Mat4x4(const S_Mat4x4 &i_mat44);
 
-	float		operator()(size_t i_row, size_t i_column) const;
-	float&		operator()(size_t i_row, size_t i_column);
+    float		operator()(size_t i_row, size_t i_column) const;
+    float&		operator()(size_t i_row, size_t i_column);
     S_Mat4x4&	operator= (const S_Mat4x4& i_mat44);
     S_Mat4x4	operator*(const S_Mat4x4 &i_mat44);
     S_Mat4x4&	operator*=(const S_Mat4x4 &i_mat44);
@@ -45,7 +46,7 @@ public:
     S_Mat4x4&	transpose();
     S_Mat4x4&	transposeBy(const S_Mat4x4 *i_mat);
     void		transposeOut(S_Mat4x4 *i_out);
-//    void		decompose(S_Vec3 *i_outPosition, S_Quat *i_outRotation, S_Vec3 *i_outScale , S_Vec3 *i_outSkew, S_Vec3 *i_outPerspective);
+    void		decompose(S_Vec3 *i_outPosition, S_Quat *i_outRotation, S_Vec3 *i_outScale , S_Vec3 *i_outSkew, S_Vec4 *i_outPerspective);
     S_Mat4x4&	identity();
     S_Mat4x4&	rotationQuaternion(const S_Quat *i_q);
 //    S_Mat4x4&	transformation2D(const S_Vec2 *i_scaleCenter, float i_scalingRotation, const S_Vec2 *i_scale,

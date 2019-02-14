@@ -176,28 +176,28 @@ inline void S_Vec4::lerpOut( S_Vec4 *i_out, const S_Vec4 *i_second, float i_amou
     i_out->m_data = glm::mix( m_data, i_second->m_data, i_amount );
 }
 
-//inline void S_Vec4::To2DLeftUpPosition( const S_Vec3 &i_position, const S_Mat4x4 &i_viewProjection )
-//{
-//    S_Vec4 pos( i_position.x, i_position.y, i_position.z, 1.0f );
+inline void S_Vec4::To2DLeftUpPosition( const S_Vec4 *i_position, const S_Mat4x4 *i_viewProjection )
+{
+    S_Vec4 pos( i_position->m_data.x, i_position->m_data.y, i_position->m_data.z, 1.0f );
 
-//    m_data = i_viewProjection * pos;
+    m_data = i_viewProjection->m_data * pos.m_data;
 	    
-//    m_data.x /= m_data.w;
-//    m_data.y /= m_data.w;
-//    m_data.z /= m_data.w;
-//    m_data.x = m_data.x * 0.5f + 0.5f;
-//    m_data.y = ( -m_data.y * 0.5f + 0.5f );
-//}
+    m_data.x /= m_data.w;
+    m_data.y /= m_data.w;
+    m_data.z /= m_data.w;
+    m_data.x = m_data.x * 0.5f + 0.5f;
+    m_data.y = ( -m_data.y * 0.5f + 0.5f );
+}
 
-//inline void S_Vec4::To2DLeftUpPositionOut( S_Vec4 &i_out, const S_Vec3 &i_position, const S_Mat4x4 &i_viewProjection )
-//{
-//    S_Vec4 pos( i_position.x, i_position.y, i_position.z, 1.0f );
+inline void S_Vec4::To2DLeftUpPositionOut( S_Vec4 *i_out, const S_Vec4 *i_position, const S_Mat4x4 *i_viewProjection )
+{
+    S_Vec4 pos( i_position->m_data.x, i_position->m_data.y, i_position->m_data.z, 1.0f );
 
-//    i_out.m_data = i_viewProjection * pos;
+    i_out->m_data = i_viewProjection->m_data * pos.m_data;
 
-//    i_out.m_data.x /= i_out.m_data.w;
-//    i_out.m_data.y /= i_out.m_data.w;
-//    i_out.m_data.z /= i_out.m_data.w;
-//    i_out.m_data.x = i_out.m_data.x * 0.5f + 0.5f;
-//    i_out.m_data.y = ( -i_out.m_data.y * 0.5f + 0.5f );
-//}
+    i_out->m_data.x /= i_out->m_data.w;
+    i_out->m_data.y /= i_out->m_data.w;
+    i_out->m_data.z /= i_out->m_data.w;
+    i_out->m_data.x = i_out->m_data.x * 0.5f + 0.5f;
+    i_out->m_data.y = ( -i_out->m_data.y * 0.5f + 0.5f );
+}
