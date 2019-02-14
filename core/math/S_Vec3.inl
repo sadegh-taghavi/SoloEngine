@@ -162,32 +162,3 @@ inline void S_Vec3::lerpOut( S_Vec3 *i_out, const S_Vec3 *i_second, float i_amou
 {
     i_out->m_data = glm::mix( m_data, i_second->m_data, i_amount );
 }
-
-//inline bool S_Vec3RayIntersectToPlane( const S_Vec3 *i_org, const S_Vec3 *i_dir, const S_Vec3 *i_verts, float &i_distance )
-//{
-//	DirectX::XMVECTOR v[ 4 ];
-//	v[ 0 ] = DirectX::XMLoadFloat3( ( DirectX::XMFLOAT3 * )&i_verts[ 0 ] );
-//	v[ 1 ] = DirectX::XMLoadFloat3( ( DirectX::XMFLOAT3 * )&i_verts[ 1 ] );
-//	v[ 2 ] = DirectX::XMLoadFloat3( ( DirectX::XMFLOAT3 * )&i_verts[ 2 ] );
-//	v[ 3 ] = DirectX::XMLoadFloat3( ( DirectX::XMFLOAT3 * )&i_verts[ 3 ] );
-
-//	if ( DirectX::TriangleTests::Intersects( DirectX::XMLoadFloat3( ( DirectX::XMFLOAT3 * )i_org ),
-//		DirectX::XMLoadFloat3( ( DirectX::XMFLOAT3 * )i_dir ), v[ 0 ], v[ 1 ], v[ 3 ], i_distance ) )
-//		return true;
-
-//	if ( DirectX::TriangleTests::Intersects( DirectX::XMLoadFloat3( ( DirectX::XMFLOAT3 * )i_org ),
-//		DirectX::XMLoadFloat3( ( DirectX::XMFLOAT3 * )i_dir ), v[ 0 ], v[ 2 ], v[ 3 ], i_distance ) )
-//		return true;
-
-//	return false;
-//}
-
-//inline bool S_Vec3RayIntersectToBox( const S_Vec3 *i_org, const S_Vec3 *i_dir,
-//    const S_Vec3 *i_min, const S_Vec3 *i_max, const S_Mat4x4 *i_transform, float &i_distance )
-//{
-//	DirectX::BoundingBox bb;
-//	DirectX::BoundingBox::CreateFromPoints( bb, DirectX::XMLoadFloat3( ( DirectX::XMFLOAT3 * )i_min ),
-//		DirectX::XMLoadFloat3( ( DirectX::XMFLOAT3 * )i_max ) );
-//	bb.Transform( bb, DirectX::XMLoadFloat4x4( ( DirectX::XMFLOAT4X4 * )i_transform ) );
-//	return bb.Intersects( XMLoadFloat3( ( DirectX::XMFLOAT3 * )i_org ), XMLoadFloat3( ( DirectX::XMFLOAT3 * )i_dir ), i_distance );
-//}

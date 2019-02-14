@@ -99,13 +99,13 @@ inline void S_Quat::multiplyOut(S_Quat *i_out, const S_Quat *i_q)
     i_out->m_data = m_data * i_q->m_data;
 }
 
-inline S_Quat& S_Quat::angleAxis( float i_angle, const S_Vec3 *i_axis)
+inline S_Quat& S_Quat::fromAngleAxis( float i_angle, const S_Vec3 *i_axis)
 {
     m_data = glm::angleAxis( i_angle, i_axis->m_data );
 	return *this;
 }
 
-inline void S_Quat::angleAxisOut(S_Quat *i_out, float i_angle, const S_Vec3 *i_axis)
+inline void S_Quat::fromAngleAxisOut(S_Quat *i_out, float i_angle, const S_Vec3 *i_axis)
 {
     i_out->m_data = glm::angleAxis( i_angle, i_axis->m_data );
 }

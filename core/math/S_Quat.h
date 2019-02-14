@@ -36,8 +36,8 @@ public:
     S_Quat& multiply(const S_Quat *i_mat44);
     void	 multiplyOut(S_Quat *i_out, const S_Quat *i_q);
     S_Quat& identity();
-    S_Quat& angleAxis(float i_angle, const S_Vec3 *i_axis);
-    void angleAxisOut(S_Quat *i_out, float i_angle, const S_Vec3 *i_axis);
+    S_Quat& fromAngleAxis(float i_angle, const S_Vec3 *i_axis);
+    void fromAngleAxisOut(S_Quat *i_out, float i_angle, const S_Vec3 *i_axis);
     S_Quat& fromEularAnglesPYR(const S_Vec3 *i_pyr);
     void fromEularAnglesPYROut(S_Quat *i_out, const S_Vec3 *i_pyr);
     S_Quat& normalize();

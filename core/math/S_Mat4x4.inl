@@ -86,13 +86,13 @@ inline S_Mat4x4& S_Mat4x4::spr( const S_Vec3 &i_position, const S_Quat &i_rotati
     return *this;
 }
 
-inline S_Mat4x4& S_Mat4x4::transform( const S_Vec3 &i_p )
+inline S_Mat4x4& S_Mat4x4::translate( const S_Vec3 &i_p )
 {
     m_data = glm::translate( m_data, i_p.m_data );
     return *this;
 }
 
-inline void S_Mat4x4::transformOut( S_Mat4x4 *i_out, const S_Vec3 &i_p )
+inline void S_Mat4x4::translateOut( S_Mat4x4 *i_out, const S_Vec3 &i_p )
 {
     i_out->m_data = glm::translate( m_data, i_p.m_data );
 }

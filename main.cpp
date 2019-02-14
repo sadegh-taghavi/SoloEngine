@@ -47,12 +47,16 @@ struct SA
     char STr[25];
     SA() {}
 };
-int main(int argc, char *argv[])
+int main(int, char **)
 {
 
     S_Vec3 v3 = S_Vec3( 3.1415f, 0.1415f, 0.0f );
+    S_Mat4x4 m;
+    m.translate( S_Vec3( 0, 0, 0 ) );
+    m.identity();
     qDebug()<< S_Vec2(12, 10).length() << S_Vec3( 25, 10, 5 ).length() <<
-               S_Vec4( 25, 10, 5, 5 ).length() << S_Quat().fromEularAnglesPYR( &v3 ).x();
+               S_Vec4( 25, 10, 5, 5 ).length() << S_Quat().fromEularAnglesPYR( &v3 ).x() <<
+               m(1, 1);
     S_Allocator al;
 //    int *dd = new int();
 //    delete dd;

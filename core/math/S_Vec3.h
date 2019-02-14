@@ -48,8 +48,4 @@ public:
     void lerpOut( S_Vec3 *i_out, const S_Vec3 *i_second, float i_amount );
 };
 
-//bool S_Vec3RayIntersectToPlane(const S_Vec3 *i_org, const S_Vec3 *i_dir, const S_Vec3 *i_verts, float &i_distance);
-//bool S_Vec3RayIntersectToBox( const S_Vec3 *i_org, const S_Vec3 *i_dir,
-//    const S_Vec3 *i_min, const S_Vec3 *i_max, const S_Mat4x4 *i_transform, float &i_distance );
-
 #include "S_Vec3.inl"

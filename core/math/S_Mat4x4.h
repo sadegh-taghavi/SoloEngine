@@ -34,8 +34,8 @@ public:
     void		multiplyOut(S_Mat4x4 *i_out, const S_Mat4x4 *i_mat44);
     S_Mat4x4&	srp(const S_Vec3 &i_position, const S_Quat &i_rotation, const S_Vec3 &i_scale);
     S_Mat4x4&	spr( const S_Vec3 &i_position, const S_Quat &i_rotation, const S_Vec3 &i_scale );
-    S_Mat4x4&	transform( const S_Vec3 &i_p );
-    void		transformOut( S_Mat4x4 *i_out, const S_Vec3 &i_p );
+    S_Mat4x4&	translate( const S_Vec3 &i_p );
+    void		translateOut( S_Mat4x4 *i_out, const S_Vec3 &i_p );
     S_Mat4x4&	lookAtRH(const S_Vec3 *i_position, const S_Vec3 *i_target, const S_Vec3 *i_up);
     S_Mat4x4&	inverse();
     S_Mat4x4&	inverseBy(const S_Mat4x4 *i_mat);
