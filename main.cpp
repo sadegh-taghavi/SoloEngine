@@ -1,6 +1,7 @@
 //#include <QDebug>
 //#include <QElapsedTimer>
 #include "Solo.h"
+#include <ctime>
 
 struct SA
 {
@@ -23,6 +24,8 @@ void test()
 
     SA vv;
 
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
     for( int i = 0; i < 1500000; ++i )
     {
         lst1.push_back( vv );
@@ -34,13 +37,18 @@ void test()
         lst1.pop_front();
     }
 
-    for( int i = 0; i < 500000; ++i )
-    {
-        lst1.push_back( vv );
-    }
+//    for( int i = 0; i < 500000; ++i )
+//    {
+//        lst1.push_back( vv );
+//    }
+
+    std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
+
+    int ms = (std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()) / 1000.0;
 
     S_Debug().debug( S_Debug()<<"Test" << al.getTotalAllocatedItems() <<
-                     al.getTotalUsedPools() << al.getTotalAllocatedBytes() );
+                     al.getTotalUsedPools() << al.getTotalAllocatedBytes() <<
+                    ms );
 
     S_Vec3 v3 = S_Vec3( 3.1415f, 0.1415f, 0.0f );
     S_Mat4x4 m;
@@ -49,6 +57,7 @@ void test()
     S_Debug().debug( S_Debug() << S_Vec2(12, 10).length() << S_Vec3( 25, 10, 5 ).length() <<
                      S_Vec4( 25, 10, 5, 5 ).length() << S_Quat().fromEularAnglesPYR( &v3 ).x() <<
                      m(1, 1) );
+
 
 
     //    S_List<SA> lst;

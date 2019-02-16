@@ -7,7 +7,8 @@ S_Allocator *S_Allocator::m_singleton = nullptr;
 
 S_Allocator::S_Allocator(uint64_t poolSize, uint64_t poolsCount)
 {
-    std::lock_guard<std::mutex> guard(m_mutex);
+    for(;m_busyState.test_and_set(std::memory_order_acquire););
+//    std::lock_guard<std::mutex> guard(m_mutex);
     m_lastPool = 0;
     m_poolSize = poolSize;
     m_poolsCount = static_cast<int64_t>( poolsCount );
@@ -24,11 +25,16 @@ S_Allocator::S_Allocator(uint64_t poolSize, uint64_t poolsCount)
         m_tPool->m_memory = reinterpret_cast<void *>( reinterpret_cast<uint64_t>( &m_pools[m_poolsCount] ) + m_tI * m_poolSize );
     }
     m_singleton = this;
+
+    m_busyState.clear(std::memory_order_release);
+
 }
 
 void *S_Allocator::allocate(uint64_t size)
 {
-    std::lock_guard<std::mutex> guard(m_mutex);
+    for(;m_busyState.test_and_set(std::memory_order_acquire););
+
+//    std::lock_guard<std::mutex> guard(m_mutex);
     m_tSize = size + sizeof( MemoryHeader );
 
     auto checkPool = [this]()
@@ -51,7 +57,10 @@ void *S_Allocator::allocate(uint64_t size)
     for( m_tI = m_lastPool; m_tI < m_poolsCount ; ++m_tI )
     {
         if( checkPool() )
+        {
+            m_busyState.clear(std::memory_order_release);
             return reinterpret_cast<void *>( reinterpret_cast<int64_t>(&m_tHeader[1]) );
+        }
     }
 
     if( m_lastPool > 0 )
@@ -59,29 +68,43 @@ void *S_Allocator::allocate(uint64_t size)
         for( m_tI = m_lastPool - 1; m_tI >= 0; --m_tI )
         {
             if( checkPool() )
+            {
+                m_busyState.clear(std::memory_order_release);
                 return reinterpret_cast<void *>( reinterpret_cast<int64_t>(&m_tHeader[1]) );
+            }
         }
     }
 
+    m_busyState.clear(std::memory_order_release);
     return nullptr;
 }
 
 void S_Allocator::deallocate(void *rawMemory)
 {
-    std::lock_guard<std::mutex> guard(m_mutex);
+    for(;m_busyState.test_and_set(std::memory_order_acquire););
+//    std::lock_guard<std::mutex> guard(m_mutex);
     m_tHeader = reinterpret_cast<MemoryHeader *>( reinterpret_cast<uint64_t>( rawMemory ) - sizeof( MemoryHeader ) );
     if( m_tHeader->m_signature[0] != 'S' ||  m_tHeader->m_signature[1] != 'E' )
+    {
+
+        m_busyState.clear(std::memory_order_release);
         return;
+    }
     m_tPool = &m_pools[m_tHeader->m_poolIndex];
     m_tPool->m_stackCounter--;
     if( m_tPool->m_stackCounter == 0 )
         m_tPool->m_allocated = 0;
+
+    m_busyState.clear(std::memory_order_release);
 }
 
 S_Allocator::~S_Allocator()
 {
-    std::lock_guard<std::mutex> guard(m_mutex);
+    for(;m_busyState.test_and_set(std::memory_order_acquire););
+//    std::lock_guard<std::mutex> guard(m_mutex);
     free( m_allocatedMemory );
+
+    m_busyState.clear(std::memory_order_release);
 }
 
 S_Allocator *S_Allocator::singleton()
@@ -91,31 +114,36 @@ S_Allocator *S_Allocator::singleton()
 
 uint64_t S_Allocator::getTotalAllocatedItems()
 {
-    std::lock_guard<std::mutex> guard(m_mutex);
+    for(;m_busyState.test_and_set(std::memory_order_acquire););
+//    std::lock_guard<std::mutex> guard(m_mutex);
     m_tSize = 0;
     for( m_tI = 0; m_tI < m_poolsCount; ++m_tI )
     {
         m_tPool = &m_pools[m_tI];
         m_tSize += m_tPool->m_stackCounter;
     }
+    m_busyState.clear(std::memory_order_release);
     return m_tSize;
 }
 
 uint64_t S_Allocator::getTotalAllocatedBytes()
 {
-    std::lock_guard<std::mutex> guard(m_mutex);
+    for(;m_busyState.test_and_set(std::memory_order_acquire););
+//    std::lock_guard<std::mutex> guard(m_mutex);
     m_tSize = 0;
     for( m_tI = 0; m_tI < m_poolsCount; ++m_tI )
     {
         m_tPool = &m_pools[m_tI];
         m_tSize += m_tPool->m_allocated;
     }
+    m_busyState.clear(std::memory_order_release);
     return m_tSize;
 }
 
 uint64_t S_Allocator::getTotalUsedPools()
 {
-    std::lock_guard<std::mutex> guard(m_mutex);
+    for(;m_busyState.test_and_set(std::memory_order_acquire););
+//    std::lock_guard<std::mutex> guard(m_mutex);
     m_tSize = 0;
     for( m_tI = 0; m_tI < m_poolsCount; ++m_tI )
     {
@@ -124,6 +152,7 @@ uint64_t S_Allocator::getTotalUsedPools()
             ++m_tSize;
 
     }
+    m_busyState.clear(std::memory_order_release);
     return m_tSize;
 }
 

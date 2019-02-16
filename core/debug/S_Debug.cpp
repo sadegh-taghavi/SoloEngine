@@ -46,7 +46,7 @@ S_Debug &S_Debug::operator<<(const uint64_t &val)
 S_Debug &S_Debug::operator<<(const int64_t &val)
 {
     char str[25];
-    sprintf( str, " %ll", val );
+    sprintf( str, " %lld", val );
     m_data += str;
     return *this;
 }
@@ -54,7 +54,7 @@ S_Debug &S_Debug::operator<<(const int64_t &val)
 S_Debug &S_Debug::operator<<(const unsigned int &val)
 {
     char str[25];
-    sprintf( str, " %i", val );
+    sprintf( str, " %d", val );
     m_data += str;
     return *this;
 }
@@ -62,7 +62,7 @@ S_Debug &S_Debug::operator<<(const unsigned int &val)
 S_Debug &S_Debug::operator<<(const int &val)
 {
     char str[25];
-    sprintf( str, " %iu", val );
+    sprintf( str, " %d", val );
     m_data += str;
     return *this;
 }
@@ -78,8 +78,14 @@ S_Debug &S_Debug::operator<<(const float &val)
 S_Debug &S_Debug::operator<<(const double &val)
 {
     char str[25];
-    sprintf( str, " %d", val );
+    sprintf( str, " %lf", val );
     m_data += str;
     return *this;
 }
+
+//S_Debug &S_Debug::operator<<(const bool &val)
+//{
+//    m_data += ( val ? " TRUE" : " FALSE" );
+//    return *this;
+//}
 

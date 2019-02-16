@@ -17,4 +17,5 @@ public:
     S_Debug &operator<<( const double &val );
     S_Debug &operator<<( const unsigned int &val );
     S_Debug &operator<<( const int &val );
+//    S_Debug &operator<<( const bool &val );
 };

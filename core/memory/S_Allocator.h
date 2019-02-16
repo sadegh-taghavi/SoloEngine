@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include <mutex>
+#include <atomic>
 
 class S_Allocator
 {
@@ -38,7 +39,8 @@ private:
     uint64_t m_tSize;
     uint64_t m_lastPool;
     MemoryHeader *m_tHeader;
-    std::mutex m_mutex;
+//    std::mutex m_mutex;
+    std::atomic_flag m_busyState = ATOMIC_FLAG_INIT;
     static S_Allocator *m_singleton;
 
 };
