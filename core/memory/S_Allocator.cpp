@@ -38,8 +38,8 @@ void *S_Allocator::allocate(uint64_t size)
         {
             m_tHeader = reinterpret_cast<MemoryHeader *>( reinterpret_cast<uint64_t>( m_tPool->m_memory ) + m_tPool->m_allocated );
             m_tHeader->m_poolIndex = m_tI;
-//            m_tHeader->m_signature[0] = 'S';
-//            m_tHeader->m_signature[1] = 'E';
+            m_tHeader->m_signature[0] = 'S';
+            m_tHeader->m_signature[1] = 'E';
             m_tPool->m_allocated += m_tSize;
             m_tPool->m_stackCounter++;
             m_lastPool = m_tI;
@@ -70,6 +70,8 @@ void S_Allocator::deallocate(void *rawMemory)
 {
     std::lock_guard<std::mutex> guard(m_mutex);
     m_tHeader = reinterpret_cast<MemoryHeader *>( reinterpret_cast<uint64_t>( rawMemory ) - sizeof( MemoryHeader ) );
+    if( m_tHeader->m_signature[0] != 'S' ||  m_tHeader->m_signature[1] != 'E' )
+        return;
     m_tPool = &m_pools[m_tHeader->m_poolIndex];
     m_tPool->m_stackCounter--;
     if( m_tPool->m_stackCounter == 0 )
@@ -86,5 +88,44 @@ S_Allocator *S_Allocator::singleton()
 {
     return m_singleton;
 }
+
+uint64_t S_Allocator::getTotalAllocatedItems()
+{
+    std::lock_guard<std::mutex> guard(m_mutex);
+    m_tSize = 0;
+    for( m_tI = 0; m_tI < m_poolsCount; ++m_tI )
+    {
+        m_tPool = &m_pools[m_tI];
+        m_tSize += m_tPool->m_stackCounter;
+    }
+    return m_tSize;
+}
+
+uint64_t S_Allocator::getTotalAllocatedBytes()
+{
+    std::lock_guard<std::mutex> guard(m_mutex);
+    m_tSize = 0;
+    for( m_tI = 0; m_tI < m_poolsCount; ++m_tI )
+    {
+        m_tPool = &m_pools[m_tI];
+        m_tSize += m_tPool->m_allocated;
+    }
+    return m_tSize;
+}
+
+uint64_t S_Allocator::getTotalUsedPools()
+{
+    std::lock_guard<std::mutex> guard(m_mutex);
+    m_tSize = 0;
+    for( m_tI = 0; m_tI < m_poolsCount; ++m_tI )
+    {
+        m_tPool = &m_pools[m_tI];
+        if( m_tPool->m_allocated > 0 )
+            ++m_tSize;
+
+    }
+    return m_tSize;
+}
+
 
 

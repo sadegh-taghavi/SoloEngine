@@ -8,5 +8,5 @@ public:
     S_Debug();
     void setTag(const S_String &tag);
     S_String &tag();
-    S_Debug &operator<<( const S_String &str );
+    S_Debug &operator<<( const S_String &val );
 };

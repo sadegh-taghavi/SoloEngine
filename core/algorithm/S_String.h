@@ -1,4 +1,4 @@
-#include <string>
+#include <cstring>
 #include "../memory/S_AlgorithmAllocator.h"
 
-typedef std::basic_string<char, std::char_traits<char>, S_AlgorithmAllocator<char> > S_String;
+typedef std::basic_string<char, std::char_traits<char> /*, S_AlgorithmAllocator<char>*/ > S_String;

@@ -14,6 +14,7 @@ HEADERS += \
     core/math/S_Vec4.h \
     core/math/S_Quat.h \
     core/math/S_Mat4x4.h \
+    core/debug/S_Debug.h \
     Solo.h
 
 SOURCES += \
@@ -24,6 +25,7 @@ SOURCES += \
     core/math/S_Vec4.inl \
     core/math/S_Quat.inl \
     core/math/S_Mat4x4.inl \
+    core/debug/S_Debug.cpp \
     main.cpp
 
 INCLUDEPATH += $$PWD/3rdparty \
@@ -36,7 +38,7 @@ INCLUDEPATH += \
     $$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/$$(ANDROID_NDK_TOOLCHAIN_VERSION)/libs/armeabi-v7a/include
 
 
-#LIBS += -Lquate($$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/$$(ANDROID_NDK_TOOLCHAIN_VERSION)/libs/armeabi-v7a) -lgnustl_shared
+#LIBS += -L$$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/$$(ANDROID_NDK_TOOLCHAIN_VERSION)/libs/armeabi-v7a -lgnustl_shared
 
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
 

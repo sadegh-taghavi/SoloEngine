@@ -5,11 +5,14 @@
 class S_Allocator
 {
 public:
-    S_Allocator( uint64_t poolSize = 8 * 1024 * 1024, uint64_t poolsCount = 32 );
+    S_Allocator( uint64_t poolSize = 8 * 1024 * 1024, uint64_t poolsCount = 16 );
     ~S_Allocator();
     void *allocate( uint64_t size );
     void deallocate(void * rawMemory);
     static S_Allocator *singleton();
+    uint64_t getTotalAllocatedItems();
+    uint64_t getTotalAllocatedBytes();
+    uint64_t getTotalUsedPools();
 private:
     class Pool
     {
@@ -21,7 +24,7 @@ private:
     };
     class MemoryHeader
     {
-//        char m_signature[2];
+        char m_signature[2];
         friend class S_Allocator;
         uint64_t m_poolIndex;
     };

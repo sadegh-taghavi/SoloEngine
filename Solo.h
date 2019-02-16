@@ -11,6 +11,7 @@
 #include "core/algorithm/S_Vector.h"
 #include "core/algorithm/S_String.h"
 
+#include "core/debug/S_Debug.h"
 
 void* operator new  (std::size_t count )
 {
@@ -24,10 +25,10 @@ void* operator new[](std::size_t count )
 
 void operator delete (void* ptr)
 {
-    return S_Allocator::singleton()->deallocate( ptr );
+    S_Allocator::singleton()->deallocate( ptr );
 }
 
 void operator delete[](void* ptr)
 {
-    return S_Allocator::singleton()->deallocate( ptr );
+    S_Allocator::singleton()->deallocate( ptr );
 }
