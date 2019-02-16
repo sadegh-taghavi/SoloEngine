@@ -8,30 +8,78 @@
 S_Debug::S_Debug()
 {
     m_tag = "SoloEngine";
+    m_data = "";
 }
 
-void S_Debug::out(const S_String &str)
+void S_Debug::outDebug()
 {
 #ifdef __ANDROID__
-    __android_log_print(ANDROID_LOG_DEBUG, m_tag.c_str(), str.c_str() );
+    __android_log_print(ANDROID_LOG_DEBUG, m_tag.c_str(), m_data.c_str() );
 #elif __WIN32__
-    printf( "%s:%s", m_tag.c_str(), str.c_str() );
+    printf( "%s:%s", m_tag.c_str(), m_data.c_str() );
 #endif
 }
 
-void S_Debug::setTag(const S_String &tag)
+S_Debug &S_Debug::debug(const S_Debug &data, const S_String &tag)
 {
+    m_data = data.m_data;
     m_tag = tag;
-}
-
-S_String &S_Debug::tag()
-{
-    return m_tag;
+    m_data += "\n";
+    outDebug();
+    return *this;
 }
 
 S_Debug &S_Debug::operator<<(const S_String &val)
 {
-    out( " " + val );
+    m_data += " " + val;
+    return *this;
+}
+
+S_Debug &S_Debug::operator<<(const uint64_t &val)
+{
+    char str[25];
+    sprintf( str, " %llu", val );
+    m_data += str;
+    return *this;
+}
+
+S_Debug &S_Debug::operator<<(const int64_t &val)
+{
+    char str[25];
+    sprintf( str, " %ll", val );
+    m_data += str;
+    return *this;
+}
+
+S_Debug &S_Debug::operator<<(const unsigned int &val)
+{
+    char str[25];
+    sprintf( str, " %i", val );
+    m_data += str;
+    return *this;
+}
+
+S_Debug &S_Debug::operator<<(const int &val)
+{
+    char str[25];
+    sprintf( str, " %iu", val );
+    m_data += str;
+    return *this;
+}
+
+S_Debug &S_Debug::operator<<(const float &val)
+{
+    char str[25];
+    sprintf( str, " %f", val );
+    m_data += str;
+    return *this;
+}
+
+S_Debug &S_Debug::operator<<(const double &val)
+{
+    char str[25];
+    sprintf( str, " %d", val );
+    m_data += str;
     return *this;
 }
 
