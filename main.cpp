@@ -18,7 +18,7 @@ void test()
     S_List<SA> lst;
 
 
-    void *ttt[500000];
+    uint64_t *ttt[150000];
 
     SA vv;
 
@@ -32,43 +32,46 @@ void test()
         lst.push_back( vv );
     }
 
-    s_debug( "ETA", et.restart() / 1000 );
+    s_debug( "ETA", et.restart() );
 
     for( int i = 0; i < 500000; ++i )
     {
         lst.pop_front();
     }
 
-    s_debug( "ETR",  et.restart() / 1000);
-    for( int i = 0; i < 500000; ++i )
-    {
+    s_debug( "ETV", et.restart() );
 
-        ttt[i] = S_Allocator::singleton()->allocate( (rand() % 64) + 10 );
-    }
-    s_debug( "AL-CA-Al", et.restart() / 1000 );
-    et.restart();
-    for( int i = 0; i < 500000; ++i )
+    for( int j = 0; j < 10; ++j )
     {
-        S_Allocator::singleton()->deallocate( ttt[i] );
-    }
-    s_debug( "DA-CA-De", et.restart() / 1000 );
+        s_debug( "ET###########", j,  et.restart() );
+        for( int i = 0; i < 150000; ++i )
+        {
+            ttt[i] = (uint64_t *)al.allocate( sizeof(uint64_t) );
+        }
+        s_debug( "AL-CA-Al", et.restart() );
+
+        for( int i = 5000; i < 60000; ++i )
+        {
+            al.deallocate( ttt[i] );
+        }
+        s_debug( "DA-CA-De", et.restart() );
 
 
-    et.restart();
-    for( int i = 0; i < 500000; ++i )
-    {
-        ttt[i] = malloc( (rand() % 64) + 10 );
+        for( int i = 0; i < 150000; ++i )
+        {
+            ttt[i] = (uint64_t *)malloc( sizeof(uint64_t) );
+        }
+        s_debug( "AL-MA-Al", et.restart() );
+
+        for( int i = 5000; i < 60000; ++i )
+        {
+            free( ttt[i] );
+        }
+        s_debug( "AL-MA-De", et.restart() );
     }
-    s_debug( "AL-MA-Al", et.restart() / 1000 );
-    et.restart();
-    for( int i = 0; i < 500000; ++i )
-    {
-        free( ttt[i] );
-    }
-    s_debug( "AL-MA-De", et.restart() / 1000 );
 
     s_debug( "Test", al.getTotalAllocatedItems() ,
-                     al.getTotalUsedPools() , al.getTotalAllocatedBytes() );
+             al.getTotalUsedPools() , al.getTotalAllocatedBytes() );
 
     S_Vec3 v3 = S_Vec3( 3.1415f, 0.1415f, 0.0f );
     S_Mat4x4 m;
@@ -76,8 +79,8 @@ void test()
     m.identity();
 
     s_debug( S_Vec2(12, 10).length(), S_Vec3( 25, 10, 5 ).length() ,
-                     S_Vec4( 25, 10, 5, 5 ).length() , S_Quat().fromEularAnglesPYR( &v3 ).x() ,
-                     m(1, 1) );
+             S_Vec4( 25, 10, 5, 5 ).length() , S_Quat().fromEularAnglesPYR( &v3 ).x() ,
+             m(1, 1) );
 
 }
 
