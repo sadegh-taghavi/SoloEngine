@@ -39,8 +39,8 @@ INCLUDEPATH += \
     $$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/$$(ANDROID_NDK_TOOLCHAIN_VERSION)/include/backward \
     $$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/$$(ANDROID_NDK_TOOLCHAIN_VERSION)/libs/armeabi-v7a/include
 
-
-#LIBS += -L$$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/$$(ANDROID_NDK_TOOLCHAIN_VERSION)/libs/armeabi-v7a -lgnustl_shared
+    ANDROID_EXTRA_LIBS = \
+        $$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/$$(ANDROID_NDK_TOOLCHAIN_VERSION)/libs/armeabi-v7a/libgnustl_shared.so
 
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
 
@@ -63,9 +63,4 @@ DISTFILES += \
     android/src/org/solo/test/MainActivity.java \
     android/src/org/solo/core/AndroidBinding.java
 
-}
-
-contains(ANDROID_TARGET_ARCH,armeabi-v7a) {
-    ANDROID_EXTRA_LIBS = \
-        $$PWD/../../../newComp/android-ndk-r10e/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/libgnustl_shared.so
 }
