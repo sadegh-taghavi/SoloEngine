@@ -8,7 +8,6 @@ S_Allocator *S_Allocator::m_singleton = nullptr;
 S_Allocator::S_Allocator(uint64_t poolSize, uint64_t poolsCount)
 {
     for(;m_busyState.test_and_set(std::memory_order_acquire););
-//    std::lock_guard<std::mutex> guard(m_mutex);
     m_lastPool = 0;
     m_poolSize = poolSize;
     m_poolsCount = static_cast<int64_t>( poolsCount );
@@ -34,7 +33,6 @@ void *S_Allocator::allocate(uint64_t size)
 {
     for(;m_busyState.test_and_set(std::memory_order_acquire););
 
-//    std::lock_guard<std::mutex> guard(m_mutex);
     m_tSize = size + sizeof( MemoryHeader );
 
     auto checkPool = [this]()
@@ -44,8 +42,7 @@ void *S_Allocator::allocate(uint64_t size)
         {
             m_tHeader = reinterpret_cast<MemoryHeader *>( reinterpret_cast<uint64_t>( m_tPool->m_memory ) + m_tPool->m_allocated );
             m_tHeader->m_poolIndex = m_tI;
-            m_tHeader->m_signature[0] = 'S';
-            m_tHeader->m_signature[1] = 'E';
+            m_tHeader->m_signature = 5421;
             m_tPool->m_allocated += m_tSize;
             m_tPool->m_stackCounter++;
             m_lastPool = m_tI;
@@ -82,9 +79,8 @@ void *S_Allocator::allocate(uint64_t size)
 void S_Allocator::deallocate(void *rawMemory)
 {
     for(;m_busyState.test_and_set(std::memory_order_acquire););
-//    std::lock_guard<std::mutex> guard(m_mutex);
     m_tHeader = reinterpret_cast<MemoryHeader *>( reinterpret_cast<uint64_t>( rawMemory ) - sizeof( MemoryHeader ) );
-    if( m_tHeader->m_signature[0] != 'S' ||  m_tHeader->m_signature[1] != 'E' )
+    if( m_tHeader->m_signature != 5421 )
     {
 
         m_busyState.clear(std::memory_order_release);
@@ -101,7 +97,6 @@ void S_Allocator::deallocate(void *rawMemory)
 S_Allocator::~S_Allocator()
 {
     for(;m_busyState.test_and_set(std::memory_order_acquire););
-//    std::lock_guard<std::mutex> guard(m_mutex);
     free( m_allocatedMemory );
 
     m_busyState.clear(std::memory_order_release);
@@ -115,7 +110,6 @@ S_Allocator *S_Allocator::singleton()
 uint64_t S_Allocator::getTotalAllocatedItems()
 {
     for(;m_busyState.test_and_set(std::memory_order_acquire););
-//    std::lock_guard<std::mutex> guard(m_mutex);
     m_tSize = 0;
     for( m_tI = 0; m_tI < m_poolsCount; ++m_tI )
     {
@@ -129,7 +123,6 @@ uint64_t S_Allocator::getTotalAllocatedItems()
 uint64_t S_Allocator::getTotalAllocatedBytes()
 {
     for(;m_busyState.test_and_set(std::memory_order_acquire););
-//    std::lock_guard<std::mutex> guard(m_mutex);
     m_tSize = 0;
     for( m_tI = 0; m_tI < m_poolsCount; ++m_tI )
     {
@@ -143,7 +136,6 @@ uint64_t S_Allocator::getTotalAllocatedBytes()
 uint64_t S_Allocator::getTotalUsedPools()
 {
     for(;m_busyState.test_and_set(std::memory_order_acquire););
-//    std::lock_guard<std::mutex> guard(m_mutex);
     m_tSize = 0;
     for( m_tI = 0; m_tI < m_poolsCount; ++m_tI )
     {

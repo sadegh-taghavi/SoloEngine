@@ -25,7 +25,7 @@ private:
     };
     class MemoryHeader
     {
-        char m_signature[2];
+        uint64_t m_signature;
         friend class S_Allocator;
         uint64_t m_poolIndex;
     };
