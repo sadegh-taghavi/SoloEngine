@@ -12,6 +12,7 @@
 #include "core/algorithm/S_String.h"
 
 #include "core/debug/S_Debug.h"
+#include "core/utility/S_ElapsedTime.h"
 
 void* operator new  (std::size_t count )
 {

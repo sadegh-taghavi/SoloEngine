@@ -1,7 +1,6 @@
 //#include <QDebug>
 //#include <QElapsedTimer>
 #include "Solo.h"
-#include <ctime>
 
 struct SA
 {
@@ -17,116 +16,68 @@ void test()
     //    delete i;
 
     S_List<SA> lst;
-    std::list<SA> lst1;
 
 
-    void *ttt[1500000];
+    void *ttt[500000];
 
     SA vv;
 
-    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-    for( int i = 0; i < 1500000; ++i )
+    S_ElapsedTime et;
+
+    et.start();
+
+    for( int i = 0; i < 500000; ++i )
     {
-        lst1.push_back( vv );
+        lst.push_back( vv );
     }
 
+    s_debug( "ETA", et.restart() / 1000 );
 
-    for( int i = 500000; i < 1000000; ++i )
+    for( int i = 0; i < 500000; ++i )
     {
-        lst1.pop_front();
+        lst.pop_front();
     }
 
-//    for( int i = 0; i < 500000; ++i )
-//    {
-//        lst1.push_back( vv );
-//    }
+    s_debug( "ETR",  et.restart() / 1000);
+    for( int i = 0; i < 500000; ++i )
+    {
 
-    std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
+        ttt[i] = S_Allocator::singleton()->allocate( (rand() % 64) + 10 );
+    }
+    s_debug( "AL-CA-Al", et.restart() / 1000 );
+    et.restart();
+    for( int i = 0; i < 500000; ++i )
+    {
+        S_Allocator::singleton()->deallocate( ttt[i] );
+    }
+    s_debug( "DA-CA-De", et.restart() / 1000 );
 
-    int ms = (std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()) / 1000.0;
 
-    S_Debug().debug( S_Debug()<<"Test" << al.getTotalAllocatedItems() <<
-                     al.getTotalUsedPools() << al.getTotalAllocatedBytes() <<
-                    ms );
+    et.restart();
+    for( int i = 0; i < 500000; ++i )
+    {
+        ttt[i] = malloc( (rand() % 64) + 10 );
+    }
+    s_debug( "AL-MA-Al", et.restart() / 1000 );
+    et.restart();
+    for( int i = 0; i < 500000; ++i )
+    {
+        free( ttt[i] );
+    }
+    s_debug( "AL-MA-De", et.restart() / 1000 );
+
+    s_debug( "Test", al.getTotalAllocatedItems() ,
+                     al.getTotalUsedPools() , al.getTotalAllocatedBytes() );
 
     S_Vec3 v3 = S_Vec3( 3.1415f, 0.1415f, 0.0f );
     S_Mat4x4 m;
     m.translate( S_Vec3( 0, 0, 0 ) );
     m.identity();
-    S_Debug().debug( S_Debug() << S_Vec2(12, 10).length() << S_Vec3( 25, 10, 5 ).length() <<
-                     S_Vec4( 25, 10, 5, 5 ).length() << S_Quat().fromEularAnglesPYR( &v3 ).x() <<
+
+    s_debug( S_Vec2(12, 10).length(), S_Vec3( 25, 10, 5 ).length() ,
+                     S_Vec4( 25, 10, 5, 5 ).length() , S_Quat().fromEularAnglesPYR( &v3 ).x() ,
                      m(1, 1) );
-
-
-
-    //    S_List<SA> lst;
-    //    std::list<SA> lst1;
-
-
-    //    void *ttt[500000];
-
-    //    QElapsedTimer et;
-
-
-
-
-    //    SA vv;
-    //    et.restart();
-    //    for( int i = 0; i < 500000; ++i )
-    //    {
-    //        lst1.push_back( vv );
-    //    }
-    //    qDebug()<<"LST-CA-Al" << et.elapsed();
-    //    et.restart();
-    //    for( int i = 0; i < 500000; ++i )
-    //    {
-    //        lst1.pop_front();
-    //    }
-    //    qDebug()<<"LST-CA-De" << et.elapsed();
-
-
-    //    et.restart();
-    //    for( int i = 0; i < 500000; ++i )
-    //    {
-    //        lst.push_back( vv );
-    //    }
-    //    qDebug()<<"LST-ST-Al" << et.elapsed();
-    //    et.restart();
-    //    for( int i = 0; i < 500000; ++i )
-    //    {
-    //        lst.pop_front();
-    //    }
-    //    qDebug()<<"LST-ST-De" << et.elapsed();
-
-
-    //    et.restart();
-    //    for( int i = 0; i < 500000; ++i )
-    //    {
-
-    //        ttt[i] = S_Allocator::singleton()->allocate( (rand() % 64) + 10 );
-    //    }
-    //    qDebug()<<"AL-CA-Al" << et.elapsed();
-    //    et.restart();
-    //    for( int i = 0; i < 500000; ++i )
-    //    {
-    //        S_Allocator::singleton()->deallocate( ttt[i] );
-    //    }
-    //    qDebug()<<"DA-CA-De" << et.elapsed();
-
-
-    //    et.restart();
-    //    for( int i = 0; i < 500000; ++i )
-    //    {
-    //        ttt[i] = malloc( (rand() % 64) + 10 );
-    //    }
-    //    qDebug()<<"AL-MA-Al" << et.elapsed();
-    //    et.restart();
-    //    for( int i = 0; i < 500000; ++i )
-    //    {
-    //        free( ttt[i] );
-    //    }
-    //    qDebug()<<"AL-MA-De" << et.elapsed();
 
 }
 

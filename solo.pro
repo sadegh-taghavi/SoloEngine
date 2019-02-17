@@ -15,6 +15,7 @@ HEADERS += \
     core/math/S_Quat.h \
     core/math/S_Mat4x4.h \
     core/debug/S_Debug.h \
+    core/utility/S_ElapsedTime.h \
     Solo.h
 
 SOURCES += \
@@ -26,6 +27,7 @@ SOURCES += \
     core/math/S_Quat.inl \
     core/math/S_Mat4x4.inl \
     core/debug/S_Debug.cpp \
+    core/utility/S_ElapsedTime.cpp \
     main.cpp
 
 INCLUDEPATH += $$PWD/3rdparty \
