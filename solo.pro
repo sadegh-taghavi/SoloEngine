@@ -1,6 +1,6 @@
 QT -= gui core
 
-CONFIG += c++11
+CONFIG += c++14
 CONFIG -= app_bundle
 
 HEADERS += \
@@ -29,9 +29,29 @@ SOURCES += \
     core/math/S_Mat4x4.inl \
     core/debug/S_Debug.cpp \
     core/utility/S_ElapsedTime.cpp \
-    main.cpp
+    main.cpp \
 
-INCLUDEPATH += $$PWD/3rdparty \
+
+INCLUDEPATH += \
+    $$PWD/3rdparty \
+    $$PWD/3rdparty/EASTL/include \
+    $$PWD/3rdparty/EASTL/test/packages/EAAssert/include \
+    $$PWD/3rdparty/EASTL/test/packages/EABase/include/Common \
+    $$PWD/3rdparty/EASTL/test/packages/EAMain/include \
+    $$PWD/3rdparty/EASTL/test/packages/EAStdC/include \
+    $$PWD/3rdparty/EASTL/test/packages/EATest/include \
+    $$PWD/3rdparty/EASTL/test/packages/EAThread/include
+
+SOURCES += \
+    3rdparty/EASTL/source/allocator_eastl.cpp \
+    3rdparty/EASTL/source/assert.cpp \
+    3rdparty/EASTL/source/fixed_pool.cpp \
+    3rdparty/EASTL/source/hashtable.cpp \
+    3rdparty/EASTL/source/intrusive_list.cpp \
+    3rdparty/EASTL/source/numeric_limits.cpp \
+    3rdparty/EASTL/source/red_black_tree.cpp \
+    3rdparty/EASTL/source/string.cpp \
+    3rdparty/EASTL/source/thread_support.cpp
 
 android {
 

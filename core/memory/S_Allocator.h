@@ -3,7 +3,7 @@
 #include <mutex>
 #include <atomic>
 
-namespace Solo
+namespace solo
 {
 
 class S_Allocator

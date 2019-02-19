@@ -1,6 +1,6 @@
 #include "S_ElapsedTime.h"
 
-using namespace Solo;
+using namespace solo;
 
 S_ElapsedTime::S_ElapsedTime()
 {

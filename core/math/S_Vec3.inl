@@ -1,7 +1,7 @@
 #include "S_Vec3.h"
 #include "S_Mat4x4.h"
 
-using namespace Solo;
+using namespace solo;
 
 inline S_Vec3::S_Vec3( float i_x, float i_y, float i_z ) : m_data( i_x, i_y, i_z )
 {

@@ -1,7 +1,7 @@
 #include <vector>
 #include "../memory/S_AlgorithmAllocator.h"
 
-namespace Solo
+namespace solo
 {
 
 template<class _T/*, class _A = S_AlgorithmAllocator<_T>*/ >

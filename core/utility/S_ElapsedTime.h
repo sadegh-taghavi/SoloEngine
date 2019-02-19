@@ -2,7 +2,7 @@
 #include <chrono>
 #include <stdint.h>
 
-namespace Solo
+namespace solo
 {
 
 class S_ElapsedTime

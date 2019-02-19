@@ -1,7 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 
-namespace Solo
+namespace solo
 {
 
 class S_Mat4x4;

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "core/memory/S_Allocator.h"
 
-namespace Solo
+namespace solo
 {
 
 template <typename T>

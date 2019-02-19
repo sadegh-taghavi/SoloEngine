@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include "core/stl/S_String.h"
 
-namespace Solo
+namespace solo
 {
 
 #ifndef s_debug(...)

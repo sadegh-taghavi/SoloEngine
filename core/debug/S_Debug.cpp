@@ -5,7 +5,7 @@
 #include <stdio.h>
 #endif
 
-using namespace Solo;
+using namespace solo;
 
 S_Debug::S_Debug()
 {

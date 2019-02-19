@@ -1,10 +1,10 @@
-#include <list>
+#include <EASTL/list.h>
 #include "../memory/S_AlgorithmAllocator.h"
 
-namespace Solo {
+namespace solo {
 
 template<class _T/*, class _A = S_AlgorithmAllocator<_T>*/ >
-class S_List : public std::list<_T/*, _A*/>
+class S_List : public eastl::list<_T/*, _A*/>
 {
 
 };

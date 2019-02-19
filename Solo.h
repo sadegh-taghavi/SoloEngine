@@ -1,3 +1,4 @@
+
 #include "core/memory/S_Allocator.h"
 #include "core/memory/S_AlgorithmAllocator.h"
 
@@ -15,7 +16,7 @@
 #include "core/debug/S_Debug.h"
 #include "core/utility/S_ElapsedTime.h"
 
-using namespace Solo;
+using namespace solo;
 
 void* operator new  (std::size_t count )
 {
@@ -27,12 +28,12 @@ void* operator new[](std::size_t count )
     return S_Allocator::singleton()->allocate( static_cast<uint64_t>( count ) );
 }
 
-void operator delete (void* ptr)
+void* __cdecl operator new[](size_t size, const char*, int, unsigned, const char*, int)
 {
-    S_Allocator::singleton()->deallocate( ptr );
+    return S_Allocator::singleton()->allocate( size );
 }
 
-void operator delete[](void* ptr)
+void __cdecl operator delete[](void* ptr, const char*, int, unsigned, const char*, int)
 {
     S_Allocator::singleton()->deallocate( ptr );
 }

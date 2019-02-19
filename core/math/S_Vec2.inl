@@ -2,7 +2,7 @@
 #include "S_Vec2.h"
 #include "S_Mat4x4.h"
 
-using namespace Solo;
+using namespace solo;
 
 inline S_Vec2::S_Vec2(float i_x, float i_y) : m_data( i_x, i_y )
 {

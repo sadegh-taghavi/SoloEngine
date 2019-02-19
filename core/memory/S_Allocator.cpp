@@ -3,7 +3,7 @@
 #include <assert.h>
 #include "S_Allocator.h"
 
-using namespace Solo;
+using namespace solo;
 
 S_Allocator *S_Allocator::m_singleton = nullptr;
 
