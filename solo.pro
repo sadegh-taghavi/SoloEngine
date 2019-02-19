@@ -4,31 +4,31 @@ CONFIG += c++14
 CONFIG -= app_bundle
 
 HEADERS += \
-    core/memory/S_Allocator.h \
-    core/memory/S_AlgorithmAllocator.h \
-    core/stl/S_Map.h \
-    core/stl/S_List.h \
-    core/stl/S_Vector.h \
-    core/stl/S_String.h \
-    core/math/S_Vec2.h \
-    core/math/S_Vec3.h \
-    core/math/S_Vec4.h \
-    core/math/S_Quat.h \
-    core/math/S_Mat4x4.h \
-    core/debug/S_Debug.h \
-    core/utility/S_ElapsedTime.h \
+    solo/memory/S_Allocator.h \
+    solo/memory/S_AlgorithmAllocator.h \
+    solo/stl/S_Map.h \
+    solo/stl/S_List.h \
+    solo/stl/S_Vector.h \
+    solo/stl/S_String.h \
+    solo/math/S_Vec2.h \
+    solo/math/S_Vec3.h \
+    solo/math/S_Vec4.h \
+    solo/math/S_Quat.h \
+    solo/math/S_Mat4x4.h \
+    solo/debug/S_Debug.h \
+    solo/utility/S_ElapsedTime.h \
     Solo.h
 
 SOURCES += \
-    core/memory/S_Allocator.cpp \
-    core/memory/S_AlgorithmAllocator.cpp \
-    core/math/S_Vec2.inl \
-    core/math/S_Vec3.inl \
-    core/math/S_Vec4.inl \
-    core/math/S_Quat.inl \
-    core/math/S_Mat4x4.inl \
-    core/debug/S_Debug.cpp \
-    core/utility/S_ElapsedTime.cpp \
+    solo/memory/S_Allocator.cpp \
+    solo/memory/S_AlgorithmAllocator.cpp \
+    solo/math/S_Vec2.inl \
+    solo/math/S_Vec3.inl \
+    solo/math/S_Vec4.inl \
+    solo/math/S_Quat.inl \
+    solo/math/S_Mat4x4.inl \
+    solo/debug/S_Debug.cpp \
+    solo/utility/S_ElapsedTime.cpp \
     main.cpp \
 
 
