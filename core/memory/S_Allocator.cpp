@@ -3,6 +3,8 @@
 #include <assert.h>
 #include "S_Allocator.h"
 
+using namespace Solo;
+
 S_Allocator *S_Allocator::m_singleton = nullptr;
 
 S_Allocator::S_Allocator(uint64_t poolSize, uint64_t poolsCount)

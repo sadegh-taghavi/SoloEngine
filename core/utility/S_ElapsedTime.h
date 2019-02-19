@@ -2,6 +2,9 @@
 #include <chrono>
 #include <stdint.h>
 
+namespace Solo
+{
+
 class S_ElapsedTime
 {
     std::chrono::steady_clock::time_point m_begin;
@@ -11,3 +14,5 @@ public:
     uint64_t restart();
     uint64_t elapsed();
 };
+
+}

@@ -1,6 +1,9 @@
 #pragma once
 #include <glm/glm.hpp>
 
+namespace Solo
+{
+
 class S_Mat4x4;
 
 class S_Vec3
@@ -47,5 +50,7 @@ public:
     void lerp( const S_Vec3 *i_second, float i_amount );
     void lerpOut( S_Vec3 *i_out, const S_Vec3 *i_second, float i_amount );
 };
+
+}
 
 #include "S_Vec3.inl"

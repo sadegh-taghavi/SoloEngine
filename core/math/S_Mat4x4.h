@@ -1,6 +1,10 @@
 #pragma once
 #include <glm/glm.hpp>
 
+namespace Solo
+{
+
+
 class S_Vec2;
 class S_Vec3;
 class S_Vec4;
@@ -53,4 +57,8 @@ public:
 //        const S_Vec2 *i_rotationCenter, float i_rotation, const S_Vec2 *i_position);
 };
 
+}
+
 #include "S_Mat4x4.inl"
+
+

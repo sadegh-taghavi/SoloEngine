@@ -1,5 +1,8 @@
 #include <stdint.h>
-#include "core/algorithm/S_String.h"
+#include "core/stl/S_String.h"
+
+namespace Solo
+{
 
 #ifndef s_debug(...)
 #define s_debug(...) ( S_Debug().debug( ( S_Debug(),__VA_ARGS__ ) ) )
@@ -30,3 +33,5 @@ public:
     S_Debug &operator,( const int &val ) { return this->operator <<(val); }
 //    S_Debug &operator<<( const bool &val );
 };
+
+}

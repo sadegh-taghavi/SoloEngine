@@ -1,6 +1,9 @@
 #pragma once
 #include <glm/glm.hpp>
 
+namespace Solo
+{
+
 class S_Mat4x4;
 
 class S_Vec2
@@ -44,4 +47,7 @@ public:
 
 };
 
+}
+
 #include "S_Vec2.inl"
+

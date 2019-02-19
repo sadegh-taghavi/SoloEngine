@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include "core/memory/S_Allocator.h"
 
+namespace Solo
+{
+
 template <typename T>
 class S_AlgorithmAllocator : public std::allocator<T>
 {
@@ -49,3 +52,5 @@ class S_AlgorithmAllocator : public std::allocator<T>
 //        p->~T();
 //    }
 };
+
+}

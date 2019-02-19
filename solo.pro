@@ -6,9 +6,10 @@ CONFIG -= app_bundle
 HEADERS += \
     core/memory/S_Allocator.h \
     core/memory/S_AlgorithmAllocator.h \
-    core/algorithm/S_List.h \
-    core/algorithm/S_Vector.h \
-    core/algorithm/S_String.h \
+    core/stl/S_Map.h \
+    core/stl/S_List.h \
+    core/stl/S_Vector.h \
+    core/stl/S_String.h \
     core/math/S_Vec2.h \
     core/math/S_Vec3.h \
     core/math/S_Vec4.h \

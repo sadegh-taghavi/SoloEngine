@@ -3,6 +3,9 @@
 #include <mutex>
 #include <atomic>
 
+namespace Solo
+{
+
 class S_Allocator
 {
 public:
@@ -44,3 +47,5 @@ private:
     static S_Allocator *m_singleton;
 
 };
+
+}

@@ -8,6 +8,8 @@
 #include "S_Vec4.h"
 #include "S_Quat.h"
 
+using namespace Solo;
+
 inline S_Mat4x4::S_Mat4x4(	float i_00, float i_01, float i_02, float i_03,
                         float i_10, float i_11, float i_12, float i_13,
                         float i_20, float i_21, float i_22, float i_23,

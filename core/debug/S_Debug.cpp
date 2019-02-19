@@ -5,6 +5,8 @@
 #include <stdio.h>
 #endif
 
+using namespace Solo;
+
 S_Debug::S_Debug()
 {
     m_tag = "SoloEngine";

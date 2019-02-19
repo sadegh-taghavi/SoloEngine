@@ -7,12 +7,15 @@
 #include "core/math/S_Quat.h"
 #include "core/math/S_Mat4x4.h"
 
-#include "core/algorithm/S_List.h"
-#include "core/algorithm/S_Vector.h"
-#include "core/algorithm/S_String.h"
+#include "core/stl/S_Map.h"
+#include "core/stl/S_List.h"
+#include "core/stl/S_Vector.h"
+#include "core/stl/S_String.h"
 
 #include "core/debug/S_Debug.h"
 #include "core/utility/S_ElapsedTime.h"
+
+using namespace Solo;
 
 void* operator new  (std::size_t count )
 {

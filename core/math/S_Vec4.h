@@ -1,6 +1,9 @@
 #pragma once
 #include <glm/glm.hpp>
 
+namespace Solo
+{
+
 class S_Mat4x4;
 
 class S_Vec4
@@ -51,4 +54,6 @@ public:
     void To2DLeftUpPosition( const S_Vec4 *i_position, const S_Mat4x4 *i_viewProjection );
     void To2DLeftUpPositionOut( S_Vec4 *i_out, const S_Vec4 *i_position, const S_Mat4x4 *i_viewProjection );
 };
+
+}
 #include "S_Vec4.inl"

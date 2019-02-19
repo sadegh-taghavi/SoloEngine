@@ -2,6 +2,8 @@
 #include "S_Quat.h"
 #include "S_Vec3.h"
 
+using namespace Solo;
+
 inline S_Quat::S_Quat(float i_x, float i_y, float i_z, float i_w) : m_data( i_x, i_y, i_z, i_w )
 {
 }

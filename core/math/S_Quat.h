@@ -2,6 +2,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+namespace Solo
+{
+
 class S_Vec3;
 
 class S_Quat
@@ -47,4 +50,8 @@ public:
     void lerpOut( S_Quat *i_out, const S_Quat *i_second, float i_amount );
 };
 
+}
+
 #include "S_Quat.inl"
+
+
