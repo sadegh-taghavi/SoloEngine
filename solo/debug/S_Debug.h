@@ -1,12 +1,10 @@
 #include <stdint.h>
-#include "core/stl/S_String.h"
+#include "solo/stl/S_String.h"
 
 namespace solo
 {
 
-#ifndef s_debug(...)
 #define s_debug(...) ( S_Debug().debug( ( S_Debug(),__VA_ARGS__ ) ) )
-#endif
 
 class S_Debug
 {
