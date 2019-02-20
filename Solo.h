@@ -58,13 +58,20 @@ void* operator new[](size_t size)
 // Operator delete, which is shared between operator new implementations.
 ///////////////////////////////////////////////////////////////////////////////
 
+#ifdef __MINGW64__
+void operator delete(void* p) _GLIBCXX_USE_NOEXCEPT
+#else
 void operator delete(void* p) _NOEXCEPT
+#endif
 {
       S_Allocator::singleton()->deallocate( p );
 }
 
-
+#ifdef __MINGW64__
+void operator delete[](void* p) _GLIBCXX_USE_NOEXCEPT
+#else
 void operator delete[](void* p) _NOEXCEPT
+#endif
 {
     S_Allocator::singleton()->deallocate( p );
 }
