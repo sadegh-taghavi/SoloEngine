@@ -1,9 +1,9 @@
-#include <cstring>
+#include <EASTL/string.h>
 #include "../memory/S_AlgorithmAllocator.h"
 
 namespace solo
 {
 
-typedef std::basic_string<char, std::char_traits<char> /*, S_AlgorithmAllocator<char>*/ > S_String;
+typedef eastl::basic_string<char/*, S_AlgorithmAllocator<char>*/ > S_String;
 
 }
