@@ -12,14 +12,13 @@ struct SA
 void test()
 {
     SA *iv = new SA();
-//    (*iv) = 0;
 
     S_String strvvv = "Test";
     strvvv += " test222";
     strvvv += " vvvv";
     S_List<SA> lst;
     SA vv;
-
+    uint64_t *ttt[150000];
 
     S_ElapsedTime et;
 
@@ -38,6 +37,35 @@ void test()
     }
 
     s_debug( "ETV", et.restart() );
+
+    for( int j = 0; j < 10; ++j )
+    {
+        s_debug( "ET###########", j,  et.restart() );
+        for( int i = 0; i < 150000; ++i )
+        {
+            ttt[i] = new uint64_t;
+        }
+        s_debug( "AL-CA-Al", et.restart() );
+
+        for( int i = 5000; i < 60000; ++i )
+        {
+            delete ttt[i];
+        }
+        s_debug( "DA-CA-De", et.restart() );
+
+
+        for( int i = 0; i < 150000; ++i )
+        {
+            ttt[i] = (uint64_t *)malloc( sizeof(uint64_t) );
+        }
+        s_debug( "AL-MA-Al", et.restart() );
+
+        for( int i = 5000; i < 60000; ++i )
+        {
+            free( ttt[i] );
+        }
+        s_debug( "AL-MA-De", et.restart() );
+    }
 
     s_debug( "Test", S_Allocator::singleton()->getTotalAllocatedItems() ,
              S_Allocator::singleton()->getTotalUsedPools() , S_Allocator::singleton()->getTotalAllocatedBytes(),
