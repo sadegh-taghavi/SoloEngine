@@ -16,7 +16,7 @@ S_Debug::S_Debug()
 void S_Debug::outDebug()
 {
 #ifdef __ANDROID__
-    __android_log_print(ANDROID_LOG_DEBUG, m_tag.c_str(), m_data.c_str() );
+    __android_log_print(ANDROID_LOG_DEBUG, m_tag.c_str(), "%s", m_data.c_str() );
 #elif __WIN32__
     printf( "%s:%s", m_tag.c_str(), m_data.c_str() );
 #endif
@@ -72,7 +72,7 @@ S_Debug &S_Debug::operator<<(const int &val)
 S_Debug &S_Debug::operator<<(const float &val)
 {
     char str[25];
-    sprintf( str, " %f", val );
+    sprintf( str, " %f", static_cast<double>(val) );
     m_data += str;
     return *this;
 }

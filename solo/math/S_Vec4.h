@@ -20,7 +20,6 @@ public:
     S_Vec4(){}
     S_Vec4(float i_x, float i_y, float i_z, float i_w);
     S_Vec4(const float *i_array);
-    S_Vec4(const S_Vec4 &i_vec);
 
     float x();
     void setX(float x);
@@ -43,7 +42,7 @@ public:
     bool operator==(const S_Vec4 &i_v);
     bool operator!=(const S_Vec4 &i_v);
     float length();
-    S_Vec4& transform(const struct S_Mat4x4 *i_mat);
+    S_Vec4& transform(const S_Mat4x4 *i_mat);
     void transformOut( S_Vec4 *i_out, const S_Mat4x4 *i_mat );
     S_Vec4& normalize();
     S_Vec4& normalizeBy(const S_Vec4* i_vec);

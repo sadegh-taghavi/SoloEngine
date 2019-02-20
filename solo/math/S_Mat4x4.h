@@ -29,8 +29,8 @@ public:
     S_Mat4x4(const float *i_array);
     S_Mat4x4(const S_Mat4x4 &i_mat44);
 
-    float		operator()(size_t i_row, size_t i_column) const;
-    float&		operator()(size_t i_row, size_t i_column);
+    float		operator()(uint64_t i_row, uint64_t i_column) const;
+    float&		operator()(uint64_t i_row, uint64_t i_column);
     S_Mat4x4&	operator= (const S_Mat4x4& i_mat44);
     S_Mat4x4	operator*(const S_Mat4x4 &i_mat44);
     S_Mat4x4&	operator*=(const S_Mat4x4 &i_mat44);

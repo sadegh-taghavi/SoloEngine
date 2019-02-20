@@ -43,7 +43,7 @@ void test()
         s_debug( "ET###########", j,  et.restart() );
         for( int i = 0; i < 150000; ++i )
         {
-            ttt[i] = new uint64_t;
+            ttt[i] = new uint64_t();
         }
         s_debug( "AL-CA-Al", et.restart() );
 
@@ -54,22 +54,22 @@ void test()
         s_debug( "DA-CA-De", et.restart() );
 
 
-        for( int i = 0; i < 150000; ++i )
-        {
-            ttt[i] = (uint64_t *)malloc( sizeof(uint64_t) );
-        }
-        s_debug( "AL-MA-Al", et.restart() );
+//        for( int i = 0; i < 150000; ++i )
+//        {
+//            ttt[i] = (uint64_t *)malloc( sizeof(uint64_t) );
+//        }
+//        s_debug( "AL-MA-Al", et.restart() );
 
-        for( int i = 5000; i < 60000; ++i )
-        {
-            free( ttt[i] );
-        }
+//        for( int i = 5000; i < 60000; ++i )
+//        {
+//            free( ttt[i] );
+//        }
         s_debug( "AL-MA-De", et.restart() );
     }
 
     s_debug( "Test", S_Allocator::singleton()->getTotalAllocatedItems() ,
              S_Allocator::singleton()->getTotalUsedPools() , S_Allocator::singleton()->getTotalAllocatedBytes(),
-             (iv->aaa), strvvv );
+             (iv->aaa), strvvv, sizeof( uint64_t ) );
     s_debug( "Invocation" , S_Allocator::singleton()->getTotalAllocateInvoked(),
              S_Allocator::singleton()->getTotalDeallocateInvoked() );
 

@@ -7,6 +7,7 @@ CONFIG -= app_bundle
 HEADERS += \
     solo/memory/S_Allocator.h \
     solo/memory/S_AlgorithmAllocator.h \
+    solo/memory/S_NewDeleteOverrides.h \
     solo/stl/S_Map.h \
     solo/stl/S_List.h \
     solo/stl/S_Vector.h \

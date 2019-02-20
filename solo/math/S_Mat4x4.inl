@@ -31,12 +31,12 @@ inline S_Mat4x4::S_Mat4x4( const S_Mat4x4 &i_mat44 )
     *this = i_mat44;
 }
 
-inline float S_Mat4x4::operator()( size_t i_row, size_t i_column ) const
+inline float S_Mat4x4::operator()( uint64_t i_row, uint64_t i_column ) const
 {
     return m_data[i_row][i_column];
 }
 
-inline float& S_Mat4x4::operator()( size_t i_row, size_t i_column )
+inline float& S_Mat4x4::operator()( uint64_t i_row, uint64_t i_column )
 {
     return m_data[i_row][i_column];
 }

@@ -14,11 +14,6 @@ inline S_Vec4::S_Vec4( const float *i_array ) : m_data( i_array[0], i_array[1], 
 
 }
 
-inline S_Vec4::S_Vec4( const S_Vec4 &i_vec )
-{
-    *this = i_vec;
-}
-
 inline float S_Vec4::x()
 {
     return m_data.x;
