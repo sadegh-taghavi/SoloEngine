@@ -16,6 +16,8 @@ public:
     uint64_t getTotalAllocatedItems();
     uint64_t getTotalAllocatedBytes();
     uint64_t getTotalUsedPools();
+    uint64_t getTotalAllocateInvoked();
+    uint64_t getTotalDeallocateInvoked();
 private:
     S_Allocator( uint64_t poolSize = 8 * 1024 * 1024, uint64_t poolsCount = 16 );
     ~S_Allocator();
@@ -37,13 +39,14 @@ private:
     Pool *m_tPool;
     Pool *m_pools;
     void *m_allocatedMemory;
+    uint64_t m_totalAllocateInvoked;
+    uint64_t m_totalDeallocateInvoked;
     uint64_t m_poolSize;
     int64_t m_poolsCount;
     int64_t m_tI;
     uint64_t m_tSize;
     uint64_t m_lastPool;
     MemoryHeader *m_tHeader;
-//    std::mutex m_mutex;
     std::atomic_flag m_busyState = ATOMIC_FLAG_INIT;
     static S_Allocator *m_singleton;
 

@@ -58,13 +58,13 @@ void* operator new[](size_t size)
 // Operator delete, which is shared between operator new implementations.
 ///////////////////////////////////////////////////////////////////////////////
 
-void operator delete(void* p)
+void operator delete(void* p) _NOEXCEPT
 {
       S_Allocator::singleton()->deallocate( p );
 }
 
 
-void operator delete[](void* p)
+void operator delete[](void* p) _NOEXCEPT
 {
     S_Allocator::singleton()->deallocate( p );
 }

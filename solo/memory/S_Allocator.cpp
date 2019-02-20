@@ -9,7 +9,9 @@ S_Allocator *S_Allocator::m_singleton = nullptr;
 
 S_Allocator::S_Allocator(uint64_t poolSize, uint64_t poolsCount)
 {
-    for(;m_busyState.test_and_set(std::memory_order_acquire););
+    for(;m_busyState.test_and_set(std::memory_order_acquire););  
+    m_totalAllocateInvoked = 0;
+    m_totalDeallocateInvoked = 0;
     m_lastPool = 0;
     m_poolSize = poolSize;
     m_poolsCount = static_cast<int64_t>( poolsCount );
@@ -35,6 +37,7 @@ void *S_Allocator::allocate(uint64_t size)
 {
     for(;m_busyState.test_and_set(std::memory_order_acquire););
 
+    ++m_totalAllocateInvoked;
     m_tSize = size + sizeof( MemoryHeader );
 
     auto checkPool = [this]()
@@ -82,6 +85,7 @@ void *S_Allocator::allocate(uint64_t size)
 void S_Allocator::deallocate(void *rawMemory)
 {
     for(;m_busyState.test_and_set(std::memory_order_acquire););
+    ++m_totalDeallocateInvoked;
     m_tHeader = reinterpret_cast<MemoryHeader *>( reinterpret_cast<uint64_t>( rawMemory ) - sizeof( MemoryHeader ) );
     if( m_tHeader->m_signature != 5421 )
     {
@@ -155,6 +159,17 @@ uint64_t S_Allocator::getTotalUsedPools()
     m_busyState.clear(std::memory_order_release);
     return m_tSize;
 }
+
+uint64_t S_Allocator::getTotalAllocateInvoked()
+{
+    return m_totalAllocateInvoked;
+}
+
+uint64_t S_Allocator::getTotalDeallocateInvoked()
+{
+    return m_totalDeallocateInvoked;
+}
+
 
 
 

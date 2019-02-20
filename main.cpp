@@ -11,9 +11,8 @@ struct SA
 };
 void test()
 {
-    int *i = new int();
-    //    delete i;
-    i++;
+    int64_t *iv = new int64_t;
+
 
     S_List<SA> lst;
     SA vv;
@@ -38,7 +37,11 @@ void test()
     s_debug( "ETV", et.restart() );
 
     s_debug( "Test", S_Allocator::singleton()->getTotalAllocatedItems() ,
-             S_Allocator::singleton()->getTotalUsedPools() , S_Allocator::singleton()->getTotalAllocatedBytes() );
+             S_Allocator::singleton()->getTotalUsedPools() , S_Allocator::singleton()->getTotalAllocatedBytes(),
+             "Invocation" , S_Allocator::singleton()->getTotalAllocateInvoked(),
+             S_Allocator::singleton()->getTotalDeallocateInvoked(), (*iv) );
+
+    delete iv;
 
     S_Vec3 v3 = S_Vec3( 3.1415f, 0.1415f, 0.0f );
     S_Mat4x4 m;
