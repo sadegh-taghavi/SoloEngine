@@ -1,5 +1,6 @@
 QT -= gui core
 
+
 CONFIG += c++14
 CONFIG -= app_bundle
 
@@ -56,12 +57,12 @@ SOURCES += \
 android {
 
 INCLUDEPATH += \
-    $$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/$$(ANDROID_NDK_TOOLCHAIN_VERSION)/include \
-    $$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/$$(ANDROID_NDK_TOOLCHAIN_VERSION)/include/backward \
-    $$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/$$(ANDROID_NDK_TOOLCHAIN_VERSION)/libs/armeabi-v7a/include
+    $$(ANDROID_NDK_ROOT)/sources/cxx-stl/llvm-libc++/include \
+    $$(ANDROID_NDK_ROOT)/sources/cxx-stl/llvm-libc++/include/ext \
+#    $$(ANDROID_NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/include
 
     ANDROID_EXTRA_LIBS = \
-        $$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/$$(ANDROID_NDK_TOOLCHAIN_VERSION)/libs/armeabi-v7a/libgnustl_shared.so
+        $$(ANDROID_NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libc++_shared.so
 
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
 
