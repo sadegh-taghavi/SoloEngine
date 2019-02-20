@@ -18,22 +18,49 @@
 
 using namespace solo;
 
-void* operator new  (std::size_t count )
-{
-    return S_Allocator::singleton()->allocate( static_cast<uint64_t>( count ) );
-}
-
-void* operator new[](std::size_t count )
-{
-    return S_Allocator::singleton()->allocate( static_cast<uint64_t>( count ) );
-}
-
-void* __cdecl operator new[](size_t size, const char*, int, unsigned, const char*, int)
+void* operator new[](size_t size, const char* /*name*/, int /*flags*/,
+                     unsigned /*debugFlags*/, const char* /*file*/, int /*line*/)
 {
     return S_Allocator::singleton()->allocate( size );
 }
 
-void __cdecl operator delete[](void* ptr, const char*, int, unsigned, const char*, int)
+void* operator new[](size_t size, size_t /*alignment*/, size_t /*alignmentOffset*/, const char* /*name*/,
+                     int /*flags*/, unsigned /*debugFlags*/, const char* /*file*/, int /*line*/)
 {
-    S_Allocator::singleton()->deallocate( ptr );
+    return S_Allocator::singleton()->allocate( size );
+    // Substitute your aligned malloc.
+//    return malloc_aligned(size, alignment, alignmentOffset);
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Other operator new as typically required by applications.
+///////////////////////////////////////////////////////////////////////////////
+
+void* operator new(size_t size)
+{
+    return S_Allocator::singleton()->allocate( size );
+}
+
+
+void* operator new[](size_t size)
+{
+    return S_Allocator::singleton()->allocate( size );
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Operator delete, which is shared between operator new implementations.
+///////////////////////////////////////////////////////////////////////////////
+
+void operator delete(void* p)
+{
+    S_Allocator::singleton()->deallocate( p );
+}
+
+
+void operator delete[](void* p)
+{
+    S_Allocator::singleton()->deallocate( p );
 }

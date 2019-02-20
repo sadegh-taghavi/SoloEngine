@@ -106,6 +106,11 @@ S_Allocator::~S_Allocator()
 
 S_Allocator *S_Allocator::singleton()
 {
+    if( m_singleton == nullptr )
+    {
+        S_Allocator *allocator = reinterpret_cast<S_Allocator *>( malloc( sizeof( S_Allocator ) ) );
+        new (allocator) S_Allocator();
+    }
     return m_singleton;
 }
 
