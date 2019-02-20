@@ -35,6 +35,7 @@ S_Allocator::S_Allocator(uint64_t poolSize, uint64_t poolsCount)
 
 void *S_Allocator::allocate(uint64_t size)
 {
+
     for(;m_busyState.test_and_set(std::memory_order_acquire););
 
     ++m_totalAllocateInvoked;
@@ -89,7 +90,6 @@ void S_Allocator::deallocate(void *rawMemory)
     m_tHeader = reinterpret_cast<MemoryHeader *>( reinterpret_cast<uint64_t>( rawMemory ) - sizeof( MemoryHeader ) );
     if( m_tHeader->m_signature != 5421 )
     {
-
         m_busyState.clear(std::memory_order_release);
         return;
     }

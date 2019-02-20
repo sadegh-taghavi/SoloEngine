@@ -68,6 +68,24 @@ void operator delete(void* p) _NOEXCEPT
 }
 
 #ifdef __MINGW64__
+void operator delete(void* p, std::size_t) _GLIBCXX_USE_NOEXCEPT
+#else
+void operator delete(void* p, std::size_t) _NOEXCEPT
+#endif
+{
+      S_Allocator::singleton()->deallocate( p );
+}
+
+#ifdef __MINGW64__
+void operator delete(void* p, const std::nothrow_t&) _GLIBCXX_USE_NOEXCEPT
+#else
+void operator delete(void* p, const std::nothrow_t&) _NOEXCEPT
+#endif
+{
+      S_Allocator::singleton()->deallocate( p );
+}
+
+#ifdef __MINGW64__
 void operator delete[](void* p) _GLIBCXX_USE_NOEXCEPT
 #else
 void operator delete[](void* p) _NOEXCEPT
@@ -75,3 +93,22 @@ void operator delete[](void* p) _NOEXCEPT
 {
     S_Allocator::singleton()->deallocate( p );
 }
+
+#ifdef __MINGW64__
+void operator delete[](void* p, const std::nothrow_t&) _GLIBCXX_USE_NOEXCEPT
+#else
+void operator delete[](void* p, const std::nothrow_t&) _NOEXCEPT
+#endif
+{
+    S_Allocator::singleton()->deallocate( p );
+}
+
+#ifdef __MINGW64__
+void operator delete[](void* p, std::size_t) _GLIBCXX_USE_NOEXCEPT
+#else
+void operator delete[](void* p, std::size_t) _NOEXCEPT
+#endif
+{
+      S_Allocator::singleton()->deallocate( p );
+}
+

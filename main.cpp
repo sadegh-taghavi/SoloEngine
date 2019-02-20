@@ -11,9 +11,12 @@ struct SA
 };
 void test()
 {
-    int64_t *iv = new int64_t;
+    SA *iv = new SA();
+//    (*iv) = 0;
 
-
+    S_String strvvv = "Test";
+    strvvv += " test222";
+    strvvv += " vvvv";
     S_List<SA> lst;
     SA vv;
 
@@ -38,8 +41,9 @@ void test()
 
     s_debug( "Test", S_Allocator::singleton()->getTotalAllocatedItems() ,
              S_Allocator::singleton()->getTotalUsedPools() , S_Allocator::singleton()->getTotalAllocatedBytes(),
-             "Invocation" , S_Allocator::singleton()->getTotalAllocateInvoked(),
-             S_Allocator::singleton()->getTotalDeallocateInvoked(), (*iv) );
+             (iv->aaa), strvvv );
+    s_debug( "Invocation" , S_Allocator::singleton()->getTotalAllocateInvoked(),
+             S_Allocator::singleton()->getTotalDeallocateInvoked() );
 
     delete iv;
 
