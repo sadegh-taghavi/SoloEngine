@@ -4,6 +4,6 @@
 namespace solo
 {
 
-typedef eastl::basic_string<char/*, S_AlgorithmAllocator<char>*/ > S_String;
+typedef eastl::basic_string<char> S_String;
 
 }

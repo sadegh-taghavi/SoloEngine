@@ -59,10 +59,10 @@ android {
 INCLUDEPATH += \
     $$(ANDROID_NDK_ROOT)/sources/cxx-stl/llvm-libc++/include \
     $$(ANDROID_NDK_ROOT)/sources/cxx-stl/llvm-libc++/include/ext \
-#    $$(ANDROID_NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/include
+#    $$(ANDROID_NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/arm64-v8a/include
 
     ANDROID_EXTRA_LIBS = \
-        $$(ANDROID_NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a/libc++_shared.so
+        $$(ANDROID_NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/arm64-v8a/libc++_shared.so
 
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
 

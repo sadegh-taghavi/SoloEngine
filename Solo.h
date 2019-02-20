@@ -22,6 +22,7 @@ void* operator new[](size_t size, const char* /*name*/, int /*flags*/,
                      unsigned /*debugFlags*/, const char* /*file*/, int /*line*/)
 {
     return S_Allocator::singleton()->allocate( size );
+//    return malloc( size );
 }
 
 void* operator new[](size_t size, size_t /*alignment*/, size_t /*alignmentOffset*/, const char* /*name*/,
@@ -30,6 +31,7 @@ void* operator new[](size_t size, size_t /*alignment*/, size_t /*alignmentOffset
     return S_Allocator::singleton()->allocate( size );
     // Substitute your aligned malloc.
 //    return malloc_aligned(size, alignment, alignmentOffset);
+//    return malloc( size );
 }
 
 
@@ -41,12 +43,14 @@ void* operator new[](size_t size, size_t /*alignment*/, size_t /*alignmentOffset
 void* operator new(size_t size)
 {
     return S_Allocator::singleton()->allocate( size );
+//    return malloc( size );
 }
 
 
 void* operator new[](size_t size)
 {
     return S_Allocator::singleton()->allocate( size );
+//    return malloc( size );
 }
 
 
@@ -56,7 +60,7 @@ void* operator new[](size_t size)
 
 void operator delete(void* p)
 {
-    S_Allocator::singleton()->deallocate( p );
+      S_Allocator::singleton()->deallocate( p );
 }
 
 

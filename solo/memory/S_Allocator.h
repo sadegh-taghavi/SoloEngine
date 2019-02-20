@@ -9,8 +9,7 @@ namespace solo
 class S_Allocator
 {
 public:
-    S_Allocator( uint64_t poolSize = 8 * 1024 * 1024, uint64_t poolsCount = 16 );
-    ~S_Allocator();
+
     void *allocate( uint64_t size );
     void deallocate(void * rawMemory);
     static S_Allocator *singleton();
@@ -18,6 +17,8 @@ public:
     uint64_t getTotalAllocatedBytes();
     uint64_t getTotalUsedPools();
 private:
+    S_Allocator( uint64_t poolSize = 8 * 1024 * 1024, uint64_t poolsCount = 16 );
+    ~S_Allocator();
     class Pool
     {
         friend class S_Allocator;

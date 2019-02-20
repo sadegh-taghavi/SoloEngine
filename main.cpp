@@ -11,15 +11,11 @@ struct SA
 };
 void test()
 {
-    S_Allocator al;
     int *i = new int();
     //    delete i;
+    i++;
 
     S_List<SA> lst;
-
-
-    uint64_t *ttt[150000];
-
     SA vv;
 
 
@@ -41,37 +37,8 @@ void test()
 
     s_debug( "ETV", et.restart() );
 
-    for( int j = 0; j < 10; ++j )
-    {
-        s_debug( "ET###########", j,  et.restart() );
-        for( int i = 0; i < 150000; ++i )
-        {
-            ttt[i] = (uint64_t *)al.allocate( sizeof(uint64_t) );
-        }
-        s_debug( "AL-CA-Al", et.restart() );
-
-        for( int i = 5000; i < 60000; ++i )
-        {
-            al.deallocate( ttt[i] );
-        }
-        s_debug( "DA-CA-De", et.restart() );
-
-
-        for( int i = 0; i < 150000; ++i )
-        {
-            ttt[i] = (uint64_t *)malloc( sizeof(uint64_t) );
-        }
-        s_debug( "AL-MA-Al", et.restart() );
-
-        for( int i = 5000; i < 60000; ++i )
-        {
-            free( ttt[i] );
-        }
-        s_debug( "AL-MA-De", et.restart() );
-    }
-
-    s_debug( "Test", al.getTotalAllocatedItems() ,
-             al.getTotalUsedPools() , al.getTotalAllocatedBytes() );
+    s_debug( "Test", S_Allocator::singleton()->getTotalAllocatedItems() ,
+             S_Allocator::singleton()->getTotalUsedPools() , S_Allocator::singleton()->getTotalAllocatedBytes() );
 
     S_Vec3 v3 = S_Vec3( 3.1415f, 0.1415f, 0.0f );
     S_Mat4x4 m;
