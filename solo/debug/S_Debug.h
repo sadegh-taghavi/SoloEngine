@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "solo/stl/S_String.h"
+#include "../stl/S_String.h"
 
 namespace solo
 {

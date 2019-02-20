@@ -1,6 +1,6 @@
 #pragma once
 #include <stdlib.h>
-#include "solo/memory/S_Allocator.h"
+#include "S_Allocator.h"
 
 namespace solo
 {

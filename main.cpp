@@ -1,6 +1,6 @@
 //#include <QDebug>
 //#include <QElapsedTimer>
-#include "Solo.h"
+#include "solo/Solo.h"
 
 struct SA
 {

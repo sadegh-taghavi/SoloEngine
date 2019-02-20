@@ -1,5 +1,5 @@
 #pragma once
-#include "Solo/Memory/S_Allocator.h"
+#include "S_Allocator.h"
 
 void* operator new[](size_t size, const char* /*name*/, int /*flags*/,
                      unsigned /*debugFlags*/, const char* /*file*/, int /*line*/)

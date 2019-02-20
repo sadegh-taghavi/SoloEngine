@@ -19,7 +19,7 @@ HEADERS += \
     solo/math/S_Mat4x4.h \
     solo/debug/S_Debug.h \
     solo/utility/S_ElapsedTime.h \
-    Solo.h
+    solo/Solo.h
 
 SOURCES += \
     solo/memory/S_Allocator.cpp \
