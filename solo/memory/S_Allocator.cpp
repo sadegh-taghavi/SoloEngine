@@ -5,6 +5,9 @@
 
 using namespace solo;
 
+#define POOL_SIGNATURE 2691618315
+#define MEMORY_SIGNATURE 5421
+
 S_Allocator S_Allocator::m_singleton;
 
 S_Allocator::S_Allocator(uint64_t poolSize, uint64_t poolsCount)
@@ -21,7 +24,7 @@ S_Allocator::S_Allocator(uint64_t poolSize, uint64_t poolsCount)
     for( m_tI = 0; m_tI < m_poolsCount; ++m_tI )
     {
         m_tPool = &m_pools[m_tI];
-//        m_tPool->m_signature = 2691618315;
+//        m_tPool->m_signature = POOL_SIGNATURE;
         m_tPool->m_allocated = 0;
         m_tPool->m_stackCounter = 0;
         m_tPool->m_memory = reinterpret_cast<void *>( reinterpret_cast<uint64_t>( &m_pools[m_poolsCount] ) + static_cast<uint64_t>(m_tI) * m_poolSize );
@@ -46,7 +49,7 @@ void *S_Allocator::allocate(uint64_t size)
         {
             m_tHeader = reinterpret_cast<MemoryHeader *>( reinterpret_cast<uint64_t>( m_tPool->m_memory ) + m_tPool->m_allocated );
             m_tHeader->m_poolIndex = static_cast<uint64_t>(m_tI);
-            m_tHeader->m_signature = 5421;
+            m_tHeader->m_signature = MEMORY_SIGNATURE;
             m_tPool->m_allocated += m_tSize;
             m_tPool->m_stackCounter++;
             m_lastPool = static_cast<uint64_t>(m_tI);
@@ -86,7 +89,7 @@ void S_Allocator::deallocate(void *rawMemory)
     for(;m_busyState.test_and_set(std::memory_order_acquire););
     ++m_totalDeallocateInvoked;
     m_tHeader = reinterpret_cast<MemoryHeader *>( reinterpret_cast<uint64_t>( rawMemory ) - sizeof( MemoryHeader ) );
-    if( m_tHeader->m_signature != 5421 )
+    if( m_tHeader->m_signature != MEMORY_SIGNATURE )
     {
         m_busyState.clear(std::memory_order_release);
         return;
