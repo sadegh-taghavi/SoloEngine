@@ -9,22 +9,21 @@ namespace solo
 class S_Allocator
 {
 public:
-
+    static S_Allocator *singleton();
     void *allocate( uint64_t size );
     void deallocate(void * rawMemory);
-    static S_Allocator *singleton();
     uint64_t getTotalAllocatedItems();
     uint64_t getTotalAllocatedBytes();
     uint64_t getTotalUsedPools();
     uint64_t getTotalAllocateInvoked();
     uint64_t getTotalDeallocateInvoked();
 private:
-    S_Allocator( uint64_t poolSize = 8 * 1024 * 1024, uint64_t poolsCount = 16 );
+    S_Allocator( uint64_t poolSize = 8 * 1024 * 1024, uint64_t poolsCount = 32 );
     ~S_Allocator();
     class Pool
     {
         friend class S_Allocator;
-//        char m_signature[2];
+//      uint64_t m_signature;
         uint64_t m_allocated;
         uint64_t m_stackCounter;
         void* m_memory;
@@ -48,8 +47,7 @@ private:
     uint64_t m_lastPool;
     MemoryHeader *m_tHeader;
     std::atomic_flag m_busyState = ATOMIC_FLAG_INIT;
-    static S_Allocator *m_singleton;
-
+    static S_Allocator m_singleton;
 };
 
 }

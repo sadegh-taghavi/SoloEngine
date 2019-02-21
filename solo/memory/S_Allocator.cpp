@@ -5,7 +5,7 @@
 
 using namespace solo;
 
-S_Allocator *S_Allocator::m_singleton = nullptr;
+S_Allocator S_Allocator::m_singleton;
 
 S_Allocator::S_Allocator(uint64_t poolSize, uint64_t poolsCount)
 {
@@ -21,13 +21,11 @@ S_Allocator::S_Allocator(uint64_t poolSize, uint64_t poolsCount)
     for( m_tI = 0; m_tI < m_poolsCount; ++m_tI )
     {
         m_tPool = &m_pools[m_tI];
-//        m_tPool->m_signature[0] = 'P';
-//        m_tPool->m_signature[1] = 'O';
+//        m_tPool->m_signature = 2691618315;
         m_tPool->m_allocated = 0;
         m_tPool->m_stackCounter = 0;
         m_tPool->m_memory = reinterpret_cast<void *>( reinterpret_cast<uint64_t>( &m_pools[m_poolsCount] ) + static_cast<uint64_t>(m_tI) * m_poolSize );
     }
-    m_singleton = this;
 
     m_busyState.clear(std::memory_order_release);
 
@@ -101,22 +99,17 @@ void S_Allocator::deallocate(void *rawMemory)
     m_busyState.clear(std::memory_order_release);
 }
 
+S_Allocator *S_Allocator::singleton()
+{
+    return &m_singleton;
+}
+
 S_Allocator::~S_Allocator()
 {
     for(;m_busyState.test_and_set(std::memory_order_acquire););
     free( m_allocatedMemory );
 
     m_busyState.clear(std::memory_order_release);
-}
-
-S_Allocator *S_Allocator::singleton()
-{
-    if( m_singleton == nullptr )
-    {
-        S_Allocator *allocator = reinterpret_cast<S_Allocator *>( malloc( sizeof( S_Allocator ) ) );
-        new (allocator) S_Allocator();
-    }
-    return m_singleton;
 }
 
 uint64_t S_Allocator::getTotalAllocatedItems()
@@ -169,7 +162,5 @@ uint64_t S_Allocator::getTotalDeallocateInvoked()
 {
     return m_totalDeallocateInvoked;
 }
-
-
 
 
