@@ -19,6 +19,7 @@ void S_Debug::outDebug()
     __android_log_print(ANDROID_LOG_DEBUG, m_tag.c_str(), "%s", m_data.c_str() );
 #elif __WIN32__
     printf( "%s:%s", m_tag.c_str(), m_data.c_str() );
+    fflush(stdout);
 #endif
 }
 
