@@ -136,11 +136,13 @@ uint64_t S_Allocator::getTotalUsedPools()
 
 uint64_t S_Allocator::getTotalAllocateInvoked()
 {
+    S_AtomicFlagLocker locker( &m_busyState );
     return m_totalAllocateInvoked;
 }
 
 uint64_t S_Allocator::getTotalDeallocateInvoked()
 {
+    S_AtomicFlagLocker locker( &m_busyState );
     return m_totalDeallocateInvoked;
 }
 

@@ -9,9 +9,22 @@ struct SA
     char STr[25];
     SA() {}
 };
+
+class Trd: public S_RunnableThread
+{
+public:
+    void run()
+    {
+        s_debug( "FROM THREADDDDDDDDDDDDDDDDDDDDDDD" );
+    }
+};
+
 void test()
 {
     SA *iv = new SA();
+
+    Trd th;
+    th.start();
 
     S_String strvvv = "Test";
     strvvv += " test222";
@@ -72,7 +85,7 @@ void test()
              S_Allocator::singleton()->getTotalUsedPools() , S_Allocator::singleton()->getTotalAllocatedBytes(),
              (iv->aaa), strvvv, sizeof( uint64_t ) );
     s_debug( "Invocation" , S_Allocator::singleton()->getTotalAllocateInvoked(),
-             S_Allocator::singleton()->getTotalDeallocateInvoked() );
+             S_Allocator::singleton()->getTotalDeallocateInvoked(), S_Thread::hardwareThreadCount() );
 
     delete iv;
 

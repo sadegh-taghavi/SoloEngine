@@ -1,13 +1,9 @@
 #include <chrono>
 #include "S_Thread.h"
+#include "solo/debug/S_Debug.h"
 
 using namespace solo;
 
-
-S_Runnable::S_Runnable()
-{
-
-}
 
 S_Runnable::~S_Runnable()
 {
@@ -21,23 +17,28 @@ void S_Runnable::operator()()
 
 S_Thread::S_Thread()
 {
-
+    m_started = false;
 }
 
 S_Thread::~S_Thread()
 {
-    m_thread.join();
+    waitFor();
 }
 
-void S_Thread::start()
+void S_Thread::start( S_Runnable *runnable )
 {
-    m_thread.join();
-    m_thread = std::thread( std::ref( *this ) );
+    waitFor();
+    m_thread = std::thread{ std::ref( *runnable ) };
+    m_started = true;
 }
 
 void S_Thread::waitFor()
 {
-    m_thread.join();
+    if( m_started )
+    {
+        m_thread.join();
+        m_started = false;
+    }
 }
 
 void S_Thread::sleep(uint64_t ms)
@@ -48,4 +49,9 @@ void S_Thread::sleep(uint64_t ms)
 unsigned int S_Thread::hardwareThreadCount()
 {
     return std::thread::hardware_concurrency();
+}
+
+void S_RunnableThread::start()
+{
+    S_Thread::start( this );
 }
