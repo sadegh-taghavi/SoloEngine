@@ -17,6 +17,8 @@ HEADERS += \
     solo/math/S_Vec4.h \
     solo/math/S_Quat.h \
     solo/math/S_Mat4x4.h \
+    solo/thread/S_Mutex.h \
+    solo/thread/S_Thread.h \
     solo/debug/S_Debug.h \
     solo/utility/S_ElapsedTime.h \
     solo/Solo.h
@@ -30,6 +32,8 @@ SOURCES += \
     solo/math/S_Quat.inl \
     solo/math/S_Mat4x4.inl \
     solo/debug/S_Debug.cpp \
+    solo/thread/S_Mutex.cpp \
+    solo/thread/S_Thread.cpp \
     solo/utility/S_ElapsedTime.cpp \
     main.cpp \
 

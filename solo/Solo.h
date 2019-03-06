@@ -14,6 +14,9 @@
 #include "stl/S_Vector.h"
 #include "stl/S_String.h"
 
+#include "thread/S_Mutex.h"
+#include "thread/S_Thread.h"
+
 #include "debug/S_Debug.h"
 #include "utility/S_ElapsedTime.h"
 

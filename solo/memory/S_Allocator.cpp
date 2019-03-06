@@ -12,7 +12,7 @@ S_Allocator S_Allocator::m_singleton;
 
 S_Allocator::S_Allocator(uint64_t poolSize, uint64_t poolsCount)
 {
-    for(;m_busyState.test_and_set(std::memory_order_acquire););  
+    S_AtomicFlagLocker locker( &m_busyState );
     m_totalAllocateInvoked = 0;
     m_totalDeallocateInvoked = 0;
     m_lastPool = 0;
@@ -29,15 +29,11 @@ S_Allocator::S_Allocator(uint64_t poolSize, uint64_t poolsCount)
         m_tPool->m_stackCounter = 0;
         m_tPool->m_memory = reinterpret_cast<void *>( reinterpret_cast<uint64_t>( &m_pools[m_poolsCount] ) + static_cast<uint64_t>(m_tI) * m_poolSize );
     }
-
-    m_busyState.clear(std::memory_order_release);
-
 }
 
 void *S_Allocator::allocate(uint64_t size)
 {
-
-    for(;m_busyState.test_and_set(std::memory_order_acquire););
+    S_AtomicFlagLocker locker( &m_busyState );
 
     ++m_totalAllocateInvoked;
     m_tSize = size + sizeof( MemoryHeader );
@@ -61,10 +57,7 @@ void *S_Allocator::allocate(uint64_t size)
     for( m_tI = static_cast<int64_t>(m_lastPool); m_tI < m_poolsCount ; ++m_tI )
     {
         if( checkPool() )
-        {
-            m_busyState.clear(std::memory_order_release);
             return reinterpret_cast<void *>( reinterpret_cast<int64_t>(&m_tHeader[1]) );
-        }
     }
 
     if( m_lastPool > 0 )
@@ -72,34 +65,24 @@ void *S_Allocator::allocate(uint64_t size)
         for( m_tI = static_cast<int64_t>(m_lastPool) - 1; m_tI >= 0; --m_tI )
         {
             if( checkPool() )
-            {
-                m_busyState.clear(std::memory_order_release);
                 return reinterpret_cast<void *>( reinterpret_cast<int64_t>(&m_tHeader[1]) );
-            }
         }
     }
-
-    m_busyState.clear(std::memory_order_release);
     return nullptr;
 //    return malloc( size );
 }
 
 void S_Allocator::deallocate(void *rawMemory)
 {
-    for(;m_busyState.test_and_set(std::memory_order_acquire););
+    S_AtomicFlagLocker locker( &m_busyState );
     ++m_totalDeallocateInvoked;
     m_tHeader = reinterpret_cast<MemoryHeader *>( reinterpret_cast<uint64_t>( rawMemory ) - sizeof( MemoryHeader ) );
     if( m_tHeader->m_signature != MEMORY_SIGNATURE )
-    {
-        m_busyState.clear(std::memory_order_release);
         return;
-    }
     m_tPool = &m_pools[m_tHeader->m_poolIndex];
     m_tPool->m_stackCounter--;
     if( m_tPool->m_stackCounter == 0 )
         m_tPool->m_allocated = 0;
-
-    m_busyState.clear(std::memory_order_release);
 }
 
 S_Allocator *S_Allocator::singleton()
@@ -109,41 +92,37 @@ S_Allocator *S_Allocator::singleton()
 
 S_Allocator::~S_Allocator()
 {
-    for(;m_busyState.test_and_set(std::memory_order_acquire););
+    S_AtomicFlagLocker locker( &m_busyState );
     free( m_allocatedMemory );
-
-    m_busyState.clear(std::memory_order_release);
 }
 
 uint64_t S_Allocator::getTotalAllocatedItems()
 {
-    for(;m_busyState.test_and_set(std::memory_order_acquire););
+    S_AtomicFlagLocker locker( &m_busyState );
     m_tSize = 0;
     for( m_tI = 0; m_tI < m_poolsCount; ++m_tI )
     {
         m_tPool = &m_pools[m_tI];
         m_tSize += m_tPool->m_stackCounter;
     }
-    m_busyState.clear(std::memory_order_release);
     return m_tSize;
 }
 
 uint64_t S_Allocator::getTotalAllocatedBytes()
 {
-    for(;m_busyState.test_and_set(std::memory_order_acquire););
+    S_AtomicFlagLocker locker( &m_busyState );
     m_tSize = 0;
     for( m_tI = 0; m_tI < m_poolsCount; ++m_tI )
     {
         m_tPool = &m_pools[m_tI];
         m_tSize += m_tPool->m_allocated;
     }
-    m_busyState.clear(std::memory_order_release);
     return m_tSize;
 }
 
 uint64_t S_Allocator::getTotalUsedPools()
 {
-    for(;m_busyState.test_and_set(std::memory_order_acquire););
+    S_AtomicFlagLocker locker( &m_busyState );
     m_tSize = 0;
     for( m_tI = 0; m_tI < m_poolsCount; ++m_tI )
     {
@@ -152,7 +131,6 @@ uint64_t S_Allocator::getTotalUsedPools()
             ++m_tSize;
 
     }
-    m_busyState.clear(std::memory_order_release);
     return m_tSize;
 }
 

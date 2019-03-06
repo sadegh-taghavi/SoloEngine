@@ -1,7 +1,6 @@
 #pragma once
 #include <stdint.h>
-#include <mutex>
-#include <atomic>
+#include "solo/thread/S_Mutex.h"
 
 namespace solo
 {
@@ -46,7 +45,7 @@ private:
     uint64_t m_tSize;
     uint64_t m_lastPool;
     MemoryHeader *m_tHeader;
-    std::atomic_flag m_busyState = ATOMIC_FLAG_INIT;
+    S_AtomicFlag m_busyState;
     static S_Allocator m_singleton;
 };
 
