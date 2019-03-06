@@ -86,7 +86,7 @@ S_Debug &S_Debug::operator<<(const double &val)
     return *this;
 }
 
-//S_Debug &S_Debug::operator<<(const bool &val)
+//S_Debug &S_Debug::operator<<(bool &val)
 //{
 //    m_data += ( val ? " TRUE" : " FALSE" );
 //    return *this;

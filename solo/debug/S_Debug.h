@@ -30,6 +30,7 @@ public:
     S_Debug &operator<<( const int &val );
     S_Debug &operator,( const int &val ) { return this->operator <<(val); }
 //    S_Debug &operator<<( const bool &val );
+//    S_Debug &operator,( const bool &val ) { return this->operator <<(val); }
 };
 
 }
