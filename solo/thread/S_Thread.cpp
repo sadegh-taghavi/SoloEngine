@@ -5,6 +5,11 @@
 using namespace solo;
 
 
+S_Runnable::S_Runnable()
+{
+    m_running = false;
+}
+
 S_Runnable::~S_Runnable()
 {
 
@@ -12,7 +17,19 @@ S_Runnable::~S_Runnable()
 
 void S_Runnable::operator()()
 {
+    m_runningFlag.acquire();
+    m_running = true;
+    m_runningFlag.clear();
     run();
+    m_runningFlag.acquire();
+    m_running = false;
+    m_runningFlag.clear();
+}
+
+bool S_Runnable::isRunning()
+{
+    S_AtomicFlagLocker locker( &m_runningFlag );
+    return m_running;
 }
 
 S_Thread::S_Thread()

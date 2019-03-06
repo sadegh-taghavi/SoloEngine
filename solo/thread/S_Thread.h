@@ -1,15 +1,20 @@
 #pragma once
 #include <thread>
+#include "S_Mutex.h"
 
 namespace solo
 {
 
 class S_Runnable
 {
+    S_AtomicFlag m_runningFlag;
+    bool m_running;
 public:
+    S_Runnable();
     virtual ~S_Runnable();
     virtual void run() = 0;
     void operator()();
+    bool isRunning();
 };
 
 class S_Thread
