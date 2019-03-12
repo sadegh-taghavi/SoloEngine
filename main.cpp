@@ -19,7 +19,7 @@ public:
 void Trd::run()
 {
     s_debug( "FROM THREADDDDDDDDDDDDDDDDDDDDDDD11111111" );
-    S_Thread::sleep( 30000 );
+    S_Thread::sleep( 10000 );
     s_debug( "FROM THREADDDDDDDDDDDDDDDDDDDDDDD22222222" );
 }
 

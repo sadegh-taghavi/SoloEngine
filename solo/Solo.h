@@ -20,4 +20,6 @@
 #include "debug/S_Debug.h"
 #include "utility/S_ElapsedTime.h"
 
+#include "input/S_Input.h"
+
 using namespace solo;

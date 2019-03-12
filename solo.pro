@@ -20,7 +20,8 @@ HEADERS += \
     solo/thread/S_Mutex.h \
     solo/thread/S_Thread.h \
     solo/debug/S_Debug.h \
-    solo/utility/S_ElapsedTime.h \
+    solo/utility/S_Input.h \
+    solo/input/S_Input.h \
     solo/Solo.h
 
 SOURCES += \
@@ -35,6 +36,7 @@ SOURCES += \
     solo/thread/S_Mutex.cpp \
     solo/thread/S_Thread.cpp \
     solo/utility/S_ElapsedTime.cpp \
+    solo/input/S_Input.cpp \
     main.cpp \
 
 
