@@ -21,5 +21,6 @@
 #include "utility/S_ElapsedTime.h"
 
 #include "input/S_Input.h"
+#include "platforms/S_Application.h"
 
 using namespace solo;
