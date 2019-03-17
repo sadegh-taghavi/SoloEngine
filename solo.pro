@@ -22,6 +22,7 @@ HEADERS += \
     solo/debug/S_Debug.h \
     solo/utility/S_Input.h \
     solo/input/S_Input.h \
+    solo/platforms/S_Application.h \
     solo/Solo.h
 
 SOURCES += \
@@ -37,6 +38,7 @@ SOURCES += \
     solo/thread/S_Thread.cpp \
     solo/utility/S_ElapsedTime.cpp \
     solo/input/S_Input.cpp \
+    solo/platforms/S_Application.cpp \
     main.cpp \
 
 
