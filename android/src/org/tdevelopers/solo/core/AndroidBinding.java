@@ -1,4 +1,4 @@
-package org.solo.core;
+package org.tdevelopers.solo.core;
 
 import android.os.Bundle;
 import android.app.Activity;

@@ -1,6 +1,6 @@
-package org.solo.test;
+package org.tdevelopers.solo.test;
 
-import org.solo.core.AndroidBinding;
+import org.tdevelopers.solo.core.AndroidBinding;
 import android.os.Bundle;
 import android.app.Activity;
 import android.util.Log;

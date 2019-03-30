@@ -19,7 +19,7 @@ public:
 void Trd::run()
 {
     s_debug( "FROM THREADDDDDDDDDDDDDDDDDDDDDDD11111111" );
-    S_Thread::sleep( 10000 );
+    S_Thread::sleep( 5000 );
     s_debug( "FROM THREADDDDDDDDDDDDDDDDDDDDDDD22222222" );
 }
 
@@ -74,7 +74,7 @@ void test()
 
         for( int i = 0; i < 500000; ++i )
         {
-            ttt[i] = (uint64_t *)malloc( sizeof(uint64_t) );
+            ttt[i] = reinterpret_cast<uint64_t *>(malloc( sizeof(uint64_t) ) );
         }
         s_debug( "AL-MA-Al", et.restart() );
 
