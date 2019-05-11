@@ -1,4 +1,4 @@
-QT -= gui core
+QT -= qt gui core
 
 
 CONFIG += c++14
@@ -41,7 +41,6 @@ SOURCES += \
     solo/platforms/S_Application.cpp \
     main.cpp \
 
-
 INCLUDEPATH += \
     $$PWD/solo/3rdparty \
     $$PWD/solo/3rdparty/EASTL/include \
@@ -50,7 +49,9 @@ INCLUDEPATH += \
     $$PWD/solo/3rdparty/EASTL/test/packages/EAMain/include \
     $$PWD/solo/3rdparty/EASTL/test/packages/EAStdC/include \
     $$PWD/solo/3rdparty/EASTL/test/packages/EATest/include \
-    $$PWD/solo/3rdparty/EASTL/test/packages/EAThread/include
+    $$PWD/solo/3rdparty/EASTL/test/packages/EAThread/include \
+    $$PWD/solo/3rdparty/WSIWindow \
+    $$PWD/solo/3rdparty/WSIWindow/VulkanWrapper
 
 SOURCES += \
     solo/3rdparty/EASTL/source/allocator_eastl.cpp \
@@ -61,13 +62,21 @@ SOURCES += \
     solo/3rdparty/EASTL/source/numeric_limits.cpp \
     solo/3rdparty/EASTL/source/red_black_tree.cpp \
     solo/3rdparty/EASTL/source/string.cpp \
-    solo/3rdparty/EASTL/source/thread_support.cpp
+    solo/3rdparty/EASTL/source/thread_support.cpp \
+    solo/3rdparty/WSIWindow/VulkanWrapper/vulkan_wrapper.cpp \
+    solo/3rdparty/WSIWindow/CDevices.cpp \
+    solo/3rdparty/WSIWindow/CInstance.cpp \
+    solo/3rdparty/WSIWindow/Validation.cpp \
+    solo/3rdparty/WSIWindow/WindowImpl.cpp \
+    solo/3rdparty/WSIWindow/WSIWindow.cpp
 
 android {
 
 INCLUDEPATH += \
+    $$PWD/solo/3rdparty/WSIWindow/android \
+    $$(ANDROID_NDK_ROOT)/sources/android/native_app_glue \
     $$(ANDROID_NDK_ROOT)/sources/cxx-stl/llvm-libc++/include \
-    $$(ANDROID_NDK_ROOT)/sources/cxx-stl/llvm-libc++/include/ext \
+    $$(ANDROID_NDK_ROOT)/sources/cxx-stl/llvm-libc++/include/ext
 #    $$(ANDROID_NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/arm64-v8a/include
 
     ANDROID_EXTRA_LIBS = \
@@ -75,13 +84,15 @@ INCLUDEPATH += \
 
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
 
-LIBS += -landroid
+#LIBS += -landroid \
+#        $$(ANDROID_NDK_ROOT)/sources/third_party/vulkan/src/build-android/jniLibs/arm64-v8a/libVkLayer_core_validation.so \
+#        $$(ANDROID_NDK_ROOT)/sources/third_party/vulkan/src/build-android/jniLibs/arm64-v8a/libVkLayer_object_tracker.so \
+#        $$(ANDROID_NDK_ROOT)/sources/third_party/vulkan/src/build-android/jniLibs/arm64-v8a/libVkLayer_parameter_validation.so \
+#        $$(ANDROID_NDK_ROOT)/sources/third_party/vulkan/src/build-android/jniLibs/arm64-v8a/libVkLayer_threading.so \
+#        $$(ANDROID_NDK_ROOT)/sources/third_party/vulkan/src/build-android/jniLibs/arm64-v8a/libVkLayer_unique_objects.so
 
-HEADERS += \
-    android_native_app_glue.h
-
-SOURCES += \
-    android_native_app_glue.c
+SOURCES += $$(ANDROID_NDK_ROOT)/sources/android/native_app_glue/android_native_app_glue.c \
+           solo/3rdparty/WSIWindow/android/native.cpp
 
 DISTFILES += \
     android/AndroidManifest.xml \
@@ -90,8 +101,12 @@ DISTFILES += \
     android/res/values/libs.xml \
     android/build.gradle \
     android/gradle/wrapper/gradle-wrapper.properties \
-    android/gradlew.bat \
-    android/src/org/solo/test/MainActivity.java \
-    android/src/org/solo/core/AndroidBinding.java
+    android/gradlew.bat
+#    android/src/org/solo/test/MainActivity.java \
+#    android/src/org/solo/core/AndroidBinding.java
 
+}
+
+win32 {
+    LIBS += C:/VulkanSDK/1.1.106.0/Lib/vulkan-1.lib
 }

@@ -104,47 +104,56 @@ void test()
 
 }
 
-#ifdef __ANDROID__
+//#ifdef __ANDROID__
 
-#include "android_native_app_glue.h"
+//#include "android_native_app_glue.h"
 
-int main(int, char **);
+//int main(int, char **);
 
-void android_main(struct android_app* app)
-{
-    android_poll_source* lSource;
-    android_app* application= app;
-    //    application->onAppCmd= activity_event_callback;
-    //    application->onInputEvent = callback_input;
+//void android_main(struct android_app* app)
+//{
+//    android_poll_source* lSource;
+//    android_app* application= app;
+//    //    application->onAppCmd= activity_event_callback;
+//    //    application->onInputEvent = callback_input;
 
-    test();
+//    test();
 
-    app_dummy();
+//    app_dummy();
 
-    while (true) {
-        // Loop the events accumulated (it can be several)
-        int lResult;
-        int lEvents;
-        while ((lResult = ALooper_pollAll(16, NULL, &lEvents, (void**)&lSource)) >= 0)
-        {
-            if (lSource != NULL) {// Lifecycle or input event
-                // Launch event app processing via application->onAppCmd
-                // or application->onInputEvent
-                lSource->process(application, lSource);
-            }
+//    while (true) {
+//        // Loop the events accumulated (it can be several)
+//        int lResult;
+//        int lEvents;
+//        while ((lResult = ALooper_pollAll(16, NULL, &lEvents, (void**)&lSource)) >= 0)
+//        {
+//            if (lSource != NULL) {// Lifecycle or input event
+//                // Launch event app processing via application->onAppCmd
+//                // or application->onInputEvent
+//                lSource->process(application, lSource);
+//            }
 
-            // Check if we are exiting.
-            if (application->destroyRequested) {
-                return;
-            }
-        }
+//            // Check if we are exiting.
+//            if (application->destroyRequested) {
+//                return;
+//            }
+//        }
 
-        // DO TASKS
+//        // DO TASKS
 
-    }
-}
-#elif __WIN32__
+//    }
+//}
+//#elif __WIN32__
 
+
+//int main(int, char **)
+//{
+//    test();
+
+//    return 0;
+//}
+
+//#endif
 
 int main(int, char **)
 {
@@ -152,6 +161,4 @@ int main(int, char **)
 
     return 0;
 }
-
-#endif
 

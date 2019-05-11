@@ -6,7 +6,7 @@
 using namespace solo;
 
 #define POOL_SIGNATURE 2691618315
-#define MEMORY_SIGNATURE 5421
+#define MEMORY_SIGNATURE 5138161962
 
 S_Allocator S_Allocator::m_singleton;
 
