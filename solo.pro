@@ -84,14 +84,11 @@ INCLUDEPATH += \
 
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
 
-#LIBS += -landroid \
-#        $$(ANDROID_NDK_ROOT)/sources/third_party/vulkan/src/build-android/jniLibs/arm64-v8a/libVkLayer_core_validation.so \
-#        $$(ANDROID_NDK_ROOT)/sources/third_party/vulkan/src/build-android/jniLibs/arm64-v8a/libVkLayer_object_tracker.so \
-#        $$(ANDROID_NDK_ROOT)/sources/third_party/vulkan/src/build-android/jniLibs/arm64-v8a/libVkLayer_parameter_validation.so \
-#        $$(ANDROID_NDK_ROOT)/sources/third_party/vulkan/src/build-android/jniLibs/arm64-v8a/libVkLayer_threading.so \
-#        $$(ANDROID_NDK_ROOT)/sources/third_party/vulkan/src/build-android/jniLibs/arm64-v8a/libVkLayer_unique_objects.so
+LIBS += -landroid \
+        -lvulkan
 
 SOURCES += $$(ANDROID_NDK_ROOT)/sources/android/native_app_glue/android_native_app_glue.c \
+           solo/3rdparty/WSIWindow/android/android_fopen.c \
            solo/3rdparty/WSIWindow/android/native.cpp
 
 DISTFILES += \
