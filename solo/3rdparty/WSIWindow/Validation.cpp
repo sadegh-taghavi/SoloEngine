@@ -27,9 +27,10 @@
 // WARNING: vulkan_wrapper.h must be #included BEFORE vulkan.h
 
 #ifdef VK_NO_PROTOTYPES
-#ifdef __LINUX__
+//#ifdef __LINUX__
 #include <vulkan_wrapper.cpp>
-#endif
+//#endif
+
 struct INITVULKAN {
     INITVULKAN() {
         bool success = (InitVulkan() == 1);  // Returns true if this device supports Vulkan.

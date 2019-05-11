@@ -63,12 +63,12 @@ SOURCES += \
     solo/3rdparty/EASTL/source/red_black_tree.cpp \
     solo/3rdparty/EASTL/source/string.cpp \
     solo/3rdparty/EASTL/source/thread_support.cpp \
-    solo/3rdparty/WSIWindow/VulkanWrapper/vulkan_wrapper.cpp \
     solo/3rdparty/WSIWindow/CDevices.cpp \
     solo/3rdparty/WSIWindow/CInstance.cpp \
     solo/3rdparty/WSIWindow/Validation.cpp \
     solo/3rdparty/WSIWindow/WindowImpl.cpp \
-    solo/3rdparty/WSIWindow/WSIWindow.cpp
+    solo/3rdparty/WSIWindow/WSIWindow.cpp \
+    solo/3rdparty/WSIWindow/VulkanWrapper/vulkan_wrapper.cpp
 
 android {
 
