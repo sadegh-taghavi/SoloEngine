@@ -1,6 +1,8 @@
 //#include <QDebug>
 //#include <QElapsedTimer>
 #include "solo/Solo.h"
+#include <WSIWindow.h>
+#include <CDevices.h>
 
 struct SA
 {
@@ -157,6 +159,10 @@ void test()
 
 int main(int, char **)
 {
+    CInstance instance(true);
+    WSIWindow window;
+    while(window.ProcessEvents()){}
+
     test();
 
     return 0;
