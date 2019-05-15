@@ -1,10 +1,8 @@
 # SoloEngine
-//Set this environment variables to resume stucking in the compile time
+//Set below environment variables to resume stucking in the compile time
 
 JAVA_FLAGS = -Dhttps.proxyHost=78.15.55.55 -Dhttps.proxyPort=32310 -Dhttp.proxyHost=78.15.55.55 -Dhttp.proxyPort=32310 
 JAVA_OPTIONS = -Dhttps.proxyHost=78.15.55.55 -Dhttps.proxyPort=32310 -Dhttp.proxyHost=78.15.55.55 -Dhttp.proxyPort=32310
-
-
 
 //Run below commands for using adb over wifi
 
