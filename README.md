@@ -1,2 +1,2 @@
 # SoloEngine
-It's a simple vulkan base cross platform (Currently Android, Winodws, Linux) game engine
+a simple vulkan base cross platform (Currently Android, Winodws, Linux) game engine
