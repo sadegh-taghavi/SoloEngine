@@ -90,7 +90,7 @@ bool S_BaseApplication::exec(bool wait)
 {
     m_activeApplication = this;
     std::unique_ptr<S_Event> e;
-    while ( ( e = m_window->getEvent( wait ) ).get() /*&& e->type() != S_EventType::None*/ )
+    while ( ( e = m_window->getEvent( wait ) ).get() && e->type() != S_EventType::None )
     {
         switch (e->type())
         {
