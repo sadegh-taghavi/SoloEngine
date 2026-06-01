@@ -20,6 +20,7 @@
 #include "solo/renderer/S_Model.h"
 #include "solo/math/S_Math.h"
 #if defined(S_PLATFORM_WINDOWS)
+#define NOMINMAX
 #include "solo/platforms/S_WindowWin32.h"
 #include <vulkan/vulkan_win32.h>
 #elif defined(S_PLATFORM_LINUX)
@@ -434,8 +435,8 @@ VkExtent2D S_VulkanRendererAPI::chooseSwapExtent(const VkSurfaceCapabilitiesKHR&
     }else
     {
         VkExtent2D actualExtent = {S_BaseApplication::executingApplication()->window()->width(), S_BaseApplication::executingApplication()->window()->height()};
-        actualExtent.width = solo::max(capabilities.minImageExtent.width, solo::min(capabilities.maxImageExtent.width, actualExtent.width));
-        actualExtent.height = solo::max(capabilities.minImageExtent.height, solo::min(capabilities.maxImageExtent.height, actualExtent.height));
+        actualExtent.width = glm::max(capabilities.minImageExtent.width, glm::min(capabilities.maxImageExtent.width, actualExtent.width));
+        actualExtent.height = glm::max(capabilities.minImageExtent.height, glm::min(capabilities.maxImageExtent.height, actualExtent.height));
 
         return actualExtent;
     }
@@ -965,32 +966,32 @@ S_VulkanRendererAPI::S_VulkanRendererAPI() : S_RendererAPI (), m_nextFrameRender
     m_itemsManager = std::make_unique<S_VulkanItemsManager>(this);
     struct Vertex
     {
-        S_Vec3 position;
-        S_Vec2 texcoord;       
+        glm::vec3 position;
+        glm::vec2 texcoord;
     };
 
     S_Vector<S_VertexBufferDescriptor> veticesDescriptors;
     veticesDescriptors.resize( 2 );
-    veticesDescriptors[0].Size = sizeof( S_Vec3 );
+    veticesDescriptors[0].Size = sizeof( glm::vec3 );
     veticesDescriptors[0].Format = S_VertexBufferDescriptorFormat::R32G32B32_SFLOAT;
     veticesDescriptors[0].Offset = offsetof( Vertex, position );
-    veticesDescriptors[1].Size = sizeof( S_Vec2 );
+    veticesDescriptors[1].Size = sizeof( glm::vec2 );
     veticesDescriptors[1].Format = S_VertexBufferDescriptorFormat::R32G32_SFLOAT;
     veticesDescriptors[1].Offset = offsetof( Vertex, texcoord );
 
 
     struct Instance
     {
-        S_Vec4 transform;
-        S_Vec4 color;
+        glm::vec4 transform;
+        glm::vec4 color;
     };
 
     S_Vector<S_VertexBufferDescriptor> instancesDescriptors;
     instancesDescriptors.resize( 2 );
-    instancesDescriptors[0].Size = sizeof( S_Vec4 );
+    instancesDescriptors[0].Size = sizeof( glm::vec4 );
     instancesDescriptors[0].Format = S_VertexBufferDescriptorFormat::R32G32B32A32_SFLOAT;
     instancesDescriptors[0].Offset = offsetof( Instance, transform );
-    instancesDescriptors[1].Size = sizeof( S_Vec4 );
+    instancesDescriptors[1].Size = sizeof( glm::vec4 );
     instancesDescriptors[1].Format = S_VertexBufferDescriptorFormat::R32G32B32A32_SFLOAT;
     instancesDescriptors[1].Offset = offsetof( Instance, color );
 
@@ -1016,14 +1017,14 @@ S_VulkanRendererAPI::S_VulkanRendererAPI() : S_RendererAPI (), m_nextFrameRender
     auto vbr = vVB->beginVerticesData();
     Vertex *v = reinterpret_cast<Vertex*>( vbr.first );
     uint32_t *i = reinterpret_cast<uint32_t*>( vbr.second );
-    v[0].position = S_Vec3(-0.5, 0.0, -0.5 );
-    v[1].position = S_Vec3(0.5, 0.0, -0.5 );
-    v[2].position = S_Vec3(-0.5, 0.0, 0.5 );
-    v[3].position = S_Vec3(0.5, 0.0, 0.5 );
-    v[0].texcoord = S_Vec2(0.0, 0.0);
-    v[1].texcoord = S_Vec2(1.0, 0.0);
-    v[2].texcoord = S_Vec2(0.0, 1.0);
-    v[3].texcoord = S_Vec2(1.0, 1.0);
+    v[0].position = glm::vec3(-0.5f, 0.0f, -0.5f);
+    v[1].position = glm::vec3( 0.5f, 0.0f, -0.5f);
+    v[2].position = glm::vec3(-0.5f, 0.0f,  0.5f);
+    v[3].position = glm::vec3( 0.5f, 0.0f,  0.5f);
+    v[0].texcoord = glm::vec2(0.0f, 0.0f);
+    v[1].texcoord = glm::vec2(1.0f, 0.0f);
+    v[2].texcoord = glm::vec2(0.0f, 1.0f);
+    v[3].texcoord = glm::vec2(1.0f, 1.0f);
 
     i[0] = 0;
     i[1] = 1;
@@ -1046,8 +1047,8 @@ S_VulkanRendererAPI::S_VulkanRendererAPI() : S_RendererAPI (), m_nextFrameRender
     {
         for( int zz = -20 ; zz < 20; ++zz )
         {
-            ind[cntr].transform = S_Vec4( xx, dist(mt), zz, 0.0 );
-            ind[cntr].color = S_Vec4( 1.0, 1.0, 1.0, 1.0 );
+            ind[cntr].transform = glm::vec4( xx, dist(mt), zz, 0.0f );
+            ind[cntr].color = glm::vec4( 1.0f, 1.0f, 1.0f, 1.0f );
             ++cntr;
         }
     }
@@ -1069,7 +1070,7 @@ S_VulkanRendererAPI::S_VulkanRendererAPI() : S_RendererAPI (), m_nextFrameRender
     vTexture ->setSampler( m_itemsManager->createTextureSampler( S_TextureSamplerDescriptor()  ) );
 
     vCam = std::make_shared<S_CameraPerspective>();
-    vCam->setPosition( S_Vec3( 0, 2.0, 10.0) );
+    vCam->setPosition( glm::vec3( 0.0f, 2.0f, 10.0f) );
 
     vCamController = std::make_shared<S_FirstPersonCameraController>();
     vCamController->setCamera( vCam );
@@ -1177,21 +1178,24 @@ void S_VulkanRendererAPI::drawFrame()
     vShader->bind();
 
     struct UPerObjectVS{
-        S_Mat4x4 MVP;
+        glm::mat4 MVP;
     }uPerObjectVS;
 
     struct UPerObjectFS{
-        S_Vec4 Color;
+        glm::vec4 Color;
     }uPerObjectFS;
 
-    S_Mat4x4 model;
     vCam->setWidth( S_Application::executingApplication()->window()->width() );
     vCam->setHeight( S_Application::executingApplication()->window()->height() );
 
     vCamController->update();
 
-    uPerObjectVS.MVP = model.spr( S_Vec3(0, 0, 0), S_Quat().identity(), S_Vec3(1.0, 1.0, 1.0) ) * vCam->viewProjection();
-    uPerObjectFS.Color = S_Vec4( 1.0, 1.0, 1.0, 1.0 );
+    glm::mat4 model(1.0f);
+    model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
+    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+    model *= glm::mat4_cast(glm::quat(1.0f, 0.0f, 0.0f, 0.0f));
+    uPerObjectVS.MVP = model * vCam->viewProjection();
+    uPerObjectFS.Color = glm::vec4( 1.0f, 1.0f, 1.0f, 1.0f );
     vShader->updateTextureValue("texSampler", S_ShaderStage::FragmentShader, *vTexture );
 
     vShader->updateUniformValue("UPerObject", S_ShaderStage::VertexShader, &uPerObjectVS);

@@ -76,7 +76,7 @@ public:
 
      virtual void setTime(float time)
      {
-         m_time = min( max( time, 0.0f ), 1.0f );         
+         m_time = glm::min( glm::max( time, 0.0f ), 1.0f );
      }
 
      virtual T from() const
@@ -122,39 +122,39 @@ public:
 protected:
     const S_Array<std::function<float(float)>, static_cast<uint32_t>(S_EasingType::Count)> m_easingFunctions =
     {
-        [](float x){return easeLinearInterpolation(x);},
-        [](float x){return easeQuadraticIn(x);},
-        [](float x){return easeQuadraticOut(x);},
-        [](float x){return easeQuadraticInOut(x);},
-        [](float x){return easeCubicIn(x);},
-        [](float x){return easeCubicOut(x);},
-        [](float x){return easeCubicInOut(x);},
-        [](float x){return easeQuarticIn(x);},
-        [](float x){return easeQuarticOut(x);},
-        [](float x){return easeQuarticInOut(x);},
-        [](float x){return easeQuinticIn(x);},
-        [](float x){return easeQuinticOut(x);},
-        [](float x){return easeQuinticInOut(x);},
-        [](float x){return easeSineIn(x);},
-        [](float x){return easeSineOut(x);},
-        [](float x){return easeSineInOut(x);},
-        [](float x){return easeCircularIn(x);},
-        [](float x){return easeCircularOut(x);},
-        [](float x){return easeCircularInOut(x);},
-        [](float x){return easeExponentialIn(x);},
-        [](float x){return easeExponentialOut(x);},
-        [](float x){return easeExponentialInOut(x);},
-        [](float x){return easeElasticIn(x);},
-        [](float x){return easeElasticOut(x);},
-        [](float x){return easeElasticInOut(x);},
-        [](float x){return easeBackEaseIn(x);},
-        [](float x){return easeBackOut(x);},
-        [](float x){return easeBackInOut(x);},
-        [](float x){return easeBackIn(x);},
-        [](float x){return easeBackEaseInOut(x);},
-        [](float x){return easeBounceIn(x);},
-        [](float x){return easeBounceOut(x);},
-        [](float x){return easeBounceInOut(x);},
+        [](float x){return glm::linearInterpolation(x);},
+        [](float x){return glm::quadraticEaseIn(x);},
+        [](float x){return glm::quadraticEaseOut(x);},
+        [](float x){return glm::quadraticEaseInOut(x);},
+        [](float x){return glm::cubicEaseIn(x);},
+        [](float x){return glm::cubicEaseOut(x);},
+        [](float x){return glm::cubicEaseInOut(x);},
+        [](float x){return glm::quarticEaseIn(x);},
+        [](float x){return glm::quarticEaseOut(x);},
+        [](float x){return glm::quarticEaseInOut(x);},
+        [](float x){return glm::quinticEaseIn(x);},
+        [](float x){return glm::quinticEaseOut(x);},
+        [](float x){return glm::quinticEaseInOut(x);},
+        [](float x){return glm::sineEaseIn(x);},
+        [](float x){return glm::sineEaseOut(x);},
+        [](float x){return glm::sineEaseInOut(x);},
+        [](float x){return glm::circularEaseIn(x);},
+        [](float x){return glm::circularEaseOut(x);},
+        [](float x){return glm::circularEaseInOut(x);},
+        [](float x){return glm::exponentialEaseIn(x);},
+        [](float x){return glm::exponentialEaseOut(x);},
+        [](float x){return glm::exponentialEaseInOut(x);},
+        [](float x){return glm::elasticEaseIn(x);},
+        [](float x){return glm::elasticEaseOut(x);},
+        [](float x){return glm::elasticEaseInOut(x);},
+        [](float x){return glm::backEaseIn(x);},
+        [](float x){return glm::backEaseOut(x);},
+        [](float x){return glm::backEaseInOut(x);},
+        [](float x){return glm::backEaseIn(x);},
+        [](float x){return glm::backEaseInOut(x);},
+        [](float x){return glm::bounceEaseIn(x);},
+        [](float x){return glm::bounceEaseOut(x);},
+        [](float x){return glm::bounceEaseInOut(x);},
     };
     S_AnimationPlayState m_playState;
     float m_time;
@@ -216,8 +216,8 @@ public:
             if( m_loop > 0 )
                 ++m_currentLoop;
         }
-        S_AnimationBase<T>::m_from.lerpOut( S_AnimationBase<T>::m_current, S_AnimationBase<T>::m_to
-                                            , S_AnimationBase<T>::m_easingFunctions[static_cast<uint32_t>(m_easingType)](S_AnimationBase<T>::m_time) );
+        S_AnimationBase<T>::m_current = glm::mix( S_AnimationBase<T>::m_from, S_AnimationBase<T>::m_to,
+                                                   S_AnimationBase<T>::m_easingFunctions[static_cast<uint32_t>(m_easingType)](S_AnimationBase<T>::m_time) );
         if( S_AnimationBase<T>::m_playState == S_AnimationPlayState::Stoped && ( m_loop < 0 ||  m_currentLoop < m_loop ) )
         {
             S_AnimationBase<T>::m_time = 0.0f;
@@ -255,7 +255,7 @@ public:
         m_easingType = easingType;
     }
 
-protected:   
+protected:
     S_EasingType m_easingType;
     float m_duration;
     int32_t m_loop;

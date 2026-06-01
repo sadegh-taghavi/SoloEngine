@@ -53,58 +53,21 @@ public:
         if( !m_enable )
             return;
 
-        float dx = S_AnimationBase<T>::m_to.x() - S_AnimationBase<T>::m_current.x();
-        float dy = S_AnimationBase<T>::m_to.y() - S_AnimationBase<T>::m_current.y();
-        float dz = S_AnimationBase<T>::m_to.z() - S_AnimationBase<T>::m_current.z();
+        float dx = S_AnimationBase<T>::m_to.x - S_AnimationBase<T>::m_current.x;
+        float dy = S_AnimationBase<T>::m_to.y - S_AnimationBase<T>::m_current.y;
+        float dz = S_AnimationBase<T>::m_to.z - S_AnimationBase<T>::m_current.z;
         s_debug("DXXXXX", dx, "DYYYYY", dy, "DZZZZZ", dz );
         if( abs(dx) > 0.01f )
-            S_AnimationBase<T>::m_current.setX( S_AnimationBase<T>::m_current.x() +
-                                                dx * (1000.0f / 10.0f * S_Application::executingApplication()->renderer()->elapsedTimeUs() / 1000000.0f) );
+            S_AnimationBase<T>::m_current.x = S_AnimationBase<T>::m_current.x +
+                                               dx * (1000.0f / 10.0f * S_Application::executingApplication()->renderer()->elapsedTimeUs() / 1000000.0f);
 
         if( abs(dy) > 0.01f )
-            S_AnimationBase<T>::m_current.setY( S_AnimationBase<T>::m_current.y() +
-                                                dy * (1000.0f / 10.0f * S_Application::executingApplication()->renderer()->elapsedTimeUs() / 1000000.0f) );
+            S_AnimationBase<T>::m_current.y = S_AnimationBase<T>::m_current.y +
+                                               dy * (1000.0f / 10.0f * S_Application::executingApplication()->renderer()->elapsedTimeUs() / 1000000.0f);
 
         if( abs(dz) > 0.01f )
-            S_AnimationBase<T>::m_current.setZ( S_AnimationBase<T>::m_current.z() +
-                                                dz * (1000.0f / 10.0f * S_Application::executingApplication()->renderer()->elapsedTimeUs() / 1000000.0f) );
-
-//        if( S_AnimationBase<T>::m_playState == S_AnimationPlayState::Playing )
-//        {
-//            S_AnimationBase<T>::m_time += 1000.0f / m_duration[m_easeState] * S_Application::executingApplication()->renderer()->elapsedTimeUs() / 1000000.0f;
-
-//            if( S_AnimationBase<T>::m_time >= 1.0f )
-//            {
-//                S_AnimationBase<T>::m_time = 1.0f;
-//                S_AnimationBase<T>::m_playState = S_AnimationPlayState::Stoped;
-//            }
-
-//            S_AnimationBase<T>::m_from.lerpOut( S_AnimationBase<T>::m_current, S_AnimationBase<T>::m_to,
-//                                                S_AnimationBase<T>::m_easingFunctions[ static_cast<uint32_t>(m_easingType[m_easeState]) ](S_AnimationBase<T>::m_time) );
-
-//            if( S_AnimationBase<T>::m_playState == S_AnimationPlayState::Stoped )
-//            {
-//                if( m_easeState == 0 )
-//                {
-//                    S_AnimationBase<T>::setFrom( S_AnimationBase<T>::m_current );
-//                    S_AnimationBase<T>::setTo( m_bufferTo );
-//                    S_AnimationBase<T>::m_time = 0.0f;
-//                    S_AnimationBase<T>::m_playState = S_AnimationPlayState::Playing;
-//                    m_easeState = m_repeatedTo ? 1 : 2;
-//                }else if( m_easeState == 1 && m_easeState == 1 && !m_repeatedTo )
-//                {
-//                    S_AnimationBase<T>::setFrom( S_AnimationBase<T>::m_current );
-//                    S_AnimationBase<T>::setTo( m_bufferTo );
-//                    S_AnimationBase<T>::m_time = 0.0;
-//                    S_AnimationBase<T>::m_playState = S_AnimationPlayState::Playing;
-//                    m_easeState = 2;
-//                }
-//                else if( m_easeState == 2 )
-//                    m_easeState = 0;
-//            }
-//            m_repeatedTo = false;
-//        }
-
+            S_AnimationBase<T>::m_current.z = S_AnimationBase<T>::m_current.z +
+                                               dz * (1000.0f / 10.0f * S_Application::executingApplication()->renderer()->elapsedTimeUs() / 1000000.0f);
     }
 
     virtual float durationStart() const

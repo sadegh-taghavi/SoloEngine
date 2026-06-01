@@ -7,7 +7,7 @@
 namespace solo
 {
 class S_BaseApplication;
-struct S_VertexBufferDescriptorArray;
+class S_VertexBufferDescriptorArray;
 class S_VertexBuffer;
 class S_Shader;
 class S_Texture;

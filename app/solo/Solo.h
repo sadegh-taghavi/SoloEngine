@@ -5,11 +5,7 @@
 #include "memory/S_NewDeleteOverrides.h"
 
 #include "base/S_Object.h"
-#include "math/S_Vec2.h"
-#include "math/S_Vec3.h"
-#include "math/S_Vec4.h"
-#include "math/S_Quat.h"
-#include "math/S_Mat4x4.h"
+#include "math/S_Math.h"
 
 #include "stl/S_Map.h"
 #include "stl/S_List.h"

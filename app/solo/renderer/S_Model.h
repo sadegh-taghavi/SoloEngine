@@ -4,11 +4,7 @@
 
 #include "solo/stl/S_Vector.h"
 #include "solo/stl/S_String.h"
-#include "solo/math/S_Mat4x4.h"
-#include "solo/math/S_Quat.h"
-#include "solo/math/S_Vec4.h"
-#include "solo/math/S_Vec3.h"
-#include "solo/math/S_Vec2.h"
+#include "solo/math/S_Math.h"
 
 namespace solo
 {
@@ -30,12 +26,12 @@ private:
 
     struct BoundingBox
     {
-        S_Vec3 Min;
-        S_Vec3 Max;
+        glm::vec3 Min;
+        glm::vec3 Max;
         bool Valid = false;
         BoundingBox();
-        BoundingBox(S_Vec3 Min, S_Vec3 Max);
-        BoundingBox aABB(S_Mat4x4 m);
+        BoundingBox(glm::vec3 Min, glm::vec3 Max);
+        BoundingBox aABB(glm::mat4 m);
     };
 
     enum class AlphaMode
@@ -51,8 +47,8 @@ private:
         float AlphaCutoff = 1.0f;
         float MetallicFactor = 1.0f;
         float RoughnessFactor = 1.0f;
-        S_Vec4 BaseColorFactor = S_Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-        S_Vec4 EmissiveFactor = S_Vec4(1.0f, 1.0f, 1.0f, 1.0f);
+        glm::vec4 BaseColorFactor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+        glm::vec4 EmissiveFactor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
         S_Texture *BaseColorTexture;
         S_Texture *MetallicRoughnessTexture;
         S_Texture *NormalTexture;
@@ -73,8 +69,8 @@ private:
         {
             S_Texture *SpecularGlossinessTexture;
             S_Texture *DiffuseTexture;
-            S_Vec4 DiffuseFactor = S_Vec4(1.0f, 1.0f, 1.0f, 1.0f);
-            S_Vec3 SpecularFactor = S_Vec3(0.0f, 0.0f, 0.0f);
+            glm::vec4 DiffuseFactor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+            glm::vec3 SpecularFactor = glm::vec3(0.0f, 0.0f, 0.0f);
         } Extension;
 
         struct PbrWorkflows
@@ -94,7 +90,7 @@ private:
         bool HasIndices;
         struct BoundingBox BoundingBox;
         Primitive(uint32_t firstIndex, uint32_t indexCount, uint32_t vertexCount, struct Material& material);
-        void setBoundingBox(S_Vec3 min, S_Vec3 max);
+        void setBoundingBox(glm::vec3 min, glm::vec3 max);
     };
 
     struct Mesh
@@ -105,20 +101,20 @@ private:
         struct _UniformBlock
         {
             static const uint8_t m_MAX_NUM_JOINTS = 128;
-            S_Mat4x4 Matrix;
-            S_Mat4x4 JointMatrix[m_MAX_NUM_JOINTS]{};
+            glm::mat4 Matrix;
+            glm::mat4 JointMatrix[m_MAX_NUM_JOINTS]{};
             float Jointcount{ 0 };
         } UniformBlock;
-        Mesh(S_Mat4x4 matrix);
+        Mesh(glm::mat4 matrix);
         ~Mesh();
-        void setBoundingBox(S_Vec3 min, S_Vec3 max);
+        void setBoundingBox(glm::vec3 min, glm::vec3 max);
     };
 
     struct Skin
     {
         S_String Name;
         Node *SkeletonRoot = nullptr;
-        S_Vector<S_Mat4x4> InverseBindMatrices;
+        S_Vector<glm::mat4> InverseBindMatrices;
         S_Vector<Node*> Joints;
     };
 
@@ -127,18 +123,18 @@ private:
         Node *Parent;
         uint32_t Index;
         S_Vector<Node*> Children;
-        S_Mat4x4 Matrix;
+        glm::mat4 Matrix;
         S_String Name;
         Mesh *MeshData;
         struct Skin *Skin;
         int32_t SkinIndex = -1;
-        S_Vec3 Translation;
-        S_Vec3 Scale{ 1.0f, 1.0f, 1.0f};
-        S_Quat Rotation;
+        glm::vec3 Translation;
+        glm::vec3 Scale{ 1.0f, 1.0f, 1.0f};
+        glm::quat Rotation;
         BoundingBox BoundingBoxvh;
         BoundingBox AABoundingBox;
-        S_Mat4x4 localMatrix();
-        S_Mat4x4 matrix();
+        glm::mat4 localMatrix();
+        glm::mat4 matrix();
         void update();
         ~Node();
     };
@@ -169,7 +165,7 @@ private:
 
         InterpolationType Interpolation;
         S_Vector<float> Inputs;
-        S_Vector<S_Vec4> OutputsVec4;
+        S_Vector<glm::vec4> OutputsVec4;
     };
 
     struct Animation
@@ -184,43 +180,37 @@ private:
 
     struct Vertex
     {
-        S_Vec3 Pos;
-        S_Vec3 Normal;
-        S_Vec2 UV0;
-        S_Vec2 UV1;
-        S_Vec4 Joint0;
-        S_Vec4 Weight0;
+        glm::vec3 Pos;
+        glm::vec3 Normal;
+        glm::vec2 UV0;
+        glm::vec2 UV1;
+        glm::vec4 Joint0;
+        glm::vec4 Weight0;
     };
 
     int m_indices;
-    S_Mat4x4 m_aABoundingBox;
+    glm::mat4 m_aABoundingBox;
     S_Vector<Node*> m_nodes;
     S_Vector<Node*> m_linearNodes;
     S_Vector<Skin*> m_skins;
     S_Vector<S_Texture *> m_textures;
-    //                    S_Vector<S_Texture> m_textureSamplers;
     S_Vector<Material> m_materials;
     S_Vector<Animation> m_animations;
     S_Vector<S_String> m_extensions;
 
     struct Dimensions
     {
-        S_Vec3 Min = S_Vec3( FLT_MAX, FLT_MAX, FLT_MAX );
-        S_Vec3 Max = S_Vec3( -FLT_MAX, -FLT_MAX, -FLT_MAX );
+        glm::vec3 Min = glm::vec3( FLT_MAX, FLT_MAX, FLT_MAX );
+        glm::vec3 Max = glm::vec3( -FLT_MAX, -FLT_MAX, -FLT_MAX );
     } m_dimensions;
 
-    //        void destroy(VkDevice device);
     void loadNode(Node* parent, const tinygltf::Node& node, uint32_t nodeIndex, const tinygltf::Model& model, S_Vector<uint32_t>& indexBuffer, S_Vector<Vertex>& vertexBuffer, float globalscale);
     void loadSkins(tinygltf::Model& gltfModel);
     void loadTextures(tinygltf::Model& gltfModel);
-    //        VkSamplerAddressMode getVkWrapMode(int32_t wrapMode);
-    //        VkFilter getVkFilterMode(int32_t filterMode);
     void loadTextureSamplers(tinygltf::Model& gltfModel);
     void loadMaterials(tinygltf::Model& gltfModel);
     void loadAnimations(tinygltf::Model& gltfModel);
     void loadFrom(S_String filename, float scale = 1.0f);
-    //        void drawNode(Node* node, VkCommandBuffer commandBuffer);
-    //        void draw(VkCommandBuffer commandBuffer);
     void calculateBoundingBox(Node* node, Node* parent);
     void getSceneDimensions();
     void updateAnimation(uint32_t index, float time);
@@ -230,4 +220,3 @@ private:
 };
 
 }
-

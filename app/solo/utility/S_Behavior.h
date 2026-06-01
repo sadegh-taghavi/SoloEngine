@@ -73,8 +73,8 @@ public:
                 S_AnimationBase<T>::m_playState = S_AnimationPlayState::Stoped;
             }
 
-            S_AnimationBase<T>::m_from.lerpOut( S_AnimationBase<T>::m_current, S_AnimationBase<T>::m_to,
-                                                S_AnimationBase<T>::m_easingFunctions[ static_cast<uint32_t>(m_easingType[m_easeState]) ](S_AnimationBase<T>::m_time) );
+            S_AnimationBase<T>::m_current = glm::mix( S_AnimationBase<T>::m_from, S_AnimationBase<T>::m_to,
+                                                       S_AnimationBase<T>::m_easingFunctions[ static_cast<uint32_t>(m_easingType[m_easeState]) ](S_AnimationBase<T>::m_time) );
 
             if( S_AnimationBase<T>::m_playState == S_AnimationPlayState::Stoped )
             {

@@ -1,8 +1,6 @@
 #include "S_CameraController.h"
 #include "S_Camera.h"
 #include "solo/application/S_Application.h"
-#include "solo/math/S_Quat.h"
-#include "solo/math/S_Mat4x4.h"
 #include "solo/math/S_Math.h"
 
 using namespace solo;
@@ -60,16 +58,6 @@ void S_FirstPersonCameraController::setCamera(const std::shared_ptr<S_Camera> &c
         return;
     m_posAnimation.setCurrent( camera->position() );
     m_posAnimation.setTo( camera->position() );
-
-//    m_rotAnimation.setDurationStart(200);
-//    m_rotAnimation.setDurationRepeat(22);
-//    m_rotAnimation.setDurationEnd(1);
-//    m_rotAnimation.setEasingTypeStart(S_EasingType::LinearInterpolation);
-//    m_rotAnimation.setEasingTypeRepeat(S_EasingType::LinearInterpolation);
-//    m_rotAnimation.setEasingTypeEnd(S_EasingType::LinearInterpolation);
-//    m_rotAnimation.setCurrent( (m_camera->target() - m_camera->position()).normalize() );
-//    m_rotAnimation.setTo( m_rotAnimation.current() );
-
 }
 
 void S_FirstPersonCameraController::update()
@@ -83,7 +71,6 @@ void S_FirstPersonCameraController::update()
     float posX = 0.0f;
     float posY = 0.0f;
     bool posChanged = false;
-    bool rotChanged = false;
     if( app->inputState()->isKey( S_MouseButton::Left ) )
     {
         posX = static_cast<float>(app->inputState()->mouseX() ) / static_cast<float>( app->window()->width() ) * 2.0f - 1.0f;
@@ -96,11 +83,10 @@ void S_FirstPersonCameraController::update()
         }
     }
 
-    S_Vec3 pos = m_posAnimation.to();
-    S_Vec3 upVector = m_camera->up();
-    S_Vec3 targetVector = (m_camera->target() - m_camera->position()).normalize();
-    S_Vec3 sideVector;
-    targetVector.crossOut( sideVector, upVector );
+    glm::vec3 pos = m_posAnimation.to();
+    glm::vec3 upVector = m_camera->up();
+    glm::vec3 targetVector = glm::normalize(m_camera->target() - m_camera->position());
+    glm::vec3 sideVector = glm::cross(targetVector, upVector);
 
     float step = 1.0f;
 
@@ -115,12 +101,12 @@ void S_FirstPersonCameraController::update()
         posChanged = true;
     }
 
-    if( app->inputState()->isKey( S_Key::A ) || posX < -0.8f )
+    if( app->inputState()->isKey( S_Key::D ) || posX < -0.8f )
     {
         pos += sideVector * step;
         posChanged = true;
     }
-    else if( app->inputState()->isKey( S_Key::D ) || posX > 0.8f )
+    else if( app->inputState()->isKey( S_Key::A ) || posX > 0.8f )
     {
         pos -= sideVector * step;
         posChanged = true;
@@ -128,29 +114,19 @@ void S_FirstPersonCameraController::update()
 
     if( rotX != 0.0f || rotY != 0.0f )
     {
-        rotChanged = true;
         targetVector += sideVector * rotX;
         targetVector += upVector * rotY;
-        targetVector.normalize();
+        targetVector = glm::normalize(targetVector);
     }
 
     if( posChanged )
         m_posAnimation.setTo( pos );
 
-    m_posAnimation.update();   
+    m_posAnimation.update();
 
-    S_Vec3 calcPos = m_posAnimation.current();
-
-//    if( rotChanged )
-//        m_rotAnimation.setTo( targetVector );
-
-//    m_rotAnimation.update();
+    glm::vec3 calcPos = m_posAnimation.current();
 
     m_camera->setPosition( calcPos );
-
     m_camera->setTarget( targetVector + calcPos );
-
-//    s_debug( "DDDDDDDDDDDD",  m_rotAnimation.current().x(),  m_rotAnimation.current().y(), m_rotAnimation.current().z() );
-
     m_camera->update();
 }

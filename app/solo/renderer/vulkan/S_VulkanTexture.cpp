@@ -117,7 +117,7 @@ S_VulkanTexture::S_VulkanTexture(S_VulkanRendererAPI *api, const S_String &textu
         else
             blitFilter = VK_FILTER_NEAREST; // XXX INVALID_OP?
 
-        max_dim = solo::max(solo::max(ktTexture->baseWidth, ktTexture->baseHeight), ktTexture->baseDepth);
+        max_dim = glm::max(glm::max(ktTexture->baseWidth, ktTexture->baseHeight), ktTexture->baseDepth);
         numImageLevels = static_cast<uint32_t>(floor(log2(max_dim)) + 1);
     } else
     {
@@ -168,9 +168,9 @@ S_VulkanTexture::S_VulkanTexture(S_VulkanRendererAPI *api, const S_String &textu
         uint64_t bufferOffset = 0;
         for (uint32_t miplevel = 0; miplevel < ktTexture->numLevels; ++miplevel)
         {
-            width = solo::max(static_cast<uint32_t>(1), ktTexture->baseWidth  >> miplevel);
-            height = solo::max(static_cast<uint32_t>(1), ktTexture->baseHeight >> miplevel);
-            depth = solo::max(static_cast<uint32_t>(1), ktTexture->baseDepth  >> miplevel);
+            width = glm::max(static_cast<uint32_t>(1), ktTexture->baseWidth  >> miplevel);
+            height = glm::max(static_cast<uint32_t>(1), ktTexture->baseHeight >> miplevel);
+            depth = glm::max(static_cast<uint32_t>(1), ktTexture->baseDepth  >> miplevel);
 
             levelSize = static_cast<uint32_t>( ktxTexture_levelSize(ktTexture, miplevel));
             //uint64_t offset;
@@ -206,9 +206,9 @@ S_VulkanTexture::S_VulkanTexture(S_VulkanRendererAPI *api, const S_String &textu
         uint8_t *pixelPtr;
         for (uint32_t miplevel = 0; miplevel < ktTexture->numLevels; ++miplevel)
         {
-            width = solo::max(static_cast<uint32_t>(1), ktTexture->baseWidth  >> miplevel);
-            height = solo::max(static_cast<uint32_t>(1), ktTexture->baseHeight >> miplevel);
-            depth = solo::max(static_cast<uint32_t>(1), ktTexture->baseDepth  >> miplevel);
+            width = glm::max(static_cast<uint32_t>(1), ktTexture->baseWidth  >> miplevel);
+            height = glm::max(static_cast<uint32_t>(1), ktTexture->baseHeight >> miplevel);
+            depth = glm::max(static_cast<uint32_t>(1), ktTexture->baseDepth  >> miplevel);
 
             faceLodSize = static_cast<uint32_t>(ktxTexture_faceLodSize(ktTexture, miplevel));
 
@@ -327,16 +327,16 @@ S_VulkanTexture::S_VulkanTexture(S_VulkanRendererAPI *api, const S_String &textu
                 imageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
                 imageBlit.srcSubresource.layerCount = numImageLayers;
                 imageBlit.srcSubresource.mipLevel = i-1;
-                imageBlit.srcOffsets[1].x = solo::max(static_cast<uint32_t>(1), ktTexture->baseWidth  >> (i - 1));
-                imageBlit.srcOffsets[1].y = solo::max(static_cast<uint32_t>(1), ktTexture->baseHeight >> (i - 1));
-                imageBlit.srcOffsets[1].z = solo::max(static_cast<uint32_t>(1), ktTexture->baseDepth  >> (i - 1));
+                imageBlit.srcOffsets[1].x = glm::max(static_cast<uint32_t>(1), ktTexture->baseWidth  >> (i - 1));
+                imageBlit.srcOffsets[1].y = glm::max(static_cast<uint32_t>(1), ktTexture->baseHeight >> (i - 1));
+                imageBlit.srcOffsets[1].z = glm::max(static_cast<uint32_t>(1), ktTexture->baseDepth  >> (i - 1));
 
                 imageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
                 imageBlit.dstSubresource.layerCount = 1;
                 imageBlit.dstSubresource.mipLevel = i;
-                imageBlit.dstOffsets[1].x = solo::max(static_cast<uint32_t>(1), ktTexture->baseWidth  >> i);
-                imageBlit.dstOffsets[1].y = solo::max(static_cast<uint32_t>(1), ktTexture->baseHeight >> i);
-                imageBlit.dstOffsets[1].z = solo::max(static_cast<uint32_t>(1), ktTexture->baseDepth  >> i);
+                imageBlit.dstOffsets[1].x = glm::max(static_cast<uint32_t>(1), ktTexture->baseWidth  >> i);
+                imageBlit.dstOffsets[1].y = glm::max(static_cast<uint32_t>(1), ktTexture->baseHeight >> i);
+                imageBlit.dstOffsets[1].z = glm::max(static_cast<uint32_t>(1), ktTexture->baseDepth  >> i);
 
                 VkImageSubresourceRange mipSubRange;
                 memset(&mipSubRange, 0, sizeof(mipSubRange));

@@ -18,35 +18,35 @@ using namespace solo;
 S_Model::BoundingBox::BoundingBox() {
 };
 
-S_Model::BoundingBox::BoundingBox(S_Vec3 min, S_Vec3 max) : Min(min), Max(max)
+S_Model::BoundingBox::BoundingBox(glm::vec3 min, glm::vec3 max) : Min(min), Max(max)
 {
 };
 
-S_Model::BoundingBox S_Model::BoundingBox::aABB(S_Mat4x4 m)
+S_Model::BoundingBox S_Model::BoundingBox::aABB(glm::mat4 m)
 {
-    S_Vec3 min = m[3];
-    S_Vec3 max = min;
-    S_Vec3 v0, v1;
+    glm::vec3 minV = glm::vec3(m[3]);
+    glm::vec3 maxV = minV;
+    glm::vec3 v0, v1;
 
-    S_Vec3 right = m[0];
-    v0 = right * Min.x();
-    v1 = right * Max.x();
-    min += solo::min(v0, v1);
-    max += solo::max(v0, v1);
+    glm::vec3 right = glm::vec3(m[0]);
+    v0 = right * Min.x;
+    v1 = right * Max.x;
+    minV += glm::min(v0, v1);
+    maxV += glm::max(v0, v1);
 
-    S_Vec3 up = m[1];
-    v0 = up * Min.y();
-    v1 = up * Max.y();
-    min += solo::min(v0, v1);
-    max += solo::max(v0, v1);
+    glm::vec3 up = glm::vec3(m[1]);
+    v0 = up * Min.y;
+    v1 = up * Max.y;
+    minV += glm::min(v0, v1);
+    maxV += glm::max(v0, v1);
 
-    S_Vec3 back = m[2];
-    v0 = back * this->Min.z();
-    v1 = back * this->Max.z();
-    min += solo::min(v0, v1);
-    max += solo::max(v0, v1);
+    glm::vec3 back = glm::vec3(m[2]);
+    v0 = back * this->Min.z;
+    v1 = back * this->Max.z;
+    minV += glm::min(v0, v1);
+    maxV += glm::max(v0, v1);
 
-    return BoundingBox(min, max);
+    return BoundingBox(minV, maxV);
 }
 
 S_Model::Primitive::Primitive(uint32_t firstIndex, uint32_t indexCount, uint32_t vertexCount, S_Model::Material &material) :
@@ -55,7 +55,7 @@ S_Model::Primitive::Primitive(uint32_t firstIndex, uint32_t indexCount, uint32_t
     HasIndices = indexCount > 0;
 };
 
-void S_Model::Primitive::setBoundingBox(S_Vec3 min, S_Vec3 max)
+void S_Model::Primitive::setBoundingBox(glm::vec3 min, glm::vec3 max)
 {
     BoundingBox.Min = min;
     BoundingBox.Max = max;
@@ -63,29 +63,18 @@ void S_Model::Primitive::setBoundingBox(S_Vec3 min, S_Vec3 max)
 }
 
 // Mesh
-S_Model::Mesh::Mesh(S_Mat4x4 matrix)
+S_Model::Mesh::Mesh(glm::mat4 matrix)
 {
     UniformBlock.Matrix = matrix;
-    //            VK_CHECK_RESULT(device->createBuffer(
-    //                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-    //                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-    //                sizeof(uniformBlock),
-    //                &uniformBuffer.buffer,
-    //                &uniformBuffer.memory,
-    //                &uniformBlock));
-    //            VK_CHECK_RESULT(vkMapMemory(device->logicalDevice, uniformBuffer.memory, 0, sizeof(uniformBlock), 0, &uniformBuffer.mapped));
-    //            uniformBuffer.descriptor = { uniformBuffer.buffer, 0, sizeof(uniformBlock) };
 };
 
 S_Model::Mesh::~Mesh()
 {
-    //            vkDestroyBuffer(device->logicalDevice, uniformBuffer.buffer, nullptr);
-    //            vkFreeMemory(device->logicalDevice, uniformBuffer.memory, nullptr);
     for (Primitive* p : Primitives)
         delete p;
 }
 
-void S_Model::Mesh::setBoundingBox(S_Vec3 min, S_Vec3 max)
+void S_Model::Mesh::setBoundingBox(glm::vec3 min, glm::vec3 max)
 {
     BoundingBox.Min = min;
     BoundingBox.Max = max;
@@ -93,16 +82,18 @@ void S_Model::Mesh::setBoundingBox(S_Vec3 min, S_Vec3 max)
 }
 
 // Node
-S_Mat4x4 S_Model::Node::localMatrix()
+glm::mat4 S_Model::Node::localMatrix()
 {
-    S_Mat4x4 matt;
-    return matt.spr( Translation, Rotation, Scale ) * Matrix;
-    //            return glm::translate(S_Mat4x4(1.0f), ) * S_Mat4x4() * glm::scale(S_Mat4x4(1.0f), ) * Matrix;
+    glm::mat4 matt(1.0f);
+    matt = glm::scale(matt, Scale);
+    matt = glm::translate(matt, Translation);
+    matt *= glm::mat4_cast(Rotation);
+    return matt * Matrix;
 }
 
-S_Mat4x4 S_Model::Node::matrix()
+glm::mat4 S_Model::Node::matrix()
 {
-    S_Mat4x4 m = localMatrix();
+    glm::mat4 m = localMatrix();
     Node *p = Parent;
     while (p)
     {
@@ -116,26 +107,21 @@ void S_Model::Node::update()
 {
     if (MeshData)
     {
-        S_Mat4x4 m = matrix();
+        glm::mat4 m = matrix();
         if (Skin)
         {
             MeshData->UniformBlock.Matrix = m;
-            // Update join matrices
-            S_Mat4x4 inverseTransform;
-            m.inverseOut( inverseTransform );
-            size_t numJoints = solo::min( static_cast<unsigned int>(Skin->Joints.size()), static_cast<unsigned int>(Mesh::_UniformBlock::m_MAX_NUM_JOINTS) );
+            glm::mat4 inverseTransform = glm::inverse(m);
+            size_t numJoints = glm::min( static_cast<unsigned int>(Skin->Joints.size()), static_cast<unsigned int>(Mesh::_UniformBlock::m_MAX_NUM_JOINTS) );
             for (size_t i = 0; i < numJoints; i++)
             {
                 Node *jointNode = Skin->Joints[i];
-                S_Mat4x4 jointMat = jointNode->matrix() * Skin->InverseBindMatrices[i];
+                glm::mat4 jointMat = jointNode->matrix() * Skin->InverseBindMatrices[i];
                 jointMat = inverseTransform * jointMat;
                 MeshData->UniformBlock.JointMatrix[i] = jointMat;
             }
             MeshData->UniformBlock.Jointcount = (float)numJoints;
-            //memcpy(Mesh->UniformBlock.Mapped, &Mesh->UniformBlock, sizeof(Mesh->UniformBlock));
-        } /*else {
-                    memcpy(Mesh->UniformBlock.Mapped, &m, sizeof(S_Mat4x4));
-                }*/
+        }
     }
 
     for (auto& child : Children)
@@ -158,35 +144,6 @@ S_Model::Node::~Node()
 
 // Model
 
-//        void S_Model::Model::destroy(VkDevice device)
-//        {
-//            if (vertices.buffer != VK_NULL_HANDLE) {
-//                vkDestroyBuffer(device, vertices.buffer, nullptr);
-//                vkFreeMemory(device, vertices.memory, nullptr);
-//            }
-//            if (indices.buffer != VK_NULL_HANDLE) {
-//                vkDestroyBuffer(device, indices.buffer, nullptr);
-//                vkFreeMemory(device, indices.memory, nullptr);
-//            }
-//            for (auto texture : textures) {
-//                texture.destroy();
-//            }
-//            textures.resize(0);
-//            textureSamplers.resize(0);
-//            for (auto node : nodes) {
-//                delete node;
-//            }
-//            materials.resize(0);
-//            animations.resize(0);
-//            nodes.resize(0);
-//            linearNodes.resize(0);
-//            extensions.resize(0);
-//            for (auto skin : skins) {
-//                delete skin;
-//            }
-//            skins.resize(0);
-//        };
-
 void S_Model::loadNode(Node *parent, const tinygltf::Node &node, uint32_t nodeIndex, const tinygltf::Model &model, std::vector<uint32_t>& indexBuffer, std::vector<Vertex>& vertexBuffer, float globalscale)
 {
     /*Node *newNode = new Node{};
@@ -194,20 +151,20 @@ void S_Model::loadNode(Node *parent, const tinygltf::Node &node, uint32_t nodeIn
     newNode->Parent = parent;
     newNode->Name = node.name;
     newNode->SkinIndex = node.skin;
-    newNode->Matrix.identity();
+    newNode->Matrix = glm::mat4(1.0f);
 
     // Generate local node matrix
     if (node.translation.size() == 3)
-        newNode->Translation = S_Vec3(node.translation.data());
+        newNode->Translation = glm::make_vec3(node.translation.data());
 
     if (node.rotation.size() == 4)
-        newNode->Rotation = S_Quat(node.rotation.data());
+        newNode->Rotation = glm::make_quat(node.rotation.data());
 
     if (node.scale.size() == 3)
-        newNode->Scale = S_Vec3(node.scale.data());
+        newNode->Scale = glm::make_vec3(node.scale.data());
 
     if (node.matrix.size() == 16)
-        newNode->Matrix = S_Mat4x4( node.matrix.data() );
+        newNode->Matrix = glm::make_mat4x4( node.matrix.data() );
 
     if (node.children.size() > 0)
     {
@@ -284,8 +241,6 @@ void S_Model::loadNode(Node *parent, const tinygltf::Node &node, uint32_t nodeIn
                     uv1ByteStride = uvAccessor.ByteStride(uvView) ? (uvAccessor.ByteStride(uvView) / sizeof(float)) : tinygltf::GetTypeSizeInBytes(TINYGLTF_TYPE_VEC2);
                 }
 
-                // Skinning
-                // Joints
                 if (primitive.attributes.find("JOINTS_0") != primitive.attributes.end()) {
                     const tinygltf::Accessor &jointAccessor = model.accessors[primitive.attributes.find("JOINTS_0")->second];
                     const tinygltf::BufferView &jointView = model.bufferViews[jointAccessor.bufferView];
@@ -311,7 +266,6 @@ void S_Model::loadNode(Node *parent, const tinygltf::Node &node, uint32_t nodeIn
 
                     vert.joint0 = hasSkin ? glm::vec4(glm::make_vec4(&bufferJoints[v * jointByteStride])) : glm::vec4(0.0f);
                     vert.weight0 = hasSkin ? glm::make_vec4(&bufferWeights[v * weightByteStride]) : glm::vec4(0.0f);
-                    // Fix for all zero weights
                     if (glm::length(vert.weight0) == 0.0f) {
                         vert.weight0 = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
                     }
@@ -359,7 +313,6 @@ void S_Model::loadNode(Node *parent, const tinygltf::Node &node, uint32_t nodeIn
             newPrimitive->setBoundingBox(posMin, posMax);
             newMesh->primitives.push_back(newPrimitive);
         }
-        // Mesh BB from BBs of primitives
         for (auto p : newMesh->primitives) {
             if (p->bb.valid && !newMesh->bb.valid) {
                 newMesh->bb = p->bb;
@@ -384,12 +337,10 @@ void S_Model::loadSkins(tinygltf::Model &gltfModel)
         Skin *newSkin = new Skin{};
         newSkin->name = source.name;
 
-        // Find skeleton root node
         if (source.skeleton > -1) {
             newSkin->skeletonRoot = nodeFromIndex(source.skeleton);
         }
 
-        // Find joint nodes
         for (int jointIndex : source.joints) {
             Node* node = nodeFromIndex(jointIndex);
             if (node) {
@@ -397,7 +348,6 @@ void S_Model::loadSkins(tinygltf::Model &gltfModel)
             }
         }
 
-        // Get inverse bind matrices from buffer
         if (source.inverseBindMatrices > -1) {
             const tinygltf::Accessor &accessor = gltfModel.accessors[source.inverseBindMatrices];
             const tinygltf::BufferView &bufferView = gltfModel.bufferViews[accessor.bufferView];

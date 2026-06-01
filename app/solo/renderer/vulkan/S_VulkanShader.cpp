@@ -38,7 +38,7 @@ S_VulkanShader::S_VulkanShader(S_VulkanRendererAPI *api, const S_String &vertexS
     if(!computeShader.empty())
         setShader( S_ShaderStage::ComputeShader, computeShader );
 
-    uint32_t allStagesSetsCount = solo::max( m_maxUniformSetInStages, m_maxTextureSetInStages ) + 1;
+    uint32_t allStagesSetsCount = glm::max( m_maxUniformSetInStages, m_maxTextureSetInStages ) + 1;
 
     S_Vector< S_Vector<VkDescriptorSetLayoutBinding> > layoutBindingList( allStagesSetsCount );
 
@@ -307,8 +307,8 @@ void S_VulkanShader::setShader(S_ShaderStage stage, const S_String &name)
         ++index;
     }
 
-    m_maxUniformSetInStages = solo::max( m_maxTextureSetInStages, currentReflectionData->Reflection.MaxUniformBuffersSet );
-    m_maxTextureSetInStages = solo::max( m_maxTextureSetInStages, currentReflectionData->Reflection.MaxTextureSet );
+    m_maxUniformSetInStages = glm::max( m_maxTextureSetInStages, currentReflectionData->Reflection.MaxUniformBuffersSet );
+    m_maxTextureSetInStages = glm::max( m_maxTextureSetInStages, currentReflectionData->Reflection.MaxTextureSet );
 
     fileData.resize( shaderCodeFile.size() );
     shaderCodeFile.read( reinterpret_cast<char *>(fileData.data()), fileData.size() );

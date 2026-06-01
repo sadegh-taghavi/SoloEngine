@@ -4,6 +4,10 @@
 #define S_PLATFORM_WINDOWS 1
 #endif
 
+#ifdef __WINNT__
+#define S_PLATFORM_WINDOWS 1
+#endif
+
 #if defined( __ANDROID__ )
 #define S_PLATFORM_ANDROID 1
 #elif defined(__linux__)
@@ -20,4 +24,11 @@
 
 #ifdef __clang__
 #define S_COMPILER_CLANG 1
+#endif
+
+#ifdef _MSC_VER
+#define S_COMPILER_MSVC 1
+#ifndef S_PLATFORM_WINDOWS
+#define S_PLATFORM_WINDOWS 1
+#endif
 #endif

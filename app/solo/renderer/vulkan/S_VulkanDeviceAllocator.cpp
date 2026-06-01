@@ -15,7 +15,7 @@ void S_VulkanDeviceAllocator::destroy(VkBuffer &buffer)
 {
     S_AtomicFlagLocker locker( &m_busyState );
     vkDestroyBuffer( m_api->device(), buffer, S_VulkanAllocator() );
-    destroyMemory( reinterpret_cast<uint64_t>( reinterpret_cast<uint64_t>( buffer ) ) );
+    destroyMemory( reinterpret_cast<uint64_t>(buffer) );
 }
 
 void S_VulkanDeviceAllocator::destroy(VkImage &image)

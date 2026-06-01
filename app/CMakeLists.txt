@@ -33,12 +33,6 @@ set(SOURCE
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/memory/S_Allocator.inl
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/memory/S_AlgorithmAllocator.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/base/S_Object.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/math/S_Vec2.inl
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/math/S_Vec3.inl
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/math/S_Vec4.inl
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/math/S_Quat.inl
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/math/S_Mat4x4.inl
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/math/S_Math.inl
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/debug/S_Debug.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/thread/S_Mutex.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/thread/S_Thread.cpp
@@ -100,11 +94,6 @@ set(HEADERS
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/stl/S_Array.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/stl/S_Tuple.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/stl/S_String.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/math/S_Vec2.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/math/S_Vec3.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/math/S_Vec4.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/math/S_Quat.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/math/S_Mat4x4.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/math/S_Math.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/thread/S_Mutex.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/thread/S_Thread.h
@@ -149,7 +138,7 @@ set(HEADERS
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/Solo.h
 )
 
-find_package(Vulkan REQUIRED FATAL_ERROR)
+find_package(Vulkan REQUIRED)
 
 if (NOT ANDROID)
         add_executable(
@@ -180,21 +169,21 @@ if (NOT ANDROID)
         add_compile_definitions(
                 VULKAN_SDK="$ENV{VULKAN_SDK}"
         )
-        set(
-                soloresourcegenerator_SOURCE 
-                ${soloresourcegenerator_SOURCE}
-                ${CMAKE_CURRENT_SOURCE_DIR}/SoloResourceGenerator/main.cpp
-        )
-        add_executable(soloresourcegenerator ${soloresourcegenerator_SOURCE})
-        add_custom_target(
-                soloresourcegenerator_run
-                COMMAND soloresourcegenerator
-                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                COMMENT "run generated soloresourcegenerator in ${CMAKE_CURRENT_SOURCE_DIR}"
-                SOURCES ${soloresourcegenerator_SOURCE}
-        )
+        # set(
+        #         soloresourcegenerator_SOURCE
+        #         ${soloresourcegenerator_SOURCE}
+        #         ${CMAKE_CURRENT_SOURCE_DIR}/SoloResourceGenerator/main.cpp
+        # )
+        # add_executable(soloresourcegenerator ${soloresourcegenerator_SOURCE})
+        # add_custom_target(
+        #         soloresourcegenerator_run
+        #         COMMAND soloresourcegenerator
+        #         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        #         COMMENT "run generated soloresourcegenerator in ${CMAKE_CURRENT_SOURCE_DIR}"
+        #         SOURCES ${soloresourcegenerator_SOURCE}
+        # )
 
-        add_dependencies(${PROJECT_NAME} soloresourcegenerator_run)
+        # add_dependencies(${PROJECT_NAME} soloresourcegenerator_run)
 endif(NOT ANDROID)
 
 if (ANDROID)

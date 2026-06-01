@@ -1,6 +1,6 @@
 #pragma once
 #include <memory>
-#include "solo/math/S_Vec3.h"
+#include "solo/math/S_Math.h"
 #include "solo/utility/S_Behavior.h"
 
 namespace solo
@@ -33,12 +33,11 @@ public:
     virtual void update();
 
 protected:
-    S_Behavior<S_Vec3> m_posAnimation;
-    S_Behavior<S_Vec3> m_rotAnimation;
+    S_Behavior<glm::vec3> m_posAnimation;
+    S_Behavior<glm::vec3> m_rotAnimation;
 
 
 };
 
 
 }
-

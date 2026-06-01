@@ -65,7 +65,7 @@ void* operator new(std::size_t __sz)
 {
     return solo::S_Allocator::singleton()->allocate( __sz );
 }
-void* operator new(std::size_t __sz, const std::nothrow_t&)
+void* operator new(std::size_t __sz, const std::nothrow_t&) noexcept
 {
     return solo::S_Allocator::singleton()->allocate( __sz );
 }
@@ -85,7 +85,7 @@ void* operator new[](std::size_t __sz)
 {
     return solo::S_Allocator::singleton()->allocate( __sz );
 }
-void* operator new[](std::size_t __sz, const std::nothrow_t&)
+void* operator new[](std::size_t __sz, const std::nothrow_t&) noexcept
 {
     return solo::S_Allocator::singleton()->allocate( __sz );
 }
@@ -105,7 +105,7 @@ void* operator new(std::size_t __sz, std::align_val_t align)
 {
     return solo::S_Allocator::singleton()->allocate( __sz, static_cast<std::size_t>(align) );
 }
-void* operator new(std::size_t __sz, std::align_val_t  align, const std::nothrow_t&)
+void* operator new(std::size_t __sz, std::align_val_t  align, const std::nothrow_t&) noexcept
 {
     return solo::S_Allocator::singleton()->allocate( __sz, static_cast<std::size_t>(align) );
 }
@@ -125,7 +125,7 @@ void* operator new[](std::size_t __sz, std::align_val_t align)
 {
     return solo::S_Allocator::singleton()->allocate( __sz, static_cast<std::size_t>(align) );
 }
-void* operator new[](std::size_t __sz, std::align_val_t align, const std::nothrow_t&)
+void* operator new[](std::size_t __sz, std::align_val_t align, const std::nothrow_t&) noexcept
 {
     return solo::S_Allocator::singleton()->allocate( __sz, static_cast<std::size_t>(align) );
 }

@@ -1,7 +1,6 @@
 #pragma once
 
-#include <solo/math/S_Mat4x4.h>
-#include <solo/math/S_Vec3.h>
+#include <solo/math/S_Math.h>
 
 namespace solo
 {
@@ -19,15 +18,15 @@ public:
     S_Camera(S_CameraType type);
     virtual ~S_Camera();
 
-    S_Mat4x4 view() const;
-    S_Mat4x4 projection() const;
-    S_Mat4x4 viewProjection() const;
-    S_Vec3 position() const;
-    S_Vec3 target() const;
-    S_Vec3 up() const;
-    void setPosition(const S_Vec3 &position);
-    void setTarget(const S_Vec3 &target);
-    void setUp(const S_Vec3 &up);
+    glm::mat4 view() const;
+    glm::mat4 projection() const;
+    glm::mat4 viewProjection() const;
+    glm::vec3 position() const;
+    glm::vec3 target() const;
+    glm::vec3 up() const;
+    void setPosition(const glm::vec3 &position);
+    void setTarget(const glm::vec3 &target);
+    void setUp(const glm::vec3 &up);
     float near() const;
     void setNear(float near);
     float far() const;
@@ -36,12 +35,12 @@ public:
 protected:
 
     S_CameraType m_type;
-    S_Vec3 m_position;
-    S_Vec3 m_target;
-    S_Vec3 m_up;
-    S_Mat4x4 m_view;
-    S_Mat4x4 m_projection;
-    S_Mat4x4 m_viewProjection;
+    glm::vec3 m_position;
+    glm::vec3 m_target;
+    glm::vec3 m_up;
+    glm::mat4 m_view;
+    glm::mat4 m_projection;
+    glm::mat4 m_viewProjection;
     float m_near;
     float m_far;
 };
@@ -89,4 +88,3 @@ protected:
 };
 
 }
-

@@ -1,8 +1,5 @@
 #pragma once
 
-#include "solo/math/S_Vec4.h"
-#include "solo/math/S_Vec3.h"
-#include "solo/math/S_Vec2.h"
 #include "solo/stl/S_Vector.h"
 #include <memory>
 

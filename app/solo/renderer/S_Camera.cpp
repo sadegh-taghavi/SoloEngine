@@ -3,8 +3,8 @@
 using namespace solo;
 
 S_Camera::S_Camera(S_CameraType type): m_type(type),
-    m_position(0, 2.0, 3.0), m_target( 0, 0, 0 ), m_up( 0, -1.0, 0 ),
-    m_near( 1.0 ), m_far( 1000.0 )
+    m_position(0, 2.0f, 3.0f), m_target( 0, 0, 0 ), m_up( 0, 1.0f, 0 ),
+    m_near( 1.0f ), m_far( 1000.0f )
 {
 
 }
@@ -14,24 +14,24 @@ S_Camera::~S_Camera()
 
 }
 
-S_Mat4x4 S_Camera::view() const
+glm::mat4 S_Camera::view() const
 {
     return m_view;
 }
 
-S_Mat4x4 S_Camera::projection() const
+glm::mat4 S_Camera::projection() const
 {
     return m_projection;
 }
 
-S_Mat4x4 S_Camera::viewProjection() const
+glm::mat4 S_Camera::viewProjection() const
 {
     return m_viewProjection;
 }
 
 void S_Camera::update()
 {
-    m_view.lookAtRH( m_position, m_target, m_up );
+    m_view = glm::lookAtRH( m_position, m_target, m_up );
     m_viewProjection = m_projection * m_view;
 }
 
@@ -55,38 +55,38 @@ void S_Camera::setNear(float near)
     m_near = near;
 }
 
-void S_Camera::setUp(const S_Vec3 &up)
+void S_Camera::setUp(const glm::vec3 &up)
 {
     m_up = up;
 }
 
-void S_Camera::setTarget(const S_Vec3 &target)
+void S_Camera::setTarget(const glm::vec3 &target)
 {
     m_target = target;
 }
 
-void S_Camera::setPosition(const S_Vec3 &position)
+void S_Camera::setPosition(const glm::vec3 &position)
 {
     m_position = position;
 }
 
-S_Vec3 S_Camera::up() const
+glm::vec3 S_Camera::up() const
 {
     return m_up;
 }
 
-S_Vec3 S_Camera::target() const
+glm::vec3 S_Camera::target() const
 {
     return m_target;
 }
 
-S_Vec3 S_Camera::position() const
+glm::vec3 S_Camera::position() const
 {
     return m_position;
 }
 
 
-S_CameraOrthographic::S_CameraOrthographic(): S_Camera(S_CameraType::Orthographic), m_left( -0.5 ), m_right( 0.5 ), m_bottom( -0.5 ), m_top( -0.5 )
+S_CameraOrthographic::S_CameraOrthographic(): S_Camera(S_CameraType::Orthographic), m_left( -0.5f ), m_right( 0.5f ), m_bottom( -0.5f ), m_top( -0.5f )
 {
 
 }
@@ -98,7 +98,7 @@ S_CameraOrthographic::~S_CameraOrthographic()
 
 void S_CameraOrthographic::update()
 {
-    m_projection.orthoCenterRH( m_left, m_right, m_bottom, m_top, m_near, m_far );
+    m_projection = glm::orthoRH( m_left, m_right, m_bottom, m_top, m_near, m_far );
     S_Camera::update();
 }
 
@@ -151,7 +151,7 @@ void S_CameraOrthographic::setOrtho(float left, float right, float bottom, float
 }
 
 
-S_CameraPerspective::S_CameraPerspective(): S_Camera ( S_CameraType::Perspective ), m_fov( 1.05f ), m_width( 128.0 ), m_height( 128.0 )
+S_CameraPerspective::S_CameraPerspective(): S_Camera ( S_CameraType::Perspective ), m_fov( 1.05f ), m_width( 128.0f ), m_height( 128.0f )
 {
 
 }
@@ -200,6 +200,6 @@ void S_CameraPerspective::setHeight(float height)
 
 void S_CameraPerspective::update()
 {
-    m_projection.perspectiveFovRH( m_fov, m_width, m_height, m_near, m_far );
+    m_projection = glm::perspectiveFovRH( m_fov, m_width, m_height, m_near, m_far );
     S_Camera::update();
 }
