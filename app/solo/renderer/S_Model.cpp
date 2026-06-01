@@ -1,6 +1,6 @@
 
 #include "solo/file/S_File.h"
-#include "solo/stl/S_Vector.h"
+#include <vector>
 #include "solo/debug/S_Debug.h"
 #include "solo/math/S_Math.h"
 
@@ -361,7 +361,7 @@ void S_Model::loadSkins(tinygltf::Model &gltfModel)
 }
 
 
-S_Model::S_Model(const S_String &model)
+S_Model::S_Model(const std::string &model)
 {
     m_path = model;
     S_File file( model );
@@ -371,7 +371,7 @@ S_Model::S_Model(const S_String &model)
         return;
     }
 
-    S_Vector<std::byte> fileData(file.size());
+    std::vector<std::byte> fileData(file.size());
     file.read( reinterpret_cast<char *>( fileData.data() ), fileData.size() );
     file.close();
 
@@ -389,9 +389,9 @@ S_Model::S_Model(const S_String &model)
     {
         S_Model* model = reinterpret_cast<S_Model *>( userData );
 
-        S_String outPath;
+        std::string outPath;
         auto lastSlashPos = model->path().find_last_of("/");
-        if( lastSlashPos == S_String::npos )
+        if( lastSlashPos == std::string::npos )
             outPath = filepath;
         else
             outPath = model->path().substr( 0, lastSlashPos + 1 ) + filepath;
@@ -429,7 +429,7 @@ S_Model::~S_Model()
 
 }
 
-S_String S_Model::path() const
+std::string S_Model::path() const
 {
     return m_path;
 }

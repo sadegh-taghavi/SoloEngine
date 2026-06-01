@@ -4,7 +4,7 @@
 
 using namespace solo;
 
-inline const S_UnorderedMap<S_String, std::unique_ptr<S_ResourceData> > *S_ResourcesContainer::resources() const
+inline const std::unordered_map<std::string, std::unique_ptr<S_ResourceData> > *S_ResourcesContainer::resources() const
 {
     return &m_resources;
 }
@@ -13,7 +13,7 @@ inline void S_ResourcesContainer::updateResources(size_t numberOfResources, cons
 {
     size_t fileNamesIndex;
     size_t fileDataIndex = 0;
-    S_String filename;
+    std::string filename;
     for( size_t i = 0; i < numberOfResources; ++i )
     {
         fileNamesIndex = 64 * i;
@@ -23,14 +23,14 @@ inline void S_ResourcesContainer::updateResources(size_t numberOfResources, cons
     }
 }
 
-inline S_ResourceData::S_ResourceData(const S_String &name, const size_t &size, const unsigned char *data) :
+inline S_ResourceData::S_ResourceData(const std::string &name, const size_t &size, const unsigned char *data) :
     m_name(name), m_size(size), m_data(data)
 
 {
 
 }
 
-inline S_String S_ResourceData::name() const
+inline std::string S_ResourceData::name() const
 {
     return m_name;
 }

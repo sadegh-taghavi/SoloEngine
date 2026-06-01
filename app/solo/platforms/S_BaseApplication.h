@@ -3,7 +3,7 @@
 #include "S_Event.h"
 #include "S_InputEvent.h"
 #include "S_WindowEvent.h"
-#include "solo/stl/S_Array.h"
+#include <array>
 #include <memory>
 
 namespace solo
@@ -25,8 +25,8 @@ public:
     void update();
 
 private:
-    S_Array<bool, static_cast<uint32_t>(S_Key::Count) > m_keysState;
-    S_Array<bool, static_cast<uint32_t>(S_MouseButton::Count) > m_mouseState;
+    std::array<bool, static_cast<uint32_t>(S_Key::Count) > m_keysState;
+    std::array<bool, static_cast<uint32_t>(S_MouseButton::Count) > m_mouseState;
     unsigned int    m_mX;
     unsigned int    m_mY;
     unsigned int    m_mLastX;

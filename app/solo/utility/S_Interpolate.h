@@ -2,7 +2,7 @@
 #include <functional>
 #include <chrono>
 #include <stdint.h>
-#include "solo/stl/S_Array.h"
+#include <array>
 #include "solo/math/S_Math.h"
 #include "solo/application/S_Application.h"
 #include "S_Animation.h"
@@ -131,8 +131,8 @@ public:
     }
 
 protected:
-    S_Array<S_EasingType, 3> m_easingType;
-    S_Array<float, 3> m_duration;
+    std::array<S_EasingType, 3> m_easingType;
+    std::array<float, 3> m_duration;
     bool m_enable;
     bool m_repeatedTo;
     uint32_t m_easeState;

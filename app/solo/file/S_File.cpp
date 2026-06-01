@@ -6,7 +6,7 @@
 
 using namespace solo;
 
-S_File::S_File( const S_String &fileName ) : m_isOpen( false ), m_resourceData( nullptr ), m_openMode( S_FileOpenMode::Read )
+S_File::S_File( const std::string &fileName ) : m_isOpen( false ), m_resourceData( nullptr ), m_openMode( S_FileOpenMode::Read )
 {
     setFileName( fileName );
 }
@@ -16,12 +16,12 @@ S_File::~S_File()
     close();
 }
 
-S_String S_File::fileName() const
+std::string S_File::fileName() const
 {
     return m_fileName;
 }
 
-void S_File::setFileName(const S_String &fileName)
+void S_File::setFileName(const std::string &fileName)
 {
     m_fileName = fileName;
     if( fileName.length() > 4 && fileName.substr( 0 , 4 ) == "sr:/" )

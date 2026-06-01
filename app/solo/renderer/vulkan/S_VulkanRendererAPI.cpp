@@ -10,7 +10,8 @@
 #include "solo/platforms/S_Window.h"
 #include "solo/platforms/S_SystemDetect.h"
 #include "solo/debug/S_Debug.h"
-#include "solo/stl/S_Map.h"
+#include <map>
+#include <array>
 #include "solo/application/S_Application.h"
 #include "solo/resource/S_ResourceManager.h"
 #include "solo/thread/S_Thread.h"
@@ -177,16 +178,16 @@ void S_VulkanRendererAPI::destroyWindowSurface()
 S_VulkanRendererAPI::QueueIndices S_VulkanRendererAPI::findQueueFamilies(VkPhysicalDevice device)
 {
     QueueIndices foundIndices;
-    S_Vector<VkQueueFamilyProperties> queueFamilies;
+    std::vector<VkQueueFamilyProperties> queueFamilies;
     uint32_t queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
     queueFamilies.resize( queueFamilyCount );
     vkGetPhysicalDeviceQueueFamilyProperties( device, &queueFamilyCount, queueFamilies.data() );
     int index = 0;
-    S_Vector<int32_t> graphicsIndices;
-    S_Vector<int32_t> computeIndices;
-    S_Vector<int32_t> transferIndices;
-    S_Vector<int32_t> presentIndices;
+    std::vector<int32_t> graphicsIndices;
+    std::vector<int32_t> computeIndices;
+    std::vector<int32_t> transferIndices;
+    std::vector<int32_t> presentIndices;
     graphicsIndices.insert( graphicsIndices.begin(), 4, -1 );
     computeIndices.insert( computeIndices.begin(), 4, -1 );
     transferIndices.insert( transferIndices.begin(), 4, -1 );
@@ -273,7 +274,7 @@ void S_VulkanRendererAPI::createPhysicalDevice()
 {
     uint32_t deviceCount = 0;
     VK_RESULT_CHECK( vkEnumeratePhysicalDevices( m_instance, &deviceCount, nullptr ) )
-            S_Vector<VkPhysicalDevice> devices;
+            std::vector<VkPhysicalDevice> devices;
     devices.resize( deviceCount );
     VK_RESULT_CHECK( vkEnumeratePhysicalDevices( m_instance, &deviceCount, devices.data() ) )
             m_physicalDevice = nullptr;
@@ -400,7 +401,7 @@ S_VulkanRendererAPI::SwapChainSupportDetails S_VulkanRendererAPI::querySwapChain
 }
 
 
-VkSurfaceFormatKHR S_VulkanRendererAPI::chooseSwapSurfaceFormat(const S_Vector<VkSurfaceFormatKHR>& availableFormats)
+VkSurfaceFormatKHR S_VulkanRendererAPI::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
 {
     for (const auto& availableFormat : availableFormats)
     {
@@ -589,7 +590,7 @@ void S_VulkanRendererAPI::createRenderPass()
     subpass.pColorAttachments = &colorAttachmentRef;
     subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
-    S_Array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
+    std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
     VkRenderPassCreateInfo renderPassInfo = {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
@@ -609,7 +610,7 @@ void S_VulkanRendererAPI::createFramebuffers()
     m_swapChainFramebuffers.resize( m_swapChainImageViews.size() );
     for ( size_t i = 0; i < m_swapChainImageViews.size(); ++i )
     {
-        S_Array<VkImageView, 2> attachments = { m_swapChainImageViews[i], m_depthImageView };
+        std::array<VkImageView, 2> attachments = { m_swapChainImageViews[i], m_depthImageView };
         VkFramebufferCreateInfo framebufferInfo = {};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferInfo.renderPass = m_renderPass;
@@ -712,7 +713,7 @@ void S_VulkanRendererAPI::recreateSwapChain()
     createCommandBuffers();
 }
 
-VkFormat S_VulkanRendererAPI::findSupportedFormat(const S_Vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+VkFormat S_VulkanRendererAPI::findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
 {
     for (VkFormat format : candidates)
     {
@@ -728,7 +729,7 @@ VkFormat S_VulkanRendererAPI::findSupportedFormat(const S_Vector<VkFormat> &cand
 
 VkFormat S_VulkanRendererAPI::findDepthFormat()
 {
-    S_Vector<VkFormat> vf;
+    std::vector<VkFormat> vf;
     vf.push_back( VK_FORMAT_D32_SFLOAT );
     vf.push_back( VK_FORMAT_D32_SFLOAT_S8_UINT );
     vf.push_back( VK_FORMAT_D24_UNORM_S8_UINT );
@@ -970,7 +971,7 @@ S_VulkanRendererAPI::S_VulkanRendererAPI() : S_RendererAPI (), m_nextFrameRender
         glm::vec2 texcoord;
     };
 
-    S_Vector<S_VertexBufferDescriptor> veticesDescriptors;
+    std::vector<S_VertexBufferDescriptor> veticesDescriptors;
     veticesDescriptors.resize( 2 );
     veticesDescriptors[0].Size = sizeof( glm::vec3 );
     veticesDescriptors[0].Format = S_VertexBufferDescriptorFormat::R32G32B32_SFLOAT;
@@ -986,7 +987,7 @@ S_VulkanRendererAPI::S_VulkanRendererAPI() : S_RendererAPI (), m_nextFrameRender
         glm::vec4 color;
     };
 
-    S_Vector<S_VertexBufferDescriptor> instancesDescriptors;
+    std::vector<S_VertexBufferDescriptor> instancesDescriptors;
     instancesDescriptors.resize( 2 );
     instancesDescriptors[0].Size = sizeof( glm::vec4 );
     instancesDescriptors[0].Format = S_VertexBufferDescriptorFormat::R32G32B32A32_SFLOAT;
@@ -995,7 +996,7 @@ S_VulkanRendererAPI::S_VulkanRendererAPI() : S_RendererAPI (), m_nextFrameRender
     instancesDescriptors[1].Format = S_VertexBufferDescriptorFormat::R32G32B32A32_SFLOAT;
     instancesDescriptors[1].Offset = offsetof( Instance, color );
 
-    S_Vector<S_PipelineDescriptor> pds;
+    std::vector<S_PipelineDescriptor> pds;
     S_PipelineDescriptor pd;
     pd.VertexBufferDescriptorArray = S_VertexBufferDescriptorArray( sizeof (Vertex), veticesDescriptors );
     pd.InstanceBufferDescriptorArray = S_VertexBufferDescriptorArray( sizeof (Instance), instancesDescriptors );
@@ -1164,7 +1165,7 @@ void S_VulkanRendererAPI::drawFrame()
     renderPassInfo.renderArea.offset = {0, 0};
     renderPassInfo.renderArea.extent = m_swapChainExtent;
 
-    S_Array<VkClearValue, 2> clearValues = {};
+    std::array<VkClearValue, 2> clearValues = {};
     clearValues[0].color = {{0.5f, 0.5f, 1.0f, 1.0f}};
     clearValues[1].depthStencil = {1.0f, 0};
 
@@ -1288,12 +1289,12 @@ S_VertexBuffer *S_VulkanRendererAPI::createVertexBuffer(uint32_t verticesCount, 
     return m_itemsManager->createVertexBuffer( verticesCount, indicesCount, instancesCount, std::move(verticesDescriptorArray), std::move(instancesDescriptorArray) );
 }
 
-S_Shader *S_VulkanRendererAPI::createShader(const S_String &vertexShader, const S_String &fragmentShader, const S_String &geometryShader, const S_String &computeShader)
+S_Shader *S_VulkanRendererAPI::createShader(const std::string &vertexShader, const std::string &fragmentShader, const std::string &geometryShader, const std::string &computeShader)
 {
     return m_itemsManager->createShader( vertexShader, fragmentShader, geometryShader, computeShader );
 }
 
-S_Texture *S_VulkanRendererAPI::createTexture(const S_String &texture)
+S_Texture *S_VulkanRendererAPI::createTexture(const std::string &texture)
 {
     return m_itemsManager->createTexture( texture );
 }

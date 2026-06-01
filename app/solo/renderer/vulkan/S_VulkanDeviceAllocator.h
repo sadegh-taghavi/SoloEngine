@@ -1,8 +1,8 @@
 #pragma once
 
 #include "S_VulkanRendererAPI.h"
-#include "solo/stl/S_UnorderedMap.h"
-#include "solo/stl/S_Vector.h"
+#include <unordered_map>
+#include <vector>
 #include "solo/thread/S_Mutex.h"
 #include <vulkan/vulkan.h>
 
@@ -70,17 +70,17 @@ private:
         DevicePoolList(S_VulkanDeviceAllocator *allocator, VkMemoryAllocateInfo *allocInfo );
         void realloc( S_VulkanDeviceAllocator *allocator, VkMemoryAllocateInfo *allocInfo );
         uint64_t LastPool;
-        S_Vector<std::unique_ptr<DevicePool>> Pools;
-        S_Vector<DeviceMemory> DeviceMemories;
+        std::vector<std::unique_ptr<DevicePool>> Pools;
+        std::vector<DeviceMemory> DeviceMemories;
 
     };
 
     S_VulkanRendererAPI *m_api;
     uint64_t m_poolSize;
     uint64_t m_poolsCount;
-    S_UnorderedMap<size_t, std::unique_ptr<MemoryBuffer>> m_allBuffers;
-    S_UnorderedMap<size_t, std::unique_ptr<DevicePoolList>> m_specificPools;
-    S_UnorderedMap<VkBufferUsageFlags, uint64_t> m_usageAlignments;
+    std::unordered_map<size_t, std::unique_ptr<MemoryBuffer>> m_allBuffers;
+    std::unordered_map<size_t, std::unique_ptr<DevicePoolList>> m_specificPools;
+    std::unordered_map<VkBufferUsageFlags, uint64_t> m_usageAlignments;
     S_AtomicFlag m_busyState;
 };
 

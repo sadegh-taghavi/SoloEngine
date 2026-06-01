@@ -1,6 +1,7 @@
 #pragma once
 #include "solo/renderer/S_RendererAPI.h"
-#include "solo/stl/S_Vector.h"
+#include <vector>
+#include <string>
 #include "solo/debug/S_Debug.h"
 #include <vulkan/vulkan.h>
 #include <memory>
@@ -17,12 +18,12 @@ public:
     virtual ~S_VulkanItemsRequest();
     void addRequestItem(const char *requestItem);
     void clearRequestedItems();
-    const S_Vector<char *> *enabledItems();
+    const std::vector<char *> *enabledItems();
 protected:
     void queryItems();
-    S_Vector<char *> m_items;
-    S_Vector<S_String> m_requestItems;
-    S_Vector<char *> m_enabledItems;
+    std::vector<char *> m_items;
+    std::vector<std::string> m_requestItems;
+    std::vector<char *> m_enabledItems;
 };
 
 class S_VulkanItemsInstanceExtensionRequest : public S_VulkanItemsRequest

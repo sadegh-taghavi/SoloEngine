@@ -1,5 +1,5 @@
 #pragma once
-#include "solo/stl/S_String.h"
+#include <string>
 #include <fstream>
 #include <iostream>
 
@@ -19,10 +19,10 @@ class S_ResourceData;
 class S_File
 {
 public:
-    S_File( const S_String &fileName );
+    S_File( const std::string &fileName );
     virtual ~S_File();
-    S_String fileName() const;
-    void setFileName(const S_String &fileName);
+    std::string fileName() const;
+    void setFileName(const std::string &fileName);
     bool isOpen() const;
     bool exist() const;
     size_t size() const;
@@ -36,7 +36,7 @@ public:
 
 private:
     bool m_isResourceFile;
-    S_String m_fileName;
+    std::string m_fileName;
     bool m_isOpen;
     std::fstream m_fileStream;
     const S_ResourceData *m_resourceData;

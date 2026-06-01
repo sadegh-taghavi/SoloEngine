@@ -2,7 +2,7 @@
 #include <functional>
 #include <chrono>
 #include <stdint.h>
-#include "solo/stl/S_Array.h"
+#include <array>
 #include "solo/math/S_Math.h"
 #include "solo/application/S_Application.h"
 
@@ -120,7 +120,7 @@ public:
      }
 
 protected:
-    const S_Array<std::function<float(float)>, static_cast<uint32_t>(S_EasingType::Count)> m_easingFunctions =
+    const std::array<std::function<float(float)>, static_cast<uint32_t>(S_EasingType::Count)> m_easingFunctions =
     {
         [](float x){return glm::linearInterpolation(x);},
         [](float x){return glm::quadraticEaseIn(x);},

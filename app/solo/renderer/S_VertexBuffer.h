@@ -1,6 +1,6 @@
 #pragma once
 
-#include "solo/stl/S_Vector.h"
+#include <vector>
 #include <memory>
 
 namespace solo
@@ -110,14 +110,14 @@ class S_VertexBufferDescriptorArray
 {
 public:
     S_VertexBufferDescriptorArray();
-    S_VertexBufferDescriptorArray(uint32_t stride, const S_Vector<S_VertexBufferDescriptor> &descriptors );
+    S_VertexBufferDescriptorArray(uint32_t stride, const std::vector<S_VertexBufferDescriptor> &descriptors );
     ~S_VertexBufferDescriptorArray();
-    const S_Vector<S_VertexBufferDescriptor> *descriptors() const;
+    const std::vector<S_VertexBufferDescriptor> *descriptors() const;
     uint32_t stride() const;  
 
 private:
     uint32_t m_stride;
-    S_Vector<S_VertexBufferDescriptor> m_descriptors;
+    std::vector<S_VertexBufferDescriptor> m_descriptors;
 };
 
 class S_VertexBuffer

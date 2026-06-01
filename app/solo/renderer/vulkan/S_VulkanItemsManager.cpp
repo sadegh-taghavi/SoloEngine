@@ -6,7 +6,7 @@
 #include "S_VulkanRendererAPI.h"
 #include "S_VulkanPipeline.h"
 #include "S_VulkanAllocator.h"
-#include "solo/stl/S_Map.h"
+#include <map>
 #include "solo/application/S_Application.h"
 #include "solo/debug/S_Debug.h"
 #include <stdint.h>
@@ -35,15 +35,15 @@ S_VulkanVertexBuffer *S_VulkanItemsManager::createVertexBuffer(uint32_t vertices
     return (--it)->get();
 }
 
-S_VulkanShader *S_VulkanItemsManager::createShader(const S_String &vertexShader, const S_String &fragmentShader,
-                                                    const S_String &geometryShader, const S_String &computeShader )
+S_VulkanShader *S_VulkanItemsManager::createShader(const std::string &vertexShader, const std::string &fragmentShader,
+                                                    const std::string &geometryShader, const std::string &computeShader )
 {
     m_shaders.push_back( std::make_unique<S_VulkanShader>( m_api, vertexShader, fragmentShader, geometryShader, computeShader ) );
     auto it = m_shaders.end();
     return (--it)->get();
 }
 
-S_VulkanTexture *S_VulkanItemsManager::createTexture(const S_String &texture )
+S_VulkanTexture *S_VulkanItemsManager::createTexture(const std::string &texture )
 {
     m_textures.push_back( std::make_unique<S_VulkanTexture>( m_api, texture ) );
     auto it = m_textures.end();

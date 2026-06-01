@@ -1,6 +1,6 @@
 #pragma once
 
-#include "solo/stl/S_String.h"
+#include <string>
 #include "solo/thread/S_Mutex.h"
 #include <stdint.h>
 
@@ -20,14 +20,14 @@ class S_Debug
 {
     friend class OutputGenerator;
     void outDebug();
-    S_String m_tag;
-    S_String m_data;
+    std::string m_tag;
+    std::string m_data;
     S_AtomicFlag m_busyState;
 public:
     S_Debug();
-    S_Debug &debug( const S_Debug &data, const S_String &tag = "Solo_Engine");
-    S_Debug &operator<<( const S_String &val );
-    S_Debug &operator,( const S_String &val ) { return this->operator <<(val); }
+    S_Debug &debug( const S_Debug &data, const std::string &tag = "Solo_Engine");
+    S_Debug &operator<<( const std::string &val );
+    S_Debug &operator,( const std::string &val ) { return this->operator <<(val); }
     S_Debug &operator<<( const uint64_t &val );
     S_Debug &operator,( const uint64_t &val ) { return this->operator <<(val); }
     S_Debug &operator<<( const int64_t &val );

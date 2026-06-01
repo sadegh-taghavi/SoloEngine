@@ -26,12 +26,12 @@ S_VertexBuffer *S_Renderer::createVertexBuffer(uint32_t verticesCount, uint32_t 
                                      std::move(instancesDescriptorArray) );
 }
 
-S_Shader *S_Renderer::createShader(const S_String &vertexShader, const S_String &fragmentShader, const S_String &geometryShader, const S_String &computeShader)
+S_Shader *S_Renderer::createShader(const std::string &vertexShader, const std::string &fragmentShader, const std::string &geometryShader, const std::string &computeShader)
 {
     return m_api->createShader( vertexShader, fragmentShader, geometryShader, computeShader );
 }
 
-S_Texture *S_Renderer::createTexture(const S_String &texture)
+S_Texture *S_Renderer::createTexture(const std::string &texture)
 {
     return m_api->createTexture( texture );
 }

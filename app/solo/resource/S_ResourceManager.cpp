@@ -11,7 +11,7 @@ S_ResourceManager::S_ResourceManager()
         m_container = std::make_unique<S_ResourcesContainer>();
 }
 
-const S_ResourceData *S_ResourceManager::resourceData(const S_String &resourceName) const
+const S_ResourceData *S_ResourceManager::resourceData(const std::string &resourceName) const
 {
     auto it = m_container->resources()->find( resourceName );
     if( it == m_container->resources()->end() )

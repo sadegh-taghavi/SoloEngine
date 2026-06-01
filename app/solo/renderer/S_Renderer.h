@@ -3,7 +3,7 @@
 #include <memory>
 #include "solo/renderer/S_VertexBuffer.h"
 #include "solo/renderer/S_TextureSampler.h"
-#include "solo/stl/S_String.h"
+#include <string>
 #include "solo/utility/S_ElapsedTime.h"
 
 namespace solo
@@ -26,10 +26,10 @@ public:
     S_VertexBuffer *createVertexBuffer(uint32_t verticesCount, uint32_t indicesCount, uint32_t instancesCount,
                                        std::unique_ptr<S_VertexBufferDescriptorArray> verticesDescriptorArray,
                                        std::unique_ptr<S_VertexBufferDescriptorArray> instancesDescriptorArray);
-    S_Shader *createShader(const S_String &vertexShader, const S_String &fragmentShader,
-                                   const S_String &geometryShader, const S_String &computeShader);
+    S_Shader *createShader(const std::string &vertexShader, const std::string &fragmentShader,
+                                   const std::string &geometryShader, const std::string &computeShader);
 
-    S_Texture *createTexture(const S_String &texture);
+    S_Texture *createTexture(const std::string &texture);
 
     S_TextureSampler *createTextureSampler(const S_TextureSamplerDescriptor &descriptor);
 

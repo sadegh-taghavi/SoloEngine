@@ -86,14 +86,6 @@ set(HEADERS
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/memory/S_AlgorithmAllocator.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/memory/S_NewDeleteOverrides.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/base/S_Object.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/stl/S_Hash.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/stl/S_Map.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/stl/S_UnorderedMap.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/stl/S_List.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/stl/S_Vector.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/stl/S_Array.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/stl/S_Tuple.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/stl/S_String.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/math/S_Math.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/thread/S_Mutex.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/thread/S_Thread.h

@@ -1,7 +1,7 @@
 #include "S_VulkanRendererAPI.h"
 #include "S_VulkanPipeline.h"
 #include "S_VulkanAllocator.h"
-#include "solo/stl/S_Map.h"
+#include <map>
 #include "solo/application/S_Application.h"
 #include "solo/debug/S_Debug.h"
 #include "solo/renderer/S_Shader.h"
@@ -22,7 +22,7 @@ S_VulkanPipeline::~S_VulkanPipeline()
 
 }
 
-void S_VulkanPipeline::create( const S_Vector<S_PipelineDescriptor> *descriptors )
+void S_VulkanPipeline::create( const std::vector<S_PipelineDescriptor> *descriptors )
 {
     if( descriptors )
         m_descriptors = *descriptors;
@@ -34,43 +34,43 @@ void S_VulkanPipeline::create( const S_Vector<S_PipelineDescriptor> *descriptors
     m_layouts.resize( count );
     m_pipelines.resize( count );
 
-    S_Vector< VkPipelineShaderStageCreateInfo > vertShaderStageInfos;
+    std::vector< VkPipelineShaderStageCreateInfo > vertShaderStageInfos;
     vertShaderStageInfos.resize( count );
-    S_Vector< VkPipelineShaderStageCreateInfo > fragShaderStageInfos;
+    std::vector< VkPipelineShaderStageCreateInfo > fragShaderStageInfos;
     fragShaderStageInfos.resize( count );
-    S_Vector< VkPipelineShaderStageCreateInfo > geometryShaderStageInfos;
+    std::vector< VkPipelineShaderStageCreateInfo > geometryShaderStageInfos;
     geometryShaderStageInfos.resize( count );
-    S_Vector< VkPipelineShaderStageCreateInfo > computeShaderStageInfos;
+    std::vector< VkPipelineShaderStageCreateInfo > computeShaderStageInfos;
     computeShaderStageInfos.resize( count );
-    S_Vector< S_Vector<VkPipelineShaderStageCreateInfo> > shaderStagess;
+    std::vector< std::vector<VkPipelineShaderStageCreateInfo> > shaderStagess;
     shaderStagess.resize( count );
-    S_Vector< S_Vector<VkVertexInputBindingDescription> > bindingDescriptions;
+    std::vector< std::vector<VkVertexInputBindingDescription> > bindingDescriptions;
     bindingDescriptions.resize( count );
-    S_Vector< S_Vector<VkVertexInputAttributeDescription> > attributeDescriptions;
+    std::vector< std::vector<VkVertexInputAttributeDescription> > attributeDescriptions;
     attributeDescriptions.resize( count );
-    S_Vector< VkPipelineVertexInputStateCreateInfo > vertexInputInfos;
+    std::vector< VkPipelineVertexInputStateCreateInfo > vertexInputInfos;
     vertexInputInfos.resize( count );
-    S_Vector< VkPipelineInputAssemblyStateCreateInfo > inputAssemblys;
+    std::vector< VkPipelineInputAssemblyStateCreateInfo > inputAssemblys;
     inputAssemblys.resize( count );
-    S_Vector< VkViewport > viewports;
+    std::vector< VkViewport > viewports;
     viewports.resize( count );
-    S_Vector< VkRect2D > scissors;
+    std::vector< VkRect2D > scissors;
     scissors.resize( count );
-    S_Vector< VkPipelineViewportStateCreateInfo > viewportStates;
+    std::vector< VkPipelineViewportStateCreateInfo > viewportStates;
     viewportStates.resize( count );
-    S_Vector< VkPipelineRasterizationStateCreateInfo > rasterizers;
+    std::vector< VkPipelineRasterizationStateCreateInfo > rasterizers;
     rasterizers.resize( count );
-    S_Vector< VkPipelineMultisampleStateCreateInfo > multisamplings;
+    std::vector< VkPipelineMultisampleStateCreateInfo > multisamplings;
     multisamplings.resize( count );
-    S_Vector< VkPipelineColorBlendAttachmentState > colorBlendAttachments;
+    std::vector< VkPipelineColorBlendAttachmentState > colorBlendAttachments;
     colorBlendAttachments.resize( count );
-    S_Vector< VkPipelineColorBlendStateCreateInfo > colorBlendings;
+    std::vector< VkPipelineColorBlendStateCreateInfo > colorBlendings;
     colorBlendings.resize( count );
-    S_Vector< VkDynamicState > dyanamicStatess;
+    std::vector< VkDynamicState > dyanamicStatess;
     dyanamicStatess.resize( count );
-    S_Vector< VkPipelineDynamicStateCreateInfo > dynamicCreateInfoStates;
+    std::vector< VkPipelineDynamicStateCreateInfo > dynamicCreateInfoStates;
     dynamicCreateInfoStates.resize( count );
-    S_Vector< VkGraphicsPipelineCreateInfo > pipelineCreateInfos;
+    std::vector< VkGraphicsPipelineCreateInfo > pipelineCreateInfos;
     pipelineCreateInfos.resize( count );
 
     S_VulkanShader *shader;
@@ -300,12 +300,12 @@ void S_VulkanPipeline::recreate()
     create();
 }
 
-S_Vector<VkPipeline> *S_VulkanPipeline::pipelines()
+std::vector<VkPipeline> *S_VulkanPipeline::pipelines()
 {
     return &m_pipelines;
 }
 
-S_Vector<VkPipelineLayout> *S_VulkanPipeline::layouts()
+std::vector<VkPipelineLayout> *S_VulkanPipeline::layouts()
 {
     return &m_layouts;
 }

@@ -1,7 +1,8 @@
 #pragma once
 #include "solo/renderer/S_RendererAPI.h"
 #include "S_VulkanPipeline.h"
-#include "solo/stl/S_Vector.h"
+#include <vector>
+#include <string>
 #include "solo/debug/S_Debug.h"
 #include <vulkan/vulkan.h>
 #include <memory>
@@ -74,10 +75,10 @@ public:
     virtual S_VertexBuffer *createVertexBuffer(uint32_t verticesCount, uint32_t indicesCount, uint32_t instancesCount,
                                                std::unique_ptr<S_VertexBufferDescriptorArray> verticesDescriptorArray,
                                                std::unique_ptr<S_VertexBufferDescriptorArray> instancesDescriptorArray);
-    virtual S_Shader *createShader(const S_String &vertexShader, const S_String &fragmentShader,
-                                   const S_String &geometryShader, const S_String &computeShader);
+    virtual S_Shader *createShader(const std::string &vertexShader, const std::string &fragmentShader,
+                                   const std::string &geometryShader, const std::string &computeShader);
 
-    virtual S_Texture *createTexture(const S_String &texture);
+    virtual S_Texture *createTexture(const std::string &texture);
 
     virtual S_TextureSampler *createTextureSampler(const S_TextureSamplerDescriptor &descriptor);
 
@@ -144,8 +145,8 @@ private:
     struct SwapChainSupportDetails
     {
         VkSurfaceCapabilitiesKHR Capabilities;
-        S_Vector<VkSurfaceFormatKHR> Formats;
-        S_Vector<VkPresentModeKHR> PresentModes;
+        std::vector<VkSurfaceFormatKHR> Formats;
+        std::vector<VkPresentModeKHR> PresentModes;
     };
 
     SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
@@ -168,7 +169,7 @@ private:
     void createSyncObjects();
     void cleanupSwapChain();
     void recreateSwapChain();
-    VkFormat findSupportedFormat(const S_Vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+    VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
     VkFormat findDepthFormat();
     bool hasStencilComponent(VkFormat format);
 
@@ -181,8 +182,8 @@ private:
     VkPhysicalDeviceMemoryProperties m_physicalDeviceMemoryProperties;
     VkDevice m_device;
     VkSwapchainKHR m_swapChain;
-    S_Vector<VkImage> m_swapChainImages;
-    S_Vector<VkImageView> m_swapChainImageViews;
+    std::vector<VkImage> m_swapChainImages;
+    std::vector<VkImageView> m_swapChainImageViews;
     VkImage m_depthImage;
     VkImageView m_depthImageView;
     VkQueue m_transferQueue;
@@ -194,17 +195,17 @@ private:
     VkExtent2D m_swapChainExtent;
     SwapChainSupportDetails m_swapChainSupportDetails;
     VkRenderPass m_renderPass;
-    S_Vector<VkFramebuffer> m_swapChainFramebuffers;
+    std::vector<VkFramebuffer> m_swapChainFramebuffers;
     std::unique_ptr<S_VulkanPipeline> m_pipelines;
     VkCommandPool m_commandPoolGraphics;
     VkCommandPool m_commandPoolTransfers;
     VkCommandBuffer m_nextFrameRenderCommandBuffer;
     VkCommandBuffer m_commandBufferVertexTransfer;
-    S_Vector<VkCommandBuffer> m_commandBuffersSwapChain;
-    S_Vector<VkSemaphore> m_imageAvailableSemaphores;
-    S_Vector<VkSemaphore> m_renderFinishedSemaphores;
-    S_Vector<VkFence> m_inFlightFences;
-    S_Vector<VkFence> m_imagesInFlight;
+    std::vector<VkCommandBuffer> m_commandBuffersSwapChain;
+    std::vector<VkSemaphore> m_imageAvailableSemaphores;
+    std::vector<VkSemaphore> m_renderFinishedSemaphores;
+    std::vector<VkFence> m_inFlightFences;
+    std::vector<VkFence> m_imagesInFlight;
     bool m_framebufferResized;
     bool m_active;
     uint32_t m_currentFrame;
@@ -218,7 +219,7 @@ private:
     std::shared_ptr<class S_CameraPerspective> vCam;
     std::shared_ptr<class S_FirstPersonCameraController> vCamController;
 
-    VkSurfaceFormatKHR chooseSwapSurfaceFormat(const S_Vector<VkSurfaceFormatKHR> &availableFormats);
+    VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
     VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
     VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
 };

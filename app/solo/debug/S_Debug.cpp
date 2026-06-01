@@ -30,7 +30,7 @@ void S_Debug::outDebug()
 #endif
 }
 
-S_Debug &S_Debug::debug(const S_Debug &data, const S_String &tag)
+S_Debug &S_Debug::debug(const S_Debug &data, const std::string &tag)
 {
     m_data = data.m_data;
     m_tag = tag;
@@ -39,7 +39,7 @@ S_Debug &S_Debug::debug(const S_Debug &data, const S_String &tag)
     return *this;
 }
 
-S_Debug &S_Debug::operator<<(const S_String &val)
+S_Debug &S_Debug::operator<<(const std::string &val)
 {
     m_data += " " + val;
     return *this;

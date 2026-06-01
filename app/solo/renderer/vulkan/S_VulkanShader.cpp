@@ -10,11 +10,11 @@
 
 using namespace solo;
 
-S_VulkanShader::S_VulkanShader(S_VulkanRendererAPI *api, const S_String &vertexShader, const S_String &fragmentShader, const S_String &geometryShader, const S_String &computeShader):
+S_VulkanShader::S_VulkanShader(S_VulkanRendererAPI *api, const std::string &vertexShader, const std::string &fragmentShader, const std::string &geometryShader, const std::string &computeShader):
     S_Shader(), m_maxUniformSetInStages(0), m_maxTextureSetInStages(0), m_commitsCount(0), m_uniformsMemorySize(0), m_api( api )
 
 {
-    S_Array< VkDescriptorPoolSize, 2> poolSizes;
+    std::array< VkDescriptorPoolSize, 2> poolSizes;
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     poolSizes[0].descriptorCount = (m_api->maxFramesInFlight() + 1) * 256 * 8;
     poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -40,7 +40,7 @@ S_VulkanShader::S_VulkanShader(S_VulkanRendererAPI *api, const S_String &vertexS
 
     uint32_t allStagesSetsCount = glm::max( m_maxUniformSetInStages, m_maxTextureSetInStages ) + 1;
 
-    S_Vector< S_Vector<VkDescriptorSetLayoutBinding> > layoutBindingList( allStagesSetsCount );
+    std::vector< std::vector<VkDescriptorSetLayoutBinding> > layoutBindingList( allStagesSetsCount );
 
     VkDescriptorSetLayoutBinding binding;
     for( auto &reflectionData: m_shaderReflections )
@@ -76,7 +76,7 @@ S_VulkanShader::S_VulkanShader(S_VulkanRendererAPI *api, const S_String &vertexS
 
     m_descriptorSetLayouts.resize( allStagesSetsCount, nullptr );
 
-    S_Vector<VkDescriptorSetLayout> layouts( (m_api->maxFramesInFlight() + 1) * 256 * allStagesSetsCount );
+    std::vector<VkDescriptorSetLayout> layouts( (m_api->maxFramesInFlight() + 1) * 256 * allStagesSetsCount );
 
     for( uint32_t i = 0; i < allStagesSetsCount; ++i )
     {
@@ -116,7 +116,7 @@ S_VulkanShader::~S_VulkanShader()
     m_api->deviceAllocator()->destroy( m_uniformBuffers );
 }
 
-void S_VulkanShader::updateUniformValue(const S_String &name, S_ShaderStage stage, const void *value)
+void S_VulkanShader::updateUniformValue(const std::string &name, S_ShaderStage stage, const void *value)
 {
     auto currentReflectionData = &m_shaderReflections[ static_cast<uint32_t>(stage) ];
     auto currentReflectionMap = &currentReflectionData->UniformBuffersMap;
@@ -172,7 +172,7 @@ void S_VulkanShader::updateUniformValue(const S_String &name, S_ShaderStage stag
 
 }
 
-void S_VulkanShader::updateTextureValue(const S_String &name, S_ShaderStage stage, const S_Texture &texture, uint32_t arrayIndex)
+void S_VulkanShader::updateTextureValue(const std::string &name, S_ShaderStage stage, const S_Texture &texture, uint32_t arrayIndex)
 {
     auto currentReflectionData = &m_shaderReflections[ static_cast<uint32_t>(stage) ];
     auto currentReflectionMap = &currentReflectionData->TextureMap;
@@ -242,11 +242,11 @@ void S_VulkanShader::commit()
     ++m_commitsCount;
 }
 
-void S_VulkanShader::setShader(S_ShaderStage stage, const S_String &name)
+void S_VulkanShader::setShader(S_ShaderStage stage, const std::string &name)
 {
 
-    S_String shaderCodeName = name + m_EXTENSIONS[ static_cast<int>(stage) ] + "c";
-    S_String shaderReflectionName = name + m_EXTENSIONS[ static_cast<int>(stage) ] + "r";
+    std::string shaderCodeName = name + m_EXTENSIONS[ static_cast<int>(stage) ] + "c";
+    std::string shaderReflectionName = name + m_EXTENSIONS[ static_cast<int>(stage) ] + "r";
 
     S_File shaderCodeFile(shaderCodeName);
     S_File shaderReflectionFile(shaderReflectionName);
@@ -262,7 +262,7 @@ void S_VulkanShader::setShader(S_ShaderStage stage, const S_String &name)
         return;
     }
 
-    S_Vector<std::byte> fileData(shaderReflectionFile.size());
+    std::vector<std::byte> fileData(shaderReflectionFile.size());
     shaderReflectionFile.read( reinterpret_cast<char *>(fileData.data()), fileData.size() );
     shaderReflectionFile.close();
 
@@ -332,7 +332,7 @@ const S_ShaderReflectionData *S_VulkanShader::shaderReflection(S_ShaderStage typ
     return &m_shaderReflections[ static_cast<int>(type) ];
 }
 
-const S_Vector<VkDescriptorSetLayout> *S_VulkanShader::descriptorSetLayouts()
+const std::vector<VkDescriptorSetLayout> *S_VulkanShader::descriptorSetLayouts()
 {
     return &m_descriptorSetLayouts;
 }

@@ -2,8 +2,8 @@
 
 #include "tiny_gltf.h"
 
-#include "solo/stl/S_Vector.h"
-#include "solo/stl/S_String.h"
+#include <vector>
+#include <string>
 #include "solo/math/S_Math.h"
 
 namespace solo
@@ -14,13 +14,13 @@ class S_Texture;
 class S_Model{
 
 public:
-    S_Model(const S_String &model);
+    S_Model(const std::string &model);
     virtual ~S_Model();
-    S_String path() const;
+    std::string path() const;
 
 private:
     tinygltf::FsCallbacks m_fsCallbacks;
-    S_String m_path;
+    std::string m_path;
 
     struct Node;
 
@@ -95,7 +95,7 @@ private:
 
     struct Mesh
     {
-        S_Vector<Primitive*> Primitives;
+        std::vector<Primitive*> Primitives;
         struct BoundingBox BoundingBox;
         struct BoundingBox AABoundingBox;
         struct _UniformBlock
@@ -112,19 +112,19 @@ private:
 
     struct Skin
     {
-        S_String Name;
+        std::string Name;
         Node *SkeletonRoot = nullptr;
-        S_Vector<glm::mat4> InverseBindMatrices;
-        S_Vector<Node*> Joints;
+        std::vector<glm::mat4> InverseBindMatrices;
+        std::vector<Node*> Joints;
     };
 
     struct Node
     {
         Node *Parent;
         uint32_t Index;
-        S_Vector<Node*> Children;
+        std::vector<Node*> Children;
         glm::mat4 Matrix;
-        S_String Name;
+        std::string Name;
         Mesh *MeshData;
         struct Skin *Skin;
         int32_t SkinIndex = -1;
@@ -164,15 +164,15 @@ private:
     {
 
         InterpolationType Interpolation;
-        S_Vector<float> Inputs;
-        S_Vector<glm::vec4> OutputsVec4;
+        std::vector<float> Inputs;
+        std::vector<glm::vec4> OutputsVec4;
     };
 
     struct Animation
     {
-        S_String Name;
-        S_Vector<AnimationSampler> Samplers;
-        S_Vector<AnimationChannel> Channels;
+        std::string Name;
+        std::vector<AnimationSampler> Samplers;
+        std::vector<AnimationChannel> Channels;
         float Start = std::numeric_limits<float>::max();
         float End = std::numeric_limits<float>::min();
     };
@@ -190,13 +190,13 @@ private:
 
     int m_indices;
     glm::mat4 m_aABoundingBox;
-    S_Vector<Node*> m_nodes;
-    S_Vector<Node*> m_linearNodes;
-    S_Vector<Skin*> m_skins;
-    S_Vector<S_Texture *> m_textures;
-    S_Vector<Material> m_materials;
-    S_Vector<Animation> m_animations;
-    S_Vector<S_String> m_extensions;
+    std::vector<Node*> m_nodes;
+    std::vector<Node*> m_linearNodes;
+    std::vector<Skin*> m_skins;
+    std::vector<S_Texture *> m_textures;
+    std::vector<Material> m_materials;
+    std::vector<Animation> m_animations;
+    std::vector<std::string> m_extensions;
 
     struct Dimensions
     {
@@ -204,13 +204,13 @@ private:
         glm::vec3 Max = glm::vec3( -FLT_MAX, -FLT_MAX, -FLT_MAX );
     } m_dimensions;
 
-    void loadNode(Node* parent, const tinygltf::Node& node, uint32_t nodeIndex, const tinygltf::Model& model, S_Vector<uint32_t>& indexBuffer, S_Vector<Vertex>& vertexBuffer, float globalscale);
+    void loadNode(Node* parent, const tinygltf::Node& node, uint32_t nodeIndex, const tinygltf::Model& model, std::vector<uint32_t>& indexBuffer, std::vector<Vertex>& vertexBuffer, float globalscale);
     void loadSkins(tinygltf::Model& gltfModel);
     void loadTextures(tinygltf::Model& gltfModel);
     void loadTextureSamplers(tinygltf::Model& gltfModel);
     void loadMaterials(tinygltf::Model& gltfModel);
     void loadAnimations(tinygltf::Model& gltfModel);
-    void loadFrom(S_String filename, float scale = 1.0f);
+    void loadFrom(std::string filename, float scale = 1.0f);
     void calculateBoundingBox(Node* node, Node* parent);
     void getSceneDimensions();
     void updateAnimation(uint32_t index, float time);

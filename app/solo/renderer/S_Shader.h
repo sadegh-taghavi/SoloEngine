@@ -1,6 +1,6 @@
 #pragma once
 
-#include "solo/stl/S_String.h"
+#include <string>
 
 namespace solo
 {
@@ -23,8 +23,8 @@ public:
     virtual ~S_Shader();
     virtual void bind() = 0;
     virtual void commit() = 0;
-    virtual void updateUniformValue( const S_String &name, S_ShaderStage stage, const void *value ) = 0;
-    virtual void updateTextureValue( const S_String &name, S_ShaderStage stage, const S_Texture &texture, uint32_t arrayIndex = 0 ) = 0;
+    virtual void updateUniformValue( const std::string &name, S_ShaderStage stage, const void *value ) = 0;
+    virtual void updateTextureValue( const std::string &name, S_ShaderStage stage, const S_Texture &texture, uint32_t arrayIndex = 0 ) = 0;
 private:
 
 

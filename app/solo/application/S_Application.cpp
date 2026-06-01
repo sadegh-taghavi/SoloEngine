@@ -1,7 +1,7 @@
 #include "S_Application.h"
 #include "solo/debug/S_Debug.h"
 #include "solo/file/S_File.h"
-#include "solo/stl/S_List.h"
+#include <list>
 
 using namespace solo;
 

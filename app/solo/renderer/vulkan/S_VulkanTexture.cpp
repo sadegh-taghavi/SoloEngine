@@ -12,7 +12,7 @@
 
 using namespace solo;
 
-S_VulkanTexture::S_VulkanTexture(S_VulkanRendererAPI *api, const S_String &texture) : S_Texture(), m_api( api )
+S_VulkanTexture::S_VulkanTexture(S_VulkanRendererAPI *api, const std::string &texture) : S_Texture(), m_api( api )
 
 {
     S_File file( texture );
@@ -22,7 +22,7 @@ S_VulkanTexture::S_VulkanTexture(S_VulkanRendererAPI *api, const S_String &textu
         return;
     }
 
-    S_Vector<std::byte> fileData(file.size());
+    std::vector<std::byte> fileData(file.size());
     file.read( reinterpret_cast<char *>( fileData.data() ), fileData.size() );
     file.close();
 
@@ -143,7 +143,7 @@ S_VulkanTexture::S_VulkanTexture(S_VulkanRendererAPI *api, const S_String &textu
         numCopyRegions = ktTexture->isArray ? ktTexture->numLevels : ktTexture->numLevels * ktTexture->numFaces;
         bufferSize += numCopyRegions * elementSize * 4;
     }
-    S_Vector<VkBufferImageCopy> copyRegions(numCopyRegions);
+    std::vector<VkBufferImageCopy> copyRegions(numCopyRegions);
 
 
     VkBuffer stageBuffer;

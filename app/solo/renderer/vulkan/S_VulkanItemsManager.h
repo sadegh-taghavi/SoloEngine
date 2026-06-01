@@ -2,8 +2,8 @@
 
 #include <memory>
 #include <vulkan/vulkan.h>
-#include "solo/stl/S_String.h"
-#include "solo/stl/S_List.h"
+#include <string>
+#include <list>
 #include "solo/renderer/S_TextureSampler.h"
 
 namespace solo
@@ -24,10 +24,10 @@ public:
     S_VulkanVertexBuffer *createVertexBuffer(uint32_t verticesCount, uint32_t indicesCount, uint32_t instancesCount,
                                  std::unique_ptr<S_VertexBufferDescriptorArray> verticesDescriptorArray,
                                  std::unique_ptr<S_VertexBufferDescriptorArray> instancesDescriptorArray);
-    S_VulkanShader *createShader(const S_String &vertexShader, const S_String &fragmentShader,
-                           const S_String &geometryShader, const S_String &computeShader);
+    S_VulkanShader *createShader(const std::string &vertexShader, const std::string &fragmentShader,
+                           const std::string &geometryShader, const std::string &computeShader);
 
-    S_VulkanTexture *createTexture(const S_String &texture);
+    S_VulkanTexture *createTexture(const std::string &texture);
 
     S_VulkanTextureSampler *createTextureSampler(const S_TextureSamplerDescriptor &descriptor);
 
@@ -37,10 +37,10 @@ public:
 
 private:
     S_VulkanRendererAPI *m_api;  
-    S_List<std::unique_ptr<S_VulkanVertexBuffer>> m_vertexBuffers;
-    S_List<std::unique_ptr<S_VulkanShader>> m_shaders;
-    S_List<std::unique_ptr<S_VulkanTexture>> m_textures;
-    S_List<std::unique_ptr<S_VulkanTextureSampler>> m_textureSamplers;
+    std::list<std::unique_ptr<S_VulkanVertexBuffer>> m_vertexBuffers;
+    std::list<std::unique_ptr<S_VulkanShader>> m_shaders;
+    std::list<std::unique_ptr<S_VulkanTexture>> m_textures;
+    std::list<std::unique_ptr<S_VulkanTextureSampler>> m_textureSamplers;
 
 };
 

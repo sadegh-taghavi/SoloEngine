@@ -1,5 +1,5 @@
 #pragma once
-#include "solo/stl/S_List.h"
+#include <list>
 
 namespace solo
 {
@@ -11,11 +11,11 @@ public:
     virtual ~S_Object();
     S_Object *parent() const;
     void setParent(S_Object *parent);
-    const S_List<S_Object *> &children() const;
+    const std::list<S_Object *> &children() const;
 
 private:
     S_Object *m_parent;
-    S_List<S_Object*> m_children;
+    std::list<S_Object*> m_children;
 
 };
 }

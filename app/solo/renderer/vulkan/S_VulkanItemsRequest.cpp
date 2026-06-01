@@ -2,14 +2,14 @@
 #include "S_VulkanItemsRequest.h"
 #include "S_VulkanAllocator.h"
 #include "solo/debug/S_Debug.h"
-#include "solo/stl/S_Map.h"
+#include <map>
 #include <stdint.h>
 #include <algorithm>
 #include <set>
 
 using namespace solo;
 
-const S_Vector<char *> *S_VulkanItemsRequest::enabledItems()
+const std::vector<char *> *S_VulkanItemsRequest::enabledItems()
 {
     return &m_enabledItems;
 }
@@ -17,12 +17,12 @@ const S_Vector<char *> *S_VulkanItemsRequest::enabledItems()
 void S_VulkanItemsRequest::queryItems()
 {
     m_enabledItems.clear();
-    S_String active;
+    std::string active;
     for ( size_t i = 0; i < m_requestItems.size(); ++i )
     {
         active = m_requestItems.at( i );
         auto foundItem = std::find_if( m_items.begin(), m_items.end(),
-                                       [&active](const char *item) { return S_String(item) == active;} );
+                                       [&active](const char *item) { return std::string(item) == active;} );
         if ( foundItem != m_items.end() )
         {
             m_enabledItems.push_back( (*foundItem) );
@@ -45,7 +45,7 @@ S_VulkanItemsRequest::~S_VulkanItemsRequest()
 
 void S_VulkanItemsRequest::addRequestItem(const char* requestItem)
 {
-    m_requestItems.push_back( S_String( requestItem ) );
+    m_requestItems.push_back( std::string( requestItem ) );
 }
 
 void solo::S_VulkanItemsRequest::clearRequestedItems()
@@ -57,7 +57,7 @@ void S_VulkanItemsInstanceExtensionRequest::queryItems()
 {
     uint32_t count = 0;
     VK_RESULT_CHECK( vkEnumerateInstanceExtensionProperties( nullptr, &count, nullptr ) )
-    S_Vector<VkExtensionProperties> items;
+    std::vector<VkExtensionProperties> items;
     items.resize( count );
     m_items.clear();
     VK_RESULT_CHECK( vkEnumerateInstanceExtensionProperties( nullptr, &count, items.data() ) )
@@ -73,7 +73,7 @@ void S_VulkanItemsInstanceLayersRequest::queryItems()
 {
     uint32_t count = 0;
     VK_RESULT_CHECK( vkEnumerateInstanceLayerProperties( &count, nullptr ) )
-    S_Vector<VkLayerProperties> items;
+    std::vector<VkLayerProperties> items;
     items.resize( count );
     m_items.clear();
     VK_RESULT_CHECK( vkEnumerateInstanceLayerProperties( &count, items.data() ) )
@@ -89,7 +89,7 @@ void S_VulkanItemsDeviceExtensionRequest::queryItems(S_VulkanRendererAPI *api)
 {
     uint32_t count = 0;
     VK_RESULT_CHECK( vkEnumerateDeviceExtensionProperties( api->physicalDevice(), nullptr, &count, nullptr ) )
-    S_Vector<VkExtensionProperties> items;
+    std::vector<VkExtensionProperties> items;
     items.resize( count );
     m_items.clear();
     VK_RESULT_CHECK( vkEnumerateDeviceExtensionProperties( api->physicalDevice(), nullptr, &count, items.data() ) )
@@ -105,7 +105,7 @@ void S_VulkanItemsDeviceLayersRequest::queryItems(S_VulkanRendererAPI *api)
 {
     uint32_t count = 0;
     VK_RESULT_CHECK( vkEnumerateDeviceLayerProperties( api->physicalDevice(), &count, nullptr ) )
-    S_Vector<VkLayerProperties> items;
+    std::vector<VkLayerProperties> items;
     items.resize( count );
     m_items.clear();
     VK_RESULT_CHECK( vkEnumerateDeviceLayerProperties( api->physicalDevice(), &count, items.data() ) )

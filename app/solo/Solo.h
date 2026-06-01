@@ -7,12 +7,12 @@
 #include "base/S_Object.h"
 #include "math/S_Math.h"
 
-#include "stl/S_Map.h"
-#include "stl/S_List.h"
-#include "stl/S_Vector.h"
-#include "stl/S_Array.h"
-#include "stl/S_Tuple.h"
-#include "stl/S_String.h"
+#include <map>
+#include <list>
+#include <vector>
+#include <array>
+#include <tuple>
+#include <string>
 
 #include "thread/S_Mutex.h"
 #include "thread/S_Thread.h"

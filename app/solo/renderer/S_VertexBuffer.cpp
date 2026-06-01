@@ -74,7 +74,7 @@ S_VertexBufferDescriptorArray::S_VertexBufferDescriptorArray() : m_stride(0)
 
 }
 
-S_VertexBufferDescriptorArray::S_VertexBufferDescriptorArray(uint32_t stride, const S_Vector<S_VertexBufferDescriptor> &descriptors) :
+S_VertexBufferDescriptorArray::S_VertexBufferDescriptorArray(uint32_t stride, const std::vector<S_VertexBufferDescriptor> &descriptors) :
     m_stride(stride), m_descriptors( descriptors )
 {
 
@@ -85,7 +85,7 @@ S_VertexBufferDescriptorArray::~S_VertexBufferDescriptorArray()
 
 }
 
-const S_Vector<S_VertexBufferDescriptor> *S_VertexBufferDescriptorArray::descriptors() const
+const std::vector<S_VertexBufferDescriptor> *S_VertexBufferDescriptorArray::descriptors() const
 {
     return &m_descriptors;
 }

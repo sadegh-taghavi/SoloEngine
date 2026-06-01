@@ -36,7 +36,7 @@ void S_Object::setParent(S_Object *parent)
         m_parent->m_children.push_back( this );
 }
 
-const S_List<S_Object *> &S_Object::children() const
+const std::list<S_Object *> &S_Object::children() const
 {
     return m_children;
 }
