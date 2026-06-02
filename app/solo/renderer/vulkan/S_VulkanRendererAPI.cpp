@@ -17,9 +17,6 @@
 #include "solo/resource/S_ResourceManager.h"
 #include "solo/thread/S_Thread.h"
 #include "solo/utility/S_ElapsedTime.h"
-#include "solo/renderer/S_Camera.h"
-#include "solo/renderer/S_CameraController.h"
-#include "solo/renderer/S_Model.h"
 #include "solo/math/S_Math.h"
 #if defined(S_PLATFORM_WINDOWS)
 #define NOMINMAX
@@ -934,6 +931,11 @@ uint32_t S_VulkanRendererAPI::nextSwapchainImageIndex() const
     return m_nextSwapchainImageIndex;
 }
 
+void S_VulkanRendererAPI::createGraphicsPipeline(const std::vector<S_PipelineDescriptor> &descriptors)
+{
+    m_pipelines->create(&descriptors);
+}
+
 VmaAllocator S_VulkanRendererAPI::vmaAllocator() const
 {
     return m_vmaAllocator;
@@ -982,120 +984,13 @@ S_VulkanRendererAPI::S_VulkanRendererAPI() : S_RendererAPI (), m_nextFrameRender
     createSwapChain();
     createImageViews();
     createRenderPass();
-    auto ptr = std::make_unique<S_Model>("sr:/models/scene.gltf");
-    // ptr->~S_Model();
     m_pipelines = std::make_unique<S_VulkanPipeline>( this );
     m_itemsManager = std::make_unique<S_VulkanItemsManager>(this);
-    struct Vertex
-    {
-        glm::vec3 position;
-        glm::vec2 texcoord;
-    };
-
-    std::vector<S_VertexBufferDescriptor> veticesDescriptors;
-    veticesDescriptors.resize( 2 );
-    veticesDescriptors[0].Size = sizeof( glm::vec3 );
-    veticesDescriptors[0].Format = S_VertexBufferDescriptorFormat::R32G32B32_SFLOAT;
-    veticesDescriptors[0].Offset = offsetof( Vertex, position );
-    veticesDescriptors[1].Size = sizeof( glm::vec2 );
-    veticesDescriptors[1].Format = S_VertexBufferDescriptorFormat::R32G32_SFLOAT;
-    veticesDescriptors[1].Offset = offsetof( Vertex, texcoord );
-
-
-    struct Instance
-    {
-        glm::vec4 transform;
-        glm::vec4 color;
-    };
-
-    std::vector<S_VertexBufferDescriptor> instancesDescriptors;
-    instancesDescriptors.resize( 2 );
-    instancesDescriptors[0].Size = sizeof( glm::vec4 );
-    instancesDescriptors[0].Format = S_VertexBufferDescriptorFormat::R32G32B32A32_SFLOAT;
-    instancesDescriptors[0].Offset = offsetof( Instance, transform );
-    instancesDescriptors[1].Size = sizeof( glm::vec4 );
-    instancesDescriptors[1].Format = S_VertexBufferDescriptorFormat::R32G32B32A32_SFLOAT;
-    instancesDescriptors[1].Offset = offsetof( Instance, color );
-
-    std::vector<S_PipelineDescriptor> pds;
-    S_PipelineDescriptor pd;
-    pd.VertexBufferDescriptorArray = S_VertexBufferDescriptorArray( sizeof (Vertex), veticesDescriptors );
-    pd.InstanceBufferDescriptorArray = S_VertexBufferDescriptorArray( sizeof (Instance), instancesDescriptors );
-    vShader = createShader( "sr:/shaders/vs", "sr:/shaders/ps", "", "" );
-    pd.Shader = vShader;
-    pds.push_back( pd );
-
-    m_pipelines->create( &pds );
-
     createDepthResources();
     createFramebuffers();
     createCommandPool();
     createCommandBuffers();
     createSyncObjects();
-
-    vVB = createVertexBuffer( 4, 6, 1600,
-                              std::make_unique<S_VertexBufferDescriptorArray>( static_cast<uint32_t>(sizeof(Vertex)), veticesDescriptors ),
-                              std::make_unique<S_VertexBufferDescriptorArray>( static_cast<uint32_t>(sizeof(Instance)), instancesDescriptors ) );
-    auto vbr = vVB->beginVerticesData();
-    Vertex *v = reinterpret_cast<Vertex*>( vbr.first );
-    uint32_t *i = reinterpret_cast<uint32_t*>( vbr.second );
-    v[0].position = glm::vec3(-0.5f, 0.0f, -0.5f);
-    v[1].position = glm::vec3( 0.5f, 0.0f, -0.5f);
-    v[2].position = glm::vec3(-0.5f, 0.0f,  0.5f);
-    v[3].position = glm::vec3( 0.5f, 0.0f,  0.5f);
-    v[0].texcoord = glm::vec2(0.0f, 0.0f);
-    v[1].texcoord = glm::vec2(1.0f, 0.0f);
-    v[2].texcoord = glm::vec2(0.0f, 1.0f);
-    v[3].texcoord = glm::vec2(1.0f, 1.0f);
-
-    i[0] = 0;
-    i[1] = 1;
-    i[2] = 2;
-    i[3] = 2;
-    i[4] = 1;
-    i[5] = 3;
-
-    vVB->endVerticesData();
-
-    Instance *ind = reinterpret_cast<Instance*>( vVB->beginInstancesData() );
-    uint32_t cntr = 0;
-
-    std::random_device rd;
-    std::mt19937 mt(rd());
-    std::uniform_real_distribution<float> dist(-2.0, 2.0);
-
-
-    for( int xx = -20 ; xx < 20; ++xx )
-    {
-        for( int zz = -20 ; zz < 20; ++zz )
-        {
-            ind[cntr].transform = glm::vec4( xx, dist(mt), zz, 0.0f );
-            ind[cntr].color = glm::vec4( 1.0f, 1.0f, 1.0f, 1.0f );
-            ++cntr;
-        }
-    }
-
-//    ind[1].transform = S_Vec4( 1.0, 0.0, 0.0, 0.0 );
-//    ind[1].color = S_Vec4( 1.0, 0.0, 0.0, 1.0 );
-//    ind[2].transform = S_Vec4( 0.0, 1.0, 0.0, 0.0 );
-//    ind[2].color = S_Vec4( 0.0, 1.0, 0.0, 1.0 );
-//    ind[3].transform = S_Vec4( 0.0, 0.0, 1.0, 0.0 );
-//    ind[3].color = S_Vec4( 0.0, 0.0, 1.0, 1.0 );
-
-    vVB->endInstancesData();
-
-    //    VkFormatProperties prop;
-    //    vkGetPhysicalDeviceFormatProperties( m_physicalDevice, VK_FORMAT_BC7_UNORM_BLOCK, &prop );
-    //    s_debug( "DDDDDDDDFFFFFFF", prop.bufferFeatures, prop.linearTilingFeatures, prop.optimalTilingFeatures );
-
-    vTexture = m_itemsManager->createTexture("sr:/textures/sign.ktx");
-    vTexture ->setSampler( m_itemsManager->createTextureSampler( S_TextureSamplerDescriptor()  ) );
-
-    vCam = std::make_shared<S_CameraPerspective>();
-    vCam->setPosition( glm::vec3( 0.0f, 2.0f, 10.0f) );
-
-    vCamController = std::make_shared<S_FirstPersonCameraController>();
-    vCamController->setCamera( vCam );
 }
 
 void S_VulkanRendererAPI::cleanupSwapChain()
@@ -1197,33 +1092,8 @@ void S_VulkanRendererAPI::drawFrame()
 
     vkCmdBindPipeline( m_nextFrameRenderCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelines->pipelines()->at(0) );
 
-    vShader->bind();
-
-    struct UPerObjectVS{
-        glm::mat4 MVP;
-    }uPerObjectVS;
-
-    struct UPerObjectFS{
-        glm::vec4 Color;
-    }uPerObjectFS;
-
-    vCam->setWidth( static_cast<float>(S_Application::executingApplication()->window()->width()) );
-    vCam->setHeight( static_cast<float>(S_Application::executingApplication()->window()->height()) );
-
-    vCamController->update();
-
-    glm::mat4 model(1.0f);
-    model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));
-    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-    model *= glm::mat4_cast(glm::quat(1.0f, 0.0f, 0.0f, 0.0f));
-    uPerObjectVS.MVP = model * vCam->viewProjection();
-    uPerObjectFS.Color = glm::vec4( 1.0f, 1.0f, 1.0f, 1.0f );
-    vShader->updateTextureValue("texSampler", S_ShaderStage::FragmentShader, *vTexture );
-
-    vShader->updateUniformValue("UPerObject", S_ShaderStage::VertexShader, &uPerObjectVS);
-    vShader->updateUniformValue("UPerObject", S_ShaderStage::FragmentShader, &uPerObjectFS);
-    vShader->commit();
-    vVB->draw();
+    if( m_renderCallback )
+        m_renderCallback();
 
     vkCmdEndRenderPass( m_nextFrameRenderCommandBuffer );
     VK_RESULT_CHECK( vkEndCommandBuffer( m_nextFrameRenderCommandBuffer ) );

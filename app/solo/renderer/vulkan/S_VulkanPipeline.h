@@ -1,6 +1,6 @@
 #pragma once
 #include "solo/renderer/S_RendererAPI.h"
-#include "solo/renderer/S_VertexBuffer.h"
+#include "solo/renderer/S_PipelineDescriptor.h"
 #include "solo/debug/S_Debug.h"
 #include <vector>
 #include <array>
@@ -14,13 +14,6 @@ namespace solo
 
 class S_VulkanRendererAPI;
 class S_Shader;
-
-struct S_PipelineDescriptor
-{
-    S_VertexBufferDescriptorArray VertexBufferDescriptorArray;
-    S_VertexBufferDescriptorArray InstanceBufferDescriptorArray;
-    S_Shader *Shader;
-};
 
 class S_VulkanPipeline
 {

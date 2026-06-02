@@ -1,8 +1,10 @@
 #pragma once
 
 #include <memory>
+#include <functional>
 #include "solo/renderer/S_VertexBuffer.h"
 #include "solo/renderer/S_TextureSampler.h"
+#include "solo/renderer/S_PipelineDescriptor.h"
 #include <string>
 #include "solo/utility/S_ElapsedTime.h"
 
@@ -33,6 +35,8 @@ public:
 
     S_TextureSampler *createTextureSampler(const S_TextureSamplerDescriptor &descriptor);
 
+    void createGraphicsPipeline(const std::vector<S_PipelineDescriptor> &descriptors);
+    void setRenderCallback(std::function<void()> callback);
     void beginScene(std::shared_ptr<S_Scene> scene);
     void endScene();
     void drawFrame();

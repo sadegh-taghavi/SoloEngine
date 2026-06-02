@@ -117,6 +117,7 @@ set(HEADERS
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanTexture.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanTextureSampler.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanItemsManager.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_PipelineDescriptor.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_RendererAPI.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_Renderer.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_VertexBuffer.h

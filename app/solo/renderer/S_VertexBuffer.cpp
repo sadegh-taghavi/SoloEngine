@@ -66,7 +66,7 @@ void S_VertexBuffer::setDrawInstancesCount(const uint32_t &drawInstancesCount)
     if( drawInstancesCount < m_instancesCount )
         m_drawInstancesCount = drawInstancesCount;
     else
-        m_drawInstancesCount = drawInstancesCount;
+        m_drawInstancesCount = m_instancesCount;
 }
 
 S_VertexBufferDescriptorArray::S_VertexBufferDescriptorArray() : m_stride(0)

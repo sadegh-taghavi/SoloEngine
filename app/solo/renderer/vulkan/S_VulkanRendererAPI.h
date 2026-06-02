@@ -68,6 +68,7 @@ public:
     S_VulkanRendererAPI();
     virtual ~S_VulkanRendererAPI();
 
+    virtual void createGraphicsPipeline(const std::vector<S_PipelineDescriptor> &descriptors) override;
     virtual void drawFrame();
     virtual void resize( uint32_t width, uint32_t height );
     virtual void active( bool active );
@@ -213,11 +214,6 @@ private:
     VmaAllocator m_vmaAllocator;
     std::unique_ptr<S_VulkanItemsManager> m_itemsManager;
     VkPhysicalDeviceProperties m_physicalDeviceProperties;
-    class S_VertexBuffer *vVB;
-    class S_Shader *vShader;
-    class S_Texture *vTexture;
-    std::shared_ptr<class S_CameraPerspective> vCam;
-    std::shared_ptr<class S_FirstPersonCameraController> vCamController;
 
     VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
     VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);

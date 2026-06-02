@@ -41,6 +41,16 @@ S_TextureSampler *S_Renderer::createTextureSampler(const S_TextureSamplerDescrip
     return m_api->createTextureSampler(descriptor);
 }
 
+void S_Renderer::createGraphicsPipeline(const std::vector<S_PipelineDescriptor> &descriptors)
+{
+    m_api->createGraphicsPipeline(descriptors);
+}
+
+void S_Renderer::setRenderCallback(std::function<void()> callback)
+{
+    m_api->setRenderCallback(std::move(callback));
+}
+
 void S_Renderer::beginScene(std::shared_ptr<S_Scene> scene)
 {
 

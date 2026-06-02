@@ -1,6 +1,9 @@
 #pragma once
 #include <string>
+#include <vector>
+#include <functional>
 #include "solo/renderer/S_TextureSampler.h"
+#include "solo/renderer/S_PipelineDescriptor.h"
 #include <stdint.h>
 #include <memory>
 
@@ -25,14 +28,16 @@ public:
     virtual S_Texture *createTexture(const std::string &texture) = 0;
     virtual S_TextureSampler *createTextureSampler(const S_TextureSamplerDescriptor &descriptor) = 0;
 
+    virtual void createGraphicsPipeline(const std::vector<S_PipelineDescriptor> &descriptors) = 0;
+    void setRenderCallback(std::function<void()> callback) { m_renderCallback = std::move(callback); }
+
     virtual void drawFrame() = 0;
     virtual void resize( uint32_t, uint32_t ){}
     virtual void active( bool ){}
     virtual ~S_RendererAPI();
 
-private:
-
+protected:
+    std::function<void()> m_renderCallback;
 };
 
 }
-
