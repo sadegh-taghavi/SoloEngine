@@ -21,7 +21,7 @@ S_VulkanTextureSampler::S_VulkanTextureSampler(S_VulkanRendererAPI *api, const S
     samplerInfo.addressModeV = static_cast<VkSamplerAddressMode>(descriptor.AddressModeV);
     samplerInfo.addressModeW = static_cast<VkSamplerAddressMode>(descriptor.AddressModeW);
     samplerInfo.anisotropyEnable = descriptor.AnisotropyEnable;
-    samplerInfo.maxAnisotropy = descriptor.MaxAnisotropy;
+    samplerInfo.maxAnisotropy = static_cast<float>(descriptor.MaxAnisotropy);
     samplerInfo.borderColor = static_cast<VkBorderColor>(descriptor.BorderColor);
     samplerInfo.unnormalizedCoordinates = VK_FALSE;
     samplerInfo.compareEnable = VK_FALSE;

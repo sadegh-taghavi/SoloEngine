@@ -54,7 +54,7 @@ S_VulkanShader::S_VulkanShader(S_VulkanRendererAPI *api, const std::string &vert
             binding.descriptorCount = uniformBuffer.ArraySize;
             uniformBuffer.Offset = m_uniformsMemorySize; // globalOffset
             uint64_t blockSize = uniformBuffer.ArraySize * uniformBuffer.BlockSize;
-            m_uniformsMemorySize += (blockSize + m_bufferAlignment - 1) / m_bufferAlignment * m_bufferAlignment;
+            m_uniformsMemorySize += static_cast<uint32_t>((blockSize + m_bufferAlignment - 1) / m_bufferAlignment * m_bufferAlignment);
             layoutBindingList.at( uniformBuffer.Set ).push_back( binding );
         }
 

@@ -133,7 +133,7 @@ S_VulkanTexture::S_VulkanTexture(S_VulkanRendererAPI *api, const std::string &te
             canUseFasterPath = false;
     }
 
-    uint32_t bufferSize = ktTexture->dataSize;
+    uint32_t bufferSize = static_cast<uint32_t>(ktTexture->dataSize);
     uint32_t numCopyRegions;
     if (canUseFasterPath)
     {
@@ -325,7 +325,7 @@ S_VulkanTexture::S_VulkanTexture(S_VulkanRendererAPI *api, const std::string &te
 
     m_api->setImageLayout( cmdBuffer, m_image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange);
 
-    vkCmdCopyBufferToImage( cmdBuffer, stageBuffer, m_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, copyRegions.size(), copyRegions.data() );
+    vkCmdCopyBufferToImage( cmdBuffer, stageBuffer, m_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, static_cast<uint32_t>(copyRegions.size()), copyRegions.data() );
 
     if (ktTexture->generateMipmaps)
     {

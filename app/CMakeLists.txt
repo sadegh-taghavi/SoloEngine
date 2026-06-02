@@ -1,6 +1,10 @@
 
 cmake_minimum_required(VERSION 3.7.2)
 project(solo VERSION 0.1.0)
+
+if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+    message(FATAL_ERROR "Only 64-bit builds are supported")
+endif()
 add_compile_definitions(UNICODE)
 
 set(CMAKE_CXX_STANDARD 17)

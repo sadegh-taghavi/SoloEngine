@@ -1034,8 +1034,8 @@ S_VulkanRendererAPI::S_VulkanRendererAPI() : S_RendererAPI (), m_nextFrameRender
     createSyncObjects();
 
     vVB = createVertexBuffer( 4, 6, 1600,
-                              std::make_unique<S_VertexBufferDescriptorArray>( sizeof(Vertex), veticesDescriptors ),
-                              std::make_unique<S_VertexBufferDescriptorArray>( sizeof(Instance), instancesDescriptors ) );
+                              std::make_unique<S_VertexBufferDescriptorArray>( static_cast<uint32_t>(sizeof(Vertex)), veticesDescriptors ),
+                              std::make_unique<S_VertexBufferDescriptorArray>( static_cast<uint32_t>(sizeof(Instance)), instancesDescriptors ) );
     auto vbr = vVB->beginVerticesData();
     Vertex *v = reinterpret_cast<Vertex*>( vbr.first );
     uint32_t *i = reinterpret_cast<uint32_t*>( vbr.second );
@@ -1207,8 +1207,8 @@ void S_VulkanRendererAPI::drawFrame()
         glm::vec4 Color;
     }uPerObjectFS;
 
-    vCam->setWidth( S_Application::executingApplication()->window()->width() );
-    vCam->setHeight( S_Application::executingApplication()->window()->height() );
+    vCam->setWidth( static_cast<float>(S_Application::executingApplication()->window()->width()) );
+    vCam->setHeight( static_cast<float>(S_Application::executingApplication()->window()->height()) );
 
     vCamController->update();
 

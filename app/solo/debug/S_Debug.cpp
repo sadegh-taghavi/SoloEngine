@@ -48,7 +48,7 @@ S_Debug &S_Debug::operator<<(const std::string &val)
 S_Debug &S_Debug::operator<<(const uint64_t &val)
 {
     char str[64];
-    sprintf( str, " %llu", val );
+    snprintf( str, sizeof(str), " %llu", val );
     m_data += str;
     return *this;
 }
@@ -56,7 +56,7 @@ S_Debug &S_Debug::operator<<(const uint64_t &val)
 S_Debug &S_Debug::operator<<(const int64_t &val)
 {
     char str[64];
-    sprintf( str, " %lld", val );
+    snprintf( str, sizeof(str), " %lld", val );
     m_data += str;
     return *this;
 }
@@ -64,7 +64,7 @@ S_Debug &S_Debug::operator<<(const int64_t &val)
 S_Debug &S_Debug::operator<<(const unsigned int &val)
 {
     char str[64];
-    sprintf( str, " %d", val );
+    snprintf( str, sizeof(str), " %d", val );
     m_data += str;
     return *this;
 }
@@ -72,7 +72,7 @@ S_Debug &S_Debug::operator<<(const unsigned int &val)
 S_Debug &S_Debug::operator<<(const int &val)
 {
     char str[64];
-    sprintf( str, " %d", val );
+    snprintf( str, sizeof(str), " %d", val );
     m_data += str;
     return *this;
 }
@@ -80,7 +80,7 @@ S_Debug &S_Debug::operator<<(const int &val)
 S_Debug &S_Debug::operator<<(const float &val)
 {
     char str[64];
-    sprintf( str, " %f", static_cast<double>(val) );
+    snprintf( str, sizeof(str), " %f", static_cast<double>(val) );
     m_data += str;
     return *this;
 }
@@ -88,7 +88,7 @@ S_Debug &S_Debug::operator<<(const float &val)
 S_Debug &S_Debug::operator<<(const double &val)
 {
     char str[64];
-    sprintf( str, " %lf", val );
+    snprintf( str, sizeof(str), " %lf", val );
     m_data += str;
     return *this;
 }
