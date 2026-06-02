@@ -17,20 +17,19 @@ const std::vector<char *> *S_VulkanItemsRequest::enabledItems()
 void S_VulkanItemsRequest::queryItems()
 {
     m_enabledItems.clear();
-    std::string active;
+    m_ownedEnabledItems.clear();
     for ( size_t i = 0; i < m_requestItems.size(); ++i )
     {
-        active = m_requestItems.at( i );
+        const std::string &active = m_requestItems.at( i );
         auto foundItem = std::find_if( m_items.begin(), m_items.end(),
-                                       [&active](const char *item) { return std::string(item) == active;} );
+                                       [&active](const std::string &item) { return item == active; } );
         if ( foundItem != m_items.end() )
-        {
-            m_enabledItems.push_back( (*foundItem) );
-//            s_debugLayer( "active item:", "\t", (*foundItem) );
-        }
+            m_ownedEnabledItems.push_back( *foundItem );
         else
-            s_debugLayer( "item not found:", "\t", m_requestItems.at( i ) );
+            s_debugLayer( "item not found:", "\t", active.c_str() );
     }
+    for ( auto &s : m_ownedEnabledItems )
+        m_enabledItems.push_back( const_cast<char *>( s.c_str() ) );
 }
 
 S_VulkanItemsRequest::S_VulkanItemsRequest()
@@ -63,7 +62,7 @@ void S_VulkanItemsInstanceExtensionRequest::queryItems()
     VK_RESULT_CHECK( vkEnumerateInstanceExtensionProperties( nullptr, &count, items.data() ) )
     for ( size_t i = 0; i < items.size(); ++i )
     {
-        m_items.push_back( items.at(i).extensionName  );
+        m_items.push_back( std::string( items.at(i).extensionName ) );
 //        s_debugLayer( "S_VulkanItemsInstanceExtensionRequest:", "\t", items.at(i).extensionName );
     }
     S_VulkanItemsRequest::queryItems();
@@ -79,7 +78,7 @@ void S_VulkanItemsInstanceLayersRequest::queryItems()
     VK_RESULT_CHECK( vkEnumerateInstanceLayerProperties( &count, items.data() ) )
     for ( size_t i = 0; i < items.size(); ++i )
     {
-        m_items.push_back( items.at(i).layerName  );
+        m_items.push_back( std::string( items.at(i).layerName ) );
 //        s_debugLayer( "S_VulkanItemsInstanceLayersRequest:", "\t", items.at(i).layerName );
     }
     S_VulkanItemsRequest::queryItems();
@@ -95,7 +94,7 @@ void S_VulkanItemsDeviceExtensionRequest::queryItems(S_VulkanRendererAPI *api)
     VK_RESULT_CHECK( vkEnumerateDeviceExtensionProperties( api->physicalDevice(), nullptr, &count, items.data() ) )
     for ( size_t i = 0; i < items.size(); ++i )
     {
-        m_items.push_back( items.at(i).extensionName  );
+        m_items.push_back( std::string( items.at(i).extensionName ) );
 //        s_debugLayer( "S_VulkanItemsDeviceExtensionRequest:", "\t", items.at(i).extensionName );
     }
     S_VulkanItemsRequest::queryItems();
@@ -111,7 +110,7 @@ void S_VulkanItemsDeviceLayersRequest::queryItems(S_VulkanRendererAPI *api)
     VK_RESULT_CHECK( vkEnumerateDeviceLayerProperties( api->physicalDevice(), &count, items.data() ) )
     for ( size_t i = 0; i < items.size(); ++i )
     {
-        m_items.push_back( items.at(i).layerName  );
+        m_items.push_back( std::string( items.at(i).layerName ) );
 //        s_debugLayer( "S_VulkanItemsDeviceLayersRequest:", "\t", items.at(i).layerName );
     }
     S_VulkanItemsRequest::queryItems();

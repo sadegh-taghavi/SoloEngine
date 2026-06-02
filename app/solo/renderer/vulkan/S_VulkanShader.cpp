@@ -1,5 +1,4 @@
 #include "S_VulkanShader.h"
-#include "solo/memory/S_Allocator.h"
 #include "solo/renderer/vulkan/S_VulkanRendererAPI.h"
 #include "solo/file/S_File.h"
 #include "solo/application/S_Application.h"
@@ -54,7 +53,8 @@ S_VulkanShader::S_VulkanShader(S_VulkanRendererAPI *api, const std::string &vert
             binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             binding.descriptorCount = uniformBuffer.ArraySize;
             uniformBuffer.Offset = m_uniformsMemorySize; // globalOffset
-            m_uniformsMemorySize += S_Allocator::makeAlign( uniformBuffer.ArraySize * uniformBuffer.BlockSize, m_bufferAlignment );
+            uint64_t blockSize = uniformBuffer.ArraySize * uniformBuffer.BlockSize;
+            m_uniformsMemorySize += (blockSize + m_bufferAlignment - 1) / m_bufferAlignment * m_bufferAlignment;
             layoutBindingList.at( uniformBuffer.Set ).push_back( binding );
         }
 
@@ -149,7 +149,7 @@ void S_VulkanShader::updateUniformValue(const std::string &name, S_ShaderStage s
 
     memcpy( ptrAddress, value, copySize );
 
-    size_t alignedSize = S_Allocator::makeAlign( copySize, m_bufferAlignment );
+    size_t alignedSize = (copySize + m_bufferAlignment - 1) / m_bufferAlignment * m_bufferAlignment;
 
     m_descriptorBufferInfos.push_back( std::make_unique<VkDescriptorBufferInfo>() );
     VkDescriptorBufferInfo *bufferInfo = (*(m_descriptorBufferInfos.end() - 1)).get();

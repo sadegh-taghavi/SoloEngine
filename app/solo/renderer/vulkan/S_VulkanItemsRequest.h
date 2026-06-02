@@ -21,8 +21,9 @@ public:
     const std::vector<char *> *enabledItems();
 protected:
     void queryItems();
-    std::vector<char *> m_items;
+    std::vector<std::string> m_items;
     std::vector<std::string> m_requestItems;
+    std::vector<std::string> m_ownedEnabledItems;
     std::vector<char *> m_enabledItems;
 };
 

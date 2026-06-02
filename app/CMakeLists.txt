@@ -31,9 +31,6 @@ include_directories(
 
 set(SOURCE
         ${SOURCE}
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/memory/S_Allocator.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/memory/S_Allocator.inl
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/memory/S_AlgorithmAllocator.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/base/S_Object.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/debug/S_Debug.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/thread/S_Mutex.cpp
@@ -82,11 +79,13 @@ set(SOURCE
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/ktx/lib/memstream.c
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/mimalloc332/src/static.c
 )
+
+set_source_files_properties(
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/mimalloc332/src/static.c
+        PROPERTIES COMPILE_DEFINITIONS "MI_MALLOC_OVERRIDE"
+)
 set(HEADERS
         ${HEADERS}
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/memory/S_Allocator.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/memory/S_AlgorithmAllocator.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/memory/S_NewDeleteOverrides.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/base/S_Object.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/math/S_Math.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/thread/S_Mutex.h

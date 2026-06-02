@@ -1,5 +1,4 @@
 #include "S_Object.h"
-#include "solo/memory/S_Allocator.h"
 using namespace solo;
 
 S_Object::S_Object(S_Object *parent) : m_parent(parent)

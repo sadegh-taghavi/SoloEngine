@@ -1,6 +1,8 @@
 #pragma once
 #include <list>
 
+#define s_safe_delete(p) { if( (p) ) { delete (p); (p) = nullptr; } }
+
 namespace solo
 {
 

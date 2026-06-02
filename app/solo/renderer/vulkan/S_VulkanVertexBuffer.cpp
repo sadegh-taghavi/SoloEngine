@@ -1,6 +1,5 @@
 #include "S_VulkanVertexBuffer.h"
 #include "solo/renderer/vulkan/S_VulkanRendererAPI.h"
-#include "solo/memory/S_Allocator.h"
 
 using namespace solo;
 
@@ -10,9 +9,9 @@ S_VulkanVertexBuffer::S_VulkanVertexBuffer(S_VulkanRendererAPI *api, uint32_t ve
     S_VertexBuffer( verticesCount, indicesCount, instancesCount, std::move( verticesDescriptorArray ), std::move( instancesDescriptorArray ) ), m_api(api)
 
 {
-    m_verticesBufferSize = S_Allocator::makeAlign( m_verticesDescriptorArray->stride() * verticesCount, 4 );
-    m_indicesBufferSize = S_Allocator::makeAlign( sizeof(uint32_t) * indicesCount, 4 );
-    m_instancesBufferSize = S_Allocator::makeAlign( m_instancesDescriptorArray->stride() * instancesCount, 4 );
+    m_verticesBufferSize = (m_verticesDescriptorArray->stride() * verticesCount + 3) & ~uint64_t(3);
+    m_indicesBufferSize = (sizeof(uint32_t) * indicesCount + 3) & ~uint64_t(3);
+    m_instancesBufferSize = (m_instancesDescriptorArray->stride() * instancesCount + 3) & ~uint64_t(3);
 
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;

@@ -1,5 +1,5 @@
 #include "S_VulkanAllocator.h"
-#include "solo/memory/S_Allocator.h"
+#include <mimalloc.h>
 
 using namespace solo;
 
@@ -8,18 +8,15 @@ VkAllocationCallbacks S_VulkanAllocator::m_singleton;
 
 void *S_VulkanAllocator::allocation(void */*pUserData*/, size_t size, size_t alignment, VkSystemAllocationScope /*allocationScope*/)
 {
-//    s_debugLayer( "VK_Allocation", size, alignment );
-    return S_Allocator::singleton()->allocate( size, alignment);
+    return mi_malloc_aligned(size, alignment);
 }
 
 void *S_VulkanAllocator::reallocation(void */*pUserData*/, void *pOriginal, size_t size, size_t alignment, VkSystemAllocationScope /*allocationScope*/)
 {
-//    s_debugLayer( "VK_Reallocation", size, alignment );
-    return S_Allocator::singleton()->reallocate( pOriginal, size, alignment );
+    return mi_realloc_aligned(pOriginal, size, alignment);
 }
 
 void S_VulkanAllocator::free(void */*pUserData*/, void *pMemory)
 {
-//    s_debugLayer( "VK_Free" );
-    S_Allocator::singleton()->deallocate( pMemory );
+    mi_free(pMemory);
 }
