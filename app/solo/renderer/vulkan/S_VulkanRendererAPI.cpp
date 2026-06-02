@@ -1,6 +1,7 @@
+#define VMA_IMPLEMENTATION
+#include <vk_mem_alloc.h>
 #include "S_VulkanRendererAPI.h"
 #include "S_VulkanAllocator.h"
-#include "S_VulkanDeviceAllocator.h"
 #include "S_VulkanItemsManager.h"
 #include "S_VulkanItemsRequest.h"
 #include "S_VulkanVertexBuffer.h"
@@ -377,7 +378,12 @@ void S_VulkanRendererAPI::createDevice()
     vkGetDeviceQueue(m_device, static_cast<uint32_t>( selectedQueueIndices.IndexCompute ), 0, &m_computeQueue );
     vkGetDeviceQueue(m_device, static_cast<uint32_t>( selectedQueueIndices.IndexTransfer ), 0, &m_transferQueue );
     vkGetDeviceQueue(m_device, static_cast<uint32_t>( selectedQueueIndices.IndexPresent ), 0, &m_presentQueue );
-    m_deviceAllocator = std::make_unique<S_VulkanDeviceAllocator>(this);
+    VmaAllocatorCreateInfo allocatorInfo = {};
+    allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_0;
+    allocatorInfo.physicalDevice = m_physicalDevice;
+    allocatorInfo.device = m_device;
+    allocatorInfo.instance = m_instance;
+    VK_RESULT_CHECK( vmaCreateAllocator( &allocatorInfo, &m_vmaAllocator ) )
 
 }
 
@@ -529,10 +535,25 @@ void S_VulkanRendererAPI::createImageViews()
 void S_VulkanRendererAPI::createDepthResources()
 {
     VkFormat depthFormat = findDepthFormat();
-    S_VulkanDeviceMemory depthImageMemory;
-    m_deviceAllocator->createImage( m_swapChainExtent.width, m_swapChainExtent.height, 1, 1, 1, depthFormat,
-                                    VK_IMAGE_TYPE_2D, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_depthImage, depthImageMemory );
+
+    VkImageCreateInfo depthImageInfo = {};
+    depthImageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    depthImageInfo.imageType = VK_IMAGE_TYPE_2D;
+    depthImageInfo.extent.width = m_swapChainExtent.width;
+    depthImageInfo.extent.height = m_swapChainExtent.height;
+    depthImageInfo.extent.depth = 1;
+    depthImageInfo.mipLevels = 1;
+    depthImageInfo.arrayLayers = 1;
+    depthImageInfo.format = depthFormat;
+    depthImageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    depthImageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    depthImageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    depthImageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    depthImageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VmaAllocationCreateInfo depthAllocInfo = {};
+    depthAllocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+    VK_RESULT_CHECK( vmaCreateImage( m_vmaAllocator, &depthImageInfo, &depthAllocInfo, &m_depthImage, &m_depthImageAllocation, nullptr ) )
 
     VkImageViewCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -913,9 +934,9 @@ uint32_t S_VulkanRendererAPI::nextSwapchainImageIndex() const
     return m_nextSwapchainImageIndex;
 }
 
-S_VulkanDeviceAllocator *S_VulkanRendererAPI::deviceAllocator()
+VmaAllocator S_VulkanRendererAPI::vmaAllocator() const
 {
-    return m_deviceAllocator.get();
+    return m_vmaAllocator;
 }
 
 S_VulkanItemsManager *S_VulkanRendererAPI::itemsManager()
@@ -1080,7 +1101,7 @@ S_VulkanRendererAPI::S_VulkanRendererAPI() : S_RendererAPI (), m_nextFrameRender
 void S_VulkanRendererAPI::cleanupSwapChain()
 {
     vkDestroyImageView(m_device, m_depthImageView, S_VulkanAllocator());
-    m_deviceAllocator->destroy(m_depthImage);
+    vmaDestroyImage( m_vmaAllocator, m_depthImage, m_depthImageAllocation );
 
     for ( size_t i = 0; i < m_swapChainFramebuffers.size(); ++i )
         vkDestroyFramebuffer( m_device, m_swapChainFramebuffers[i], S_VulkanAllocator() );
@@ -1111,7 +1132,7 @@ S_VulkanRendererAPI::~S_VulkanRendererAPI()
     vkDestroyCommandPool( m_device, m_commandPoolTransfers, S_VulkanAllocator() );
     vkDestroyCommandPool( m_device, m_commandPoolGraphics, S_VulkanAllocator() );
     destroyWindowSurface();
-    m_deviceAllocator->destroy();
+    vmaDestroyAllocator( m_vmaAllocator );
     vkDestroyDevice( m_device, S_VulkanAllocator() );
 #if defined( SOLO_ENABLE_DEBUG_LAYER ) && defined (SOLO_ENABLE_VULKAN_VALIDATION_LAYER)
     auto vkDestroyDebugReportCallbackEXT = reinterpret_cast<PFN_vkDestroyDebugReportCallbackEXT>( vkGetInstanceProcAddr(m_instance, "vkDestroyDebugReportCallbackEXT") );

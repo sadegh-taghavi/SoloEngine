@@ -2,8 +2,7 @@
 
 #include "solo/renderer/S_Texture.h"
 #include <string>
-#include "solo/renderer/vulkan/S_VulkanDeviceAllocator.h"
-#include <vulkan/vulkan.h>
+#include <vk_mem_alloc.h>
 
 namespace solo
 {
@@ -23,6 +22,7 @@ private:
     VkImageLayout m_layout;
     S_VulkanRendererAPI *m_api;
     VkImage m_image;
+    VmaAllocation m_imageAllocation;
     VkImageView m_view;
 };
 

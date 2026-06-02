@@ -11,7 +11,8 @@
 using namespace solo;
 
 S_VulkanShader::S_VulkanShader(S_VulkanRendererAPI *api, const std::string &vertexShader, const std::string &fragmentShader, const std::string &geometryShader, const std::string &computeShader):
-    S_Shader(), m_maxUniformSetInStages(0), m_maxTextureSetInStages(0), m_commitsCount(0), m_uniformsMemorySize(0), m_api( api )
+    S_Shader(), m_maxUniformSetInStages(0), m_maxTextureSetInStages(0), m_commitsCount(0), m_uniformsMemorySize(0),
+    m_uniformBuffers(VK_NULL_HANDLE), m_uniformBuffersAllocation(VK_NULL_HANDLE), m_uniformBuffersMappedData(nullptr), m_api( api )
 
 {
     std::array< VkDescriptorPoolSize, 2> poolSizes;
@@ -26,7 +27,7 @@ S_VulkanShader::S_VulkanShader(S_VulkanRendererAPI *api, const std::string &vert
     poolInfo.maxSets = (m_api->maxFramesInFlight() + 1) * 256 * 8;
     VK_RESULT_CHECK( vkCreateDescriptorPool(m_api->device(), &poolInfo, S_VulkanAllocator(), &m_descriptorsPool) );
 
-    m_bufferAlignment = m_api->deviceAllocator()->getAlign(1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    m_bufferAlignment = glm::max( (uint64_t)1, (uint64_t)m_api->physicalDeviceProperties()->limits.minUniformBufferOffsetAlignment );
     for( size_t i = 0; i < static_cast<int>(S_ShaderStage::Count); ++i )
         m_shaderModules[i] = nullptr;
     if(!vertexShader.empty())
@@ -69,9 +70,19 @@ S_VulkanShader::S_VulkanShader(S_VulkanRendererAPI *api, const std::string &vert
 
     if( m_uniformsMemorySize )
     {
-        m_api->deviceAllocator()->createBuffer( m_uniformsMemorySize * (m_api->maxFramesInFlight() + 1) * 256 * ( m_maxUniformSetInStages + 1 ),
-                                                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, m_uniformBuffers, m_uniformBuffersMemory );
+        VkBufferCreateInfo uniformBufInfo = {};
+        uniformBufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        uniformBufInfo.size = m_uniformsMemorySize * (m_api->maxFramesInFlight() + 1) * 256 * ( m_maxUniformSetInStages + 1 );
+        uniformBufInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        uniformBufInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        VmaAllocationCreateInfo uniformAllocInfo = {};
+        uniformAllocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+        uniformAllocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+        VmaAllocationInfo allocInfo;
+        VK_RESULT_CHECK( vmaCreateBuffer( m_api->vmaAllocator(), &uniformBufInfo, &uniformAllocInfo, &m_uniformBuffers, &m_uniformBuffersAllocation, &allocInfo ) )
+        m_uniformBuffersMappedData = allocInfo.pMappedData;
     }
 
     m_descriptorSetLayouts.resize( allStagesSetsCount, nullptr );
@@ -113,7 +124,8 @@ S_VulkanShader::~S_VulkanShader()
         if( m_shaderModules[i] )
             vkDestroyShaderModule( m_api->device(), m_shaderModules[i], S_VulkanAllocator() );
     }
-    m_api->deviceAllocator()->destroy( m_uniformBuffers );
+    if( m_uniformBuffers != VK_NULL_HANDLE )
+        vmaDestroyBuffer( m_api->vmaAllocator(), m_uniformBuffers, m_uniformBuffersAllocation );
 }
 
 void S_VulkanShader::updateUniformValue(const std::string &name, S_ShaderStage stage, const void *value)
@@ -128,29 +140,22 @@ void S_VulkanShader::updateUniformValue(const std::string &name, S_ShaderStage s
     uint32_t descriptorBaseIndex = ( uniformBuffer->Set * (m_api->maxFramesInFlight() + 1) * 256
                                     + m_api->nextSwapchainImageIndex() * 256 ) + m_commitsCount;
 
-    VkMappedMemoryRange memoryRange;
-
-    memoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-    memoryRange.memory = m_uniformBuffersMemory.Memory;
-    memoryRange.pNext = nullptr;
-
-    memoryRange.size = uniformBuffer->ArraySize * uniformBuffer->BlockSize;
     size_t baseOffset = descriptorBaseIndex * m_uniformsMemorySize + uniformBuffer->Offset;
-    memoryRange.offset = baseOffset + m_uniformBuffersMemory.OffsetFromBufferBase;
+    size_t copySize = uniformBuffer->ArraySize * uniformBuffer->BlockSize;
 
     auto ptrAddress = reinterpret_cast<void *>(
-                reinterpret_cast<size_t>( m_uniformBuffersMemory.MappedPtr )
+                reinterpret_cast<size_t>( m_uniformBuffersMappedData )
                 + baseOffset );
 
-    memcpy( ptrAddress, value, memoryRange.size );
+    memcpy( ptrAddress, value, copySize );
 
-    memoryRange.size = S_Allocator::makeAlign( memoryRange.size, m_bufferAlignment);
+    size_t alignedSize = S_Allocator::makeAlign( copySize, m_bufferAlignment );
 
     m_descriptorBufferInfos.push_back( std::make_unique<VkDescriptorBufferInfo>() );
     VkDescriptorBufferInfo *bufferInfo = (*(m_descriptorBufferInfos.end() - 1)).get();
     bufferInfo->buffer = m_uniformBuffers;
-    bufferInfo->offset = memoryRange.offset;
-    bufferInfo->range = memoryRange.size;
+    bufferInfo->offset = baseOffset;
+    bufferInfo->range = alignedSize;
 
 //    s_debug("######################", __LINE__, descriptorBaseIndex, m_descriptorSets.size(), uniformBuffer->Set, m_api->nextSwapchainImageIndex());
     VkWriteDescriptorSet descriptorWrite = {};
@@ -166,7 +171,6 @@ void S_VulkanShader::updateUniformValue(const std::string &name, S_ShaderStage s
     descriptorWrite.pImageInfo = nullptr;
     descriptorWrite.pTexelBufferView = nullptr;
 
-    m_aboutToWriteMemoryRanges.push_back( memoryRange );
     m_aboutToWriteDescriptorSets.push_back( descriptorWrite );
     m_aboutToUseDescriptorSets[uniformBuffer->Set] = descriptorWrite.dstSet;
 
@@ -220,11 +224,10 @@ void S_VulkanShader::commit()
 {
     if( !m_aboutToUseDescriptorSets.size() )
         return;
-    if( m_aboutToWriteMemoryRanges.size() )
+    if( m_aboutToWriteDescriptorSets.size() )
     {
-        VK_RESULT_CHECK( vkFlushMappedMemoryRanges( m_api->device(),
-                                                    static_cast<uint32_t>( m_aboutToWriteMemoryRanges.size() ), m_aboutToWriteMemoryRanges.data() ) );
-        m_aboutToWriteMemoryRanges.clear();
+        if( m_uniformBuffers != VK_NULL_HANDLE )
+            VK_RESULT_CHECK( vmaFlushAllocation( m_api->vmaAllocator(), m_uniformBuffersAllocation, 0, VK_WHOLE_SIZE ) )
     }
 
     if( m_aboutToWriteDescriptorSets.size() )

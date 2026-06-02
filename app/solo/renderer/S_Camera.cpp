@@ -4,7 +4,7 @@ using namespace solo;
 
 S_Camera::S_Camera(S_CameraType type): m_type(type),
     m_position(0, 2.0f, 3.0f), m_target( 0, 0, 0 ), m_up( 0, 1.0f, 0 ),
-    m_near( 1.0f ), m_far( 1000.0f )
+    m_near( 0.01f ), m_far( 1000.0f )
 {
 
 }

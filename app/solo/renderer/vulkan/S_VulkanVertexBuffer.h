@@ -1,8 +1,7 @@
 #pragma once
 
 #include "solo/renderer/S_VertexBuffer.h"
-#include "solo/renderer/vulkan/S_VulkanDeviceAllocator.h"
-#include <vulkan/vulkan.h>
+#include <vk_mem_alloc.h>
 
 namespace solo
 {
@@ -22,10 +21,7 @@ public:
 private:
     S_VulkanRendererAPI *m_api;
     VkBuffer m_verticesStagingBuffer;
-    S_VulkanDeviceMemory m_verticesStagingMemory;
-    S_VulkanDeviceMemory m_verticesMemory;
-    VkMappedMemoryRange m_verticesMemoryRanges;
-    VkMappedMemoryRange m_instancesMemoryRanges;
+    VmaAllocation m_verticesStagingAllocation;
     void *m_vertices;
     void *m_indices;
     void *m_instances;

@@ -25,6 +25,8 @@ include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/rapidjson
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/ktx/include
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/ktx/lib
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/mimalloc332/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/VMA330/include
         )
 
 set(SOURCE
@@ -47,7 +49,6 @@ set(SOURCE
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/platforms/S_BaseApplication.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanAllocator.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanAllocator.inl
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanDeviceAllocator.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanItemsRequest.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanPipeline.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanRendererAPI.cpp
@@ -79,6 +80,7 @@ set(SOURCE
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/ktx/lib/texture.c
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/ktx/lib/filestream.c
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/ktx/lib/memstream.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/mimalloc332/src/static.c
 )
 set(HEADERS
         ${HEADERS}
@@ -103,7 +105,6 @@ set(HEADERS
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/platforms/S_WindowAndroid.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/platforms/S_BaseApplication.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanAllocator.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanDeviceAllocator.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanItemsRequest.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanPipeline.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanRendererAPI.h

@@ -1,5 +1,6 @@
 #include "S_VulkanVertexBuffer.h"
 #include "solo/renderer/vulkan/S_VulkanRendererAPI.h"
+#include "solo/memory/S_Allocator.h"
 
 using namespace solo;
 
@@ -9,35 +10,31 @@ S_VulkanVertexBuffer::S_VulkanVertexBuffer(S_VulkanRendererAPI *api, uint32_t ve
     S_VertexBuffer( verticesCount, indicesCount, instancesCount, std::move( verticesDescriptorArray ), std::move( instancesDescriptorArray ) ), m_api(api)
 
 {
-    m_verticesBufferSize = m_api->deviceAllocator()->getAlign( m_verticesDescriptorArray->stride() * verticesCount, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT );
-    m_indicesBufferSize = m_api->deviceAllocator()->getAlign( sizeof(uint32_t) * indicesCount, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT );
-    m_instancesBufferSize = m_api->deviceAllocator()->getAlign( m_instancesDescriptorArray->stride() * instancesCount, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT );
-    m_api->deviceAllocator()->createBuffer( m_verticesBufferSize + m_indicesBufferSize + m_instancesBufferSize,
-                                            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, m_verticesStagingBuffer, m_verticesStagingMemory );
-    //    m_api->deviceAllocator()->createBuffer( vbSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-    //                                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_verticesBuffer, m_verticesMemory );
+    m_verticesBufferSize = S_Allocator::makeAlign( m_verticesDescriptorArray->stride() * verticesCount, 4 );
+    m_indicesBufferSize = S_Allocator::makeAlign( sizeof(uint32_t) * indicesCount, 4 );
+    m_instancesBufferSize = S_Allocator::makeAlign( m_instancesDescriptorArray->stride() * instancesCount, 4 );
 
-    m_vertices = m_verticesStagingMemory.MappedPtr;
-    m_indices = reinterpret_cast<void *>(reinterpret_cast<uint64_t>( m_vertices ) + m_verticesBufferSize );
-    m_instances = reinterpret_cast<void *>(reinterpret_cast<uint64_t>( m_indices ) + m_indicesBufferSize );
+    VkBufferCreateInfo bufferInfo = {};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = m_verticesBufferSize + m_indicesBufferSize + m_instancesBufferSize;
+    bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    m_verticesMemoryRanges.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-    m_verticesMemoryRanges.size = m_verticesBufferSize + m_indicesBufferSize;
-    m_verticesMemoryRanges.offset = m_verticesStagingMemory.OffsetFromBufferBase;
-    m_verticesMemoryRanges.pNext = nullptr;
-    m_verticesMemoryRanges.memory = m_verticesStagingMemory.Memory;
+    VmaAllocationCreateInfo allocCreateInfo = {};
+    allocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
+    allocCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
-    m_instancesMemoryRanges.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-    m_instancesMemoryRanges.size = m_instancesBufferSize;
-    m_instancesMemoryRanges.offset = m_verticesStagingMemory.OffsetFromBufferBase + m_verticesMemoryRanges.size;
-    m_instancesMemoryRanges.pNext = nullptr;
-    m_instancesMemoryRanges.memory = m_verticesStagingMemory.Memory;
+    VmaAllocationInfo allocInfo;
+    VK_RESULT_CHECK( vmaCreateBuffer( m_api->vmaAllocator(), &bufferInfo, &allocCreateInfo, &m_verticesStagingBuffer, &m_verticesStagingAllocation, &allocInfo ) )
+
+    m_vertices = allocInfo.pMappedData;
+    m_indices = reinterpret_cast<void *>( reinterpret_cast<uint64_t>( m_vertices ) + m_verticesBufferSize );
+    m_instances = reinterpret_cast<void *>( reinterpret_cast<uint64_t>( m_indices ) + m_indicesBufferSize );
 }
 
 S_VulkanVertexBuffer::~S_VulkanVertexBuffer()
 {
-    m_api->deviceAllocator()->destroy( m_verticesStagingBuffer );
+    vmaDestroyBuffer( m_api->vmaAllocator(), m_verticesStagingBuffer, m_verticesStagingAllocation );
 }
 
 std::pair<void *, void *> S_VulkanVertexBuffer::beginVerticesData()
@@ -47,7 +44,7 @@ std::pair<void *, void *> S_VulkanVertexBuffer::beginVerticesData()
 
 void S_VulkanVertexBuffer::endVerticesData()
 {
-    VK_RESULT_CHECK( vkFlushMappedMemoryRanges( m_api->device(), 1, &m_verticesMemoryRanges ) );
+    VK_RESULT_CHECK( vmaFlushAllocation( m_api->vmaAllocator(), m_verticesStagingAllocation, 0, m_verticesBufferSize + m_indicesBufferSize ) )
 }
 
 void *S_VulkanVertexBuffer::beginInstancesData()
@@ -57,7 +54,7 @@ void *S_VulkanVertexBuffer::beginInstancesData()
 
 void S_VulkanVertexBuffer::endInstancesData()
 {
-    VK_RESULT_CHECK( vkFlushMappedMemoryRanges( m_api->device(), 1, &m_instancesMemoryRanges ) );
+    VK_RESULT_CHECK( vmaFlushAllocation( m_api->vmaAllocator(), m_verticesStagingAllocation, m_verticesBufferSize + m_indicesBufferSize, m_instancesBufferSize ) )
 }
 
 void S_VulkanVertexBuffer::draw()

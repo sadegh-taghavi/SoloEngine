@@ -5,12 +5,11 @@
 #include <string>
 #include "solo/debug/S_Debug.h"
 #include <vulkan/vulkan.h>
+#include <vk_mem_alloc.h>
 #include <memory>
 
 namespace solo
 {
-
-class S_VulkanDeviceAllocator;
 class S_VulkanItemsManager;
 
 #ifdef SOLO_ENABLE_DEBUG_LAYER
@@ -105,7 +104,7 @@ public:
     VkPhysicalDeviceProperties *physicalDeviceProperties();
 
 
-    S_VulkanDeviceAllocator *deviceAllocator();
+    VmaAllocator vmaAllocator() const;
 
     S_VulkanItemsManager *itemsManager();
 
@@ -185,6 +184,7 @@ private:
     std::vector<VkImage> m_swapChainImages;
     std::vector<VkImageView> m_swapChainImageViews;
     VkImage m_depthImage;
+    VmaAllocation m_depthImageAllocation;
     VkImageView m_depthImageView;
     VkQueue m_transferQueue;
     VkQueue m_graphicsQueue;
@@ -210,7 +210,7 @@ private:
     bool m_active;
     uint32_t m_currentFrame;
     uint32_t m_nextSwapchainImageIndex;
-    std::unique_ptr<S_VulkanDeviceAllocator> m_deviceAllocator;
+    VmaAllocator m_vmaAllocator;
     std::unique_ptr<S_VulkanItemsManager> m_itemsManager;
     VkPhysicalDeviceProperties m_physicalDeviceProperties;
     class S_VertexBuffer *vVB;

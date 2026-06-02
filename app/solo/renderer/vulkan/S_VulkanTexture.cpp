@@ -147,20 +147,25 @@ S_VulkanTexture::S_VulkanTexture(S_VulkanRendererAPI *api, const std::string &te
 
 
     VkBuffer stageBuffer;
-    S_VulkanDeviceMemory stageMemory;
+    VmaAllocation stageAllocation;
 
-    m_api->deviceAllocator()->createBuffer( bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-                                            stageBuffer, stageMemory );
-    VkMappedMemoryRange vkrange = {};
-    vkrange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-    vkrange.size = stageMemory.ActualSize;
-    vkrange.offset = stageMemory.OffsetFromBufferBase;
-    vkrange.pNext = nullptr;
-    vkrange.memory = stageMemory.Memory;
+    VkBufferCreateInfo stageBufInfo = {};
+    stageBufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    stageBufInfo.size = bufferSize;
+    stageBufInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    stageBufInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VmaAllocationCreateInfo stageAllocCreateInfo = {};
+    stageAllocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
+    stageAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+    VmaAllocationInfo stageAllocInfo;
+    VK_RESULT_CHECK( vmaCreateBuffer( m_api->vmaAllocator(), &stageBufInfo, &stageAllocCreateInfo, &stageBuffer, &stageAllocation, &stageAllocInfo ) )
+    void *stageMappedData = stageAllocInfo.pMappedData;
 
     if (canUseFasterPath)
     {
-        memcpy( stageMemory.MappedPtr, ktTexture->pData, ktTexture->dataSize );
+        memcpy( stageMappedData, ktTexture->pData, ktTexture->dataSize );
         uint32_t width;
         uint32_t height;
         uint32_t depth;
@@ -232,7 +237,7 @@ S_VulkanTexture::S_VulkanTexture(S_VulkanRendererAPI *api, const std::string &te
 
                 if (_KTX_PAD_UNPACK_ALIGN_LEN(rowPitch) == 0)
                 {
-                    memcpy( reinterpret_cast<void *>(reinterpret_cast<uint64_t>( stageMemory.MappedPtr ) + bufferOffset ),
+                    memcpy( reinterpret_cast<void *>(reinterpret_cast<uint64_t>( stageMappedData ) + bufferOffset ),
                             pixelPtr, faceLodSize);
                     bufferOffset += faceLodSize;
                 }else
@@ -254,7 +259,7 @@ S_VulkanTexture::S_VulkanTexture(S_VulkanRendererAPI *api, const std::string &te
                     {
                         for (uint32_t row = 0; row < height; row++)
                         {
-                            memcpy( reinterpret_cast<void *>(reinterpret_cast<uint64_t>( stageMemory.MappedPtr ) + bufferOffset ),
+                            memcpy( reinterpret_cast<void *>(reinterpret_cast<uint64_t>( stageMappedData ) + bufferOffset ),
                                     pixelPtr, rowPitch);
                             bufferOffset += rowPitch;
                             pixelPtr = pixelPtr + paddedRowPitch;
@@ -286,14 +291,27 @@ S_VulkanTexture::S_VulkanTexture(S_VulkanRendererAPI *api, const std::string &te
 
     }
 
-    VK_RESULT_CHECK( vkFlushMappedMemoryRanges( m_api->device(), 1, &vkrange ) );
+    VK_RESULT_CHECK( vmaFlushAllocation( m_api->vmaAllocator(), stageAllocation, 0, VK_WHOLE_SIZE ) )
 
-    S_VulkanDeviceMemory memory;
-    m_api->deviceAllocator()->createImage( ktTexture->baseWidth, ktTexture->baseHeight,
-                                           ktTexture->baseDepth, numImageLevels,
-                                           numImageLayers, vkFormat, imageType,
-                                           VK_IMAGE_USAGE_SAMPLED_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                           m_image, memory );
+    VkImageCreateInfo texImageInfo = {};
+    texImageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    texImageInfo.flags = createFlags;
+    texImageInfo.imageType = imageType;
+    texImageInfo.extent.width = ktTexture->baseWidth;
+    texImageInfo.extent.height = ktTexture->baseHeight;
+    texImageInfo.extent.depth = ktTexture->baseDepth;
+    texImageInfo.mipLevels = numImageLevels;
+    texImageInfo.arrayLayers = numImageLayers;
+    texImageInfo.format = vkFormat;
+    texImageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    texImageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    texImageInfo.usage = usageFlags;
+    texImageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    texImageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VmaAllocationCreateInfo texAllocInfo = {};
+    texAllocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+    VK_RESULT_CHECK( vmaCreateImage( m_api->vmaAllocator(), &texImageInfo, &texAllocInfo, &m_image, &m_imageAllocation, nullptr ) )
 
 
     VkImageSubresourceRange subresourceRange = {};
@@ -365,7 +383,7 @@ S_VulkanTexture::S_VulkanTexture(S_VulkanRendererAPI *api, const std::string &te
 
     ktxTexture_Destroy( ktTexture );
 
-    m_api->deviceAllocator()->destroy( stageBuffer );
+    vmaDestroyBuffer( m_api->vmaAllocator(), stageBuffer, stageAllocation );
 
     VkImageViewCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -387,7 +405,7 @@ S_VulkanTexture::S_VulkanTexture(S_VulkanRendererAPI *api, const std::string &te
 S_VulkanTexture::~S_VulkanTexture()
 {
     vkDestroyImageView( m_api->device(), m_view, S_VulkanAllocator() );
-    m_api->deviceAllocator()->destroy( m_image );
+    vmaDestroyImage( m_api->vmaAllocator(), m_image, m_imageAllocation );
 }
 
 VkImage S_VulkanTexture::image() const

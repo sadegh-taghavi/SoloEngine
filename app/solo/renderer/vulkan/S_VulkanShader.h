@@ -5,8 +5,8 @@
 #include <vector>
 #include <map>
 #include <string>
-#include "solo/renderer/vulkan/S_VulkanDeviceAllocator.h"
-#include <vulkan/vulkan.h>
+#include <memory>
+#include <vk_mem_alloc.h>
 
 namespace solo
 {
@@ -43,14 +43,14 @@ private:
     uint32_t m_maxTextureSetInStages;
     uint32_t m_commitsCount;
     uint64_t m_bufferAlignment;
-    std::vector<VkMappedMemoryRange> m_aboutToWriteMemoryRanges;
     std::vector<VkWriteDescriptorSet> m_aboutToWriteDescriptorSets;
     std::vector<VkDescriptorSet> m_aboutToUseDescriptorSets;
     std::vector<std::unique_ptr<VkDescriptorBufferInfo>> m_descriptorBufferInfos;
     std::vector<std::unique_ptr<VkDescriptorImageInfo>> m_descriptorImageInfos;
     uint32_t m_uniformsMemorySize;
     VkBuffer m_uniformBuffers;
-    S_VulkanDeviceMemory m_uniformBuffersMemory;
+    VmaAllocation m_uniformBuffersAllocation;
+    void *m_uniformBuffersMappedData;
     std::vector<VkDescriptorSetLayout> m_descriptorSetLayouts;
     std::vector<VkDescriptorSet> m_descriptorSets;
     S_VulkanRendererAPI *m_api;

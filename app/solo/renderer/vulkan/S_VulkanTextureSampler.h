@@ -1,7 +1,6 @@
 #pragma once
 
 #include "solo/renderer/S_TextureSampler.h"
-#include "solo/renderer/vulkan/S_VulkanDeviceAllocator.h"
 #include <vulkan/vulkan.h>
 
 namespace solo
