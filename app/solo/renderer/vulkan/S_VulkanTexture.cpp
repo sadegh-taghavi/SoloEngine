@@ -350,7 +350,7 @@ S_VulkanTexture::S_VulkanTexture(S_VulkanRendererAPI *api, const std::string &te
                 imageBlit.srcOffsets[1].z = glm::max(static_cast<uint32_t>(1), ktTexture->baseDepth  >> (i - 1));
 
                 imageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                imageBlit.dstSubresource.layerCount = 1;
+                imageBlit.dstSubresource.layerCount = numImageLayers;
                 imageBlit.dstSubresource.mipLevel = i;
                 imageBlit.dstOffsets[1].x = glm::max(static_cast<uint32_t>(1), ktTexture->baseWidth  >> i);
                 imageBlit.dstOffsets[1].y = glm::max(static_cast<uint32_t>(1), ktTexture->baseHeight >> i);

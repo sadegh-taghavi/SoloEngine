@@ -77,8 +77,8 @@ void solo::S_Application::onCreateEvent()
         }
     m_vVB->endInstancesData();
 
-    m_vTexture = m_renderer->api()->createTexture("sr:/textures/sign.ktx");
-    m_vTexture->setSampler(m_renderer->api()->createTextureSampler(S_TextureSamplerDescriptor()));
+    m_vTexture = m_renderer->createTexture("sr:/textures/sign.ktx");
+    m_vTexture->setSampler(m_renderer->createTextureSampler(S_TextureSamplerDescriptor()));
 
     m_vCam = std::make_shared<S_CameraPerspective>();
     m_vCam->setPosition(glm::vec3(0.0f, 2.0f, 10.0f));

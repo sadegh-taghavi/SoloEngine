@@ -10,6 +10,7 @@ class S_Runnable
     S_AtomicFlag m_runningFlag;
     bool m_running;
     char _padding[6];
+    friend class S_Thread;
 public:
     S_Runnable();
     virtual ~S_Runnable();

@@ -64,7 +64,7 @@ S_Debug &S_Debug::operator<<(const int64_t &val)
 S_Debug &S_Debug::operator<<(const unsigned int &val)
 {
     char str[64];
-    snprintf( str, sizeof(str), " %d", val );
+    snprintf( str, sizeof(str), " %u", val );
     m_data += str;
     return *this;
 }

@@ -43,6 +43,7 @@ protected:
     glm::mat4 m_viewProjection;
     float m_near;
     float m_far;
+    bool m_projectionDirty = true;
 };
 
 class S_CameraOrthographic: public S_Camera

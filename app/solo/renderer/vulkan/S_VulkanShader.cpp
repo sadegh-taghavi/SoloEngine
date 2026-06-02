@@ -6,6 +6,7 @@
 #include "solo/renderer/vulkan/S_VulkanTexture.h"
 #include "solo/renderer/vulkan/S_VulkanTextureSampler.h"
 #include "solo/math/S_Math.h"
+#include <algorithm>
 
 using namespace solo;
 
@@ -137,6 +138,11 @@ void S_VulkanShader::updateUniformValue(const std::string &name, S_ShaderStage s
         return;
     auto uniformBuffer = &currentReflectionData->UniformBuffers.at( (*it).second );
 
+    if( m_commitsCount >= 256 )
+    {
+        s_debugLayer( "S_VulkanShader: exceeded 256 draw calls per frame-slot — uniform update dropped" );
+        return;
+    }
     uint32_t descriptorBaseIndex = ( uniformBuffer->Set * (m_api->maxFramesInFlight() + 1) * 256
                                     + m_api->nextSwapchainImageIndex() * 256 ) + m_commitsCount;
 
@@ -148,6 +154,9 @@ void S_VulkanShader::updateUniformValue(const std::string &name, S_ShaderStage s
                 + baseOffset );
 
     memcpy( ptrAddress, value, copySize );
+
+    m_dirtyMin = std::min( m_dirtyMin, baseOffset );
+    m_dirtyMax = std::max( m_dirtyMax, baseOffset + copySize );
 
     size_t alignedSize = (copySize + m_bufferAlignment - 1) / m_bufferAlignment * m_bufferAlignment;
 
@@ -218,16 +227,28 @@ void S_VulkanShader::bind()
 {
     std::fill( m_aboutToUseDescriptorSets.begin(), m_aboutToUseDescriptorSets.end(), nullptr );
     m_commitsCount = 0;
+    m_dirtyMin = SIZE_MAX;
+    m_dirtyMax = 0;
 }
 
 void S_VulkanShader::commit()
 {
     if( !m_aboutToUseDescriptorSets.size() )
         return;
+    if( m_pipelineLayout == VK_NULL_HANDLE )
+    {
+        s_debugLayer( "S_VulkanShader::commit() called before setPipelineLayout()" );
+        return;
+    }
     if( m_aboutToWriteDescriptorSets.size() )
     {
-        if( m_uniformBuffers != VK_NULL_HANDLE )
-            VK_RESULT_CHECK( vmaFlushAllocation( m_api->vmaAllocator(), m_uniformBuffersAllocation, 0, VK_WHOLE_SIZE ) )
+        if( m_uniformBuffers != VK_NULL_HANDLE && m_dirtyMin < m_dirtyMax )
+        {
+            VK_RESULT_CHECK( vmaFlushAllocation( m_api->vmaAllocator(), m_uniformBuffersAllocation,
+                                                 m_dirtyMin, m_dirtyMax - m_dirtyMin ) )
+            m_dirtyMin = SIZE_MAX;
+            m_dirtyMax = 0;
+        }
     }
 
     if( m_aboutToWriteDescriptorSets.size() )
@@ -239,7 +260,7 @@ void S_VulkanShader::commit()
     }
 
     vkCmdBindDescriptorSets( m_api->nextFrameRenderCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-                             m_api->pipelines()->layouts()->at( 0 ), 0, static_cast<uint32_t>( m_aboutToUseDescriptorSets.size() ),
+                             m_pipelineLayout, 0, static_cast<uint32_t>( m_aboutToUseDescriptorSets.size() ),
                              m_aboutToUseDescriptorSets.data(),
                              0, nullptr);
     ++m_commitsCount;
@@ -310,7 +331,7 @@ void S_VulkanShader::setShader(S_ShaderStage stage, const std::string &name)
         ++index;
     }
 
-    m_maxUniformSetInStages = glm::max( m_maxTextureSetInStages, currentReflectionData->Reflection.MaxUniformBuffersSet );
+    m_maxUniformSetInStages = glm::max( m_maxUniformSetInStages, currentReflectionData->Reflection.MaxUniformBuffersSet );
     m_maxTextureSetInStages = glm::max( m_maxTextureSetInStages, currentReflectionData->Reflection.MaxTextureSet );
 
     fileData.resize( shaderCodeFile.size() );
@@ -323,6 +344,11 @@ void S_VulkanShader::setShader(S_ShaderStage stage, const std::string &name)
     createInfo.pCode = reinterpret_cast<const uint32_t*>(fileData.data());
     VK_RESULT_CHECK( vkCreateShaderModule( m_api->device(), &createInfo, S_VulkanAllocator(),
                                            &m_shaderModules[static_cast<int>(stage)]) );
+}
+
+void S_VulkanShader::setPipelineLayout(VkPipelineLayout layout)
+{
+    m_pipelineLayout = layout;
 }
 
 VkShaderModule S_VulkanShader::shaderModule(S_ShaderStage type)

@@ -419,8 +419,12 @@ S_Model::S_Model(const std::string &model)
 
     gltfContext.SetFsCallbacks(m_fsCallbacks);
 
-    gltfContext.LoadASCIIFromString( &gltfModel, &error, &warning, reinterpret_cast<const char *>( fileData.data() ),
-                                     static_cast<unsigned int>(fileData.size()), "" );
+    if( !gltfContext.LoadASCIIFromString( &gltfModel, &error, &warning, reinterpret_cast<const char *>( fileData.data() ),
+                                          static_cast<unsigned int>(fileData.size()), "" ) )
+    {
+        s_debugLayer( "S_Model: failed to parse GLTF:", error );
+        return;
+    }
     s_debug( gltfModel.nodes.size() );
 }
 

@@ -17,10 +17,7 @@ S_Runnable::~S_Runnable()
 
 void S_Runnable::operator()()
 {
-    m_runningFlag.acquire();
-    m_running = true;
-    m_runningFlag.clear();
-    run();
+    try { run(); } catch (...) {}
     m_runningFlag.acquire();
     m_running = false;
     m_runningFlag.clear();
@@ -45,6 +42,9 @@ S_Thread::~S_Thread()
 void S_Thread::start( S_Runnable *runnable )
 {
     waitFor();
+    runnable->m_runningFlag.acquire();
+    runnable->m_running = true;
+    runnable->m_runningFlag.clear();
     m_thread = std::thread{ std::ref( *runnable ) };
     m_started = true;
 }

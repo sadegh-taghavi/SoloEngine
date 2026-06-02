@@ -709,7 +709,7 @@ void S_VulkanRendererAPI::recreateSwapChain()
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport( m_physicalDevice );
 
     if( S_BaseApplication::executingApplication()->window()->width() == 0
-            || S_BaseApplication::executingApplication()->window()->width() == 0 ||
+            || S_BaseApplication::executingApplication()->window()->height() == 0 ||
             swapChainSupport.Capabilities.currentExtent.width == 0 ||
             swapChainSupport.Capabilities.currentExtent.height == 0 )
     {
@@ -729,6 +729,7 @@ void S_VulkanRendererAPI::recreateSwapChain()
     createDepthResources();
     createFramebuffers();
     createCommandBuffers();
+    m_imagesInFlight.assign( m_swapChainImages.size(), nullptr );
 }
 
 VkFormat S_VulkanRendererAPI::findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
@@ -971,7 +972,7 @@ VkRenderPass S_VulkanRendererAPI::renderPass() const
     return m_renderPass;
 }
 
-S_VulkanRendererAPI::S_VulkanRendererAPI() : S_RendererAPI (), m_nextFrameRenderCommandBuffer(nullptr), m_framebufferResized(false), m_currentFrame(0)
+S_VulkanRendererAPI::S_VulkanRendererAPI() : S_RendererAPI (), m_nextFrameRenderCommandBuffer(nullptr), m_framebufferResized(false), m_active(false), m_currentFrame(0)
 {
     createInstance();
     createDebugCallback();
@@ -1040,6 +1041,8 @@ void S_VulkanRendererAPI::drawFrame()
 {
     if( !m_active )
         return;
+    if( m_pipelines->pipelines()->empty() )
+        return;
     static S_ElapsedTime et;
     //    s_debug( "ELAPSSSSSED:", et.restart() / 1000 );
 //    S_Thread::sleep( 10 );
@@ -1064,9 +1067,13 @@ void S_VulkanRendererAPI::drawFrame()
 
     }*/
 
+    if( m_imagesInFlight[m_nextSwapchainImageIndex] != nullptr )
+        vkWaitForFences( m_device, 1, &m_imagesInFlight[m_nextSwapchainImageIndex], VK_TRUE, UINT64_MAX );
+    m_imagesInFlight[m_nextSwapchainImageIndex] = m_inFlightFences[m_currentFrame];
+
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     beginInfo.pInheritanceInfo = nullptr;
 
     m_nextFrameRenderCommandBuffer = m_commandBuffersSwapChain[m_nextSwapchainImageIndex];
@@ -1098,11 +1105,6 @@ void S_VulkanRendererAPI::drawFrame()
     vkCmdEndRenderPass( m_nextFrameRenderCommandBuffer );
     VK_RESULT_CHECK( vkEndCommandBuffer( m_nextFrameRenderCommandBuffer ) );
     m_nextFrameRenderCommandBuffer = nullptr;
-
-    if (m_imagesInFlight[m_nextSwapchainImageIndex] != nullptr )
-        vkWaitForFences( m_device, 1, &m_imagesInFlight[m_nextSwapchainImageIndex], VK_TRUE, UINT64_MAX );
-
-    m_imagesInFlight[m_nextSwapchainImageIndex] = m_inFlightFences[m_currentFrame];
 
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;

@@ -109,7 +109,12 @@ std::unique_ptr<S_Event> solo::S_WindowWin32::getEvent(bool wait_for_event)
 
     MSG msg = {};
     if (wait_for_event)
-        m_running = (GetMessage(&msg, nullptr, 16, 0) > 0);
+    {
+        int gmResult = GetMessage( &msg, nullptr, 16, 0 );
+        if( gmResult == -1 )
+            s_debugLayer( "GetMessage failed, error:", static_cast<uint32_t>( GetLastError() ) );
+        m_running = ( gmResult > 0 );
+    }
     else
         m_running = (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE) > 0);
 
@@ -128,7 +133,7 @@ std::unique_ptr<S_Event> solo::S_WindowWin32::getEvent(bool wait_for_event)
             {
                 if (!!(GetKeyState(VK_LSHIFT) & 128) != m_keyState[static_cast<unsigned int>(S_Key::LeftShift)])
                     PostMessage(m_hWnd, msg.message, VK_LSHIFT, 0);
-                if (!!(GetKeyState(VK_RSHIFT) & 128) != m_keyState[static_cast<unsigned int>(S_Key::LeftShift)])
+                if (!!(GetKeyState(VK_RSHIFT) & 128) != m_keyState[static_cast<unsigned int>(S_Key::RightShift)])
                     PostMessage(m_hWnd, msg.message, VK_RSHIFT, 0);
             }
         }else if (msg.message == WM_SYSKEYDOWN || msg.message == WM_SYSKEYUP)
@@ -235,8 +240,9 @@ std::unique_ptr<S_Event> solo::S_WindowWin32::getEvent(bool wait_for_event)
             break;
         case WM_CHAR:
         {
-            char buff[4];
-            strncpy_s(buff, reinterpret_cast<const char *>( &msg.wParam ), 4);
+            char buff[5] = {};
+            wchar_t wch = static_cast<wchar_t>( msg.wParam );
+            WideCharToMultiByte( CP_UTF8, 0, &wch, 1, buff, 4, nullptr, nullptr );
             event = std::make_unique<S_CharacterEvent>(buff);
             break;
         }

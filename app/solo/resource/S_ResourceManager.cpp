@@ -3,12 +3,9 @@
 
 using namespace solo;
 
-//std::unique_ptr<S_ResourcesContainer> S_ResourceManager::m_container;
-
 S_ResourceManager::S_ResourceManager()
+    : m_container( std::make_unique<S_ResourcesContainer>() )
 {
-    if( !m_container.get() )
-        m_container = std::make_unique<S_ResourcesContainer>();
 }
 
 const S_ResourceData *S_ResourceManager::resourceData(const std::string &resourceName) const

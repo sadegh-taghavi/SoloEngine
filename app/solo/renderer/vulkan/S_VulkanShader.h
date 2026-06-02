@@ -32,6 +32,7 @@ public:
     void updateTextureValue( const std::string &name, S_ShaderStage stage, const S_Texture &texture, uint32_t arrayIndex = 0 );
     void bind();
     void commit();
+    void setPipelineLayout(VkPipelineLayout layout);
     VkShaderModule shaderModule( S_ShaderStage type );
     const S_ShaderReflectionData *shaderReflection( S_ShaderStage type );
     const std::vector<VkDescriptorSetLayout> *descriptorSetLayouts();
@@ -48,6 +49,9 @@ private:
     std::vector<std::unique_ptr<VkDescriptorBufferInfo>> m_descriptorBufferInfos;
     std::vector<std::unique_ptr<VkDescriptorImageInfo>> m_descriptorImageInfos;
     uint32_t m_uniformsMemorySize;
+    VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
+    size_t m_dirtyMin = SIZE_MAX;
+    size_t m_dirtyMax = 0;
     VkBuffer m_uniformBuffers;
     VmaAllocation m_uniformBuffersAllocation;
     void *m_uniformBuffersMappedData;

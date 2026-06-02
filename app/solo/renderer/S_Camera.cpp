@@ -43,6 +43,7 @@ float S_Camera::far() const
 void S_Camera::setFar(float far)
 {
     m_far = far;
+    m_projectionDirty = true;
 }
 
 float S_Camera::near() const
@@ -53,6 +54,7 @@ float S_Camera::near() const
 void S_Camera::setNear(float near)
 {
     m_near = near;
+    m_projectionDirty = true;
 }
 
 void S_Camera::setUp(const glm::vec3 &up)
@@ -86,7 +88,7 @@ glm::vec3 S_Camera::position() const
 }
 
 
-S_CameraOrthographic::S_CameraOrthographic(): S_Camera(S_CameraType::Orthographic), m_left( -0.5f ), m_right( 0.5f ), m_bottom( -0.5f ), m_top( -0.5f )
+S_CameraOrthographic::S_CameraOrthographic(): S_Camera(S_CameraType::Orthographic), m_left( -0.5f ), m_right( 0.5f ), m_bottom( -0.5f ), m_top( 0.5f )
 {
 
 }
@@ -98,7 +100,11 @@ S_CameraOrthographic::~S_CameraOrthographic()
 
 void S_CameraOrthographic::update()
 {
-    m_projection = glm::orthoRH( m_left, m_right, m_bottom, m_top, m_near, m_far );
+    if( m_projectionDirty )
+    {
+        m_projection = glm::orthoRH( m_left, m_right, m_bottom, m_top, m_near, m_far );
+        m_projectionDirty = false;
+    }
     S_Camera::update();
 }
 
@@ -176,6 +182,7 @@ float S_CameraPerspective::fov() const
 void S_CameraPerspective::setFov(float fov)
 {
     m_fov = fov;
+    m_projectionDirty = true;
 }
 
 float S_CameraPerspective::width() const
@@ -185,7 +192,9 @@ float S_CameraPerspective::width() const
 
 void S_CameraPerspective::setWidth(float width)
 {
+    if( m_width == width ) return;
     m_width = width;
+    m_projectionDirty = true;
 }
 
 float S_CameraPerspective::height() const
@@ -195,11 +204,17 @@ float S_CameraPerspective::height() const
 
 void S_CameraPerspective::setHeight(float height)
 {
+    if( m_height == height ) return;
     m_height = height;
+    m_projectionDirty = true;
 }
 
 void S_CameraPerspective::update()
 {
-    m_projection = glm::perspectiveFovRH( m_fov, m_width, m_height, m_near, m_far );
+    if( m_projectionDirty )
+    {
+        m_projection = glm::perspectiveFovRH( m_fov, m_width, m_height, m_near, m_far );
+        m_projectionDirty = false;
+    }
     S_Camera::update();
 }

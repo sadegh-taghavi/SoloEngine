@@ -10,14 +10,14 @@ S_Object::S_Object(S_Object *parent) : m_parent(parent)
 S_Object::~S_Object()
 {
     if( m_parent )
+        m_parent->m_children.remove( this );
+
+    S_Object *obj = nullptr;
+    while( !m_children.empty() )
     {
-        S_Object *obj = nullptr;
-        while( !m_children.empty() )
-        {
-            obj = m_children.back();
-            s_safe_delete(obj);
-            m_children.pop_back();
-        }
+        obj = m_children.back();
+        m_children.pop_back();
+        s_safe_delete(obj);
     }
 }
 

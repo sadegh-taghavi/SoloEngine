@@ -49,11 +49,11 @@ private:
         float RoughnessFactor = 1.0f;
         glm::vec4 BaseColorFactor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
         glm::vec4 EmissiveFactor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-        S_Texture *BaseColorTexture;
-        S_Texture *MetallicRoughnessTexture;
-        S_Texture *NormalTexture;
-        S_Texture *OcclusionTexture;
-        S_Texture *EmissiveTexture;
+        S_Texture *BaseColorTexture = nullptr;
+        S_Texture *MetallicRoughnessTexture = nullptr;
+        S_Texture *NormalTexture = nullptr;
+        S_Texture *OcclusionTexture = nullptr;
+        S_Texture *EmissiveTexture = nullptr;
 
         struct TexCoordSets
         {
@@ -67,8 +67,8 @@ private:
 
         struct Extension
         {
-            S_Texture *SpecularGlossinessTexture;
-            S_Texture *DiffuseTexture;
+            S_Texture *SpecularGlossinessTexture = nullptr;
+            S_Texture *DiffuseTexture = nullptr;
             glm::vec4 DiffuseFactor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
             glm::vec3 SpecularFactor = glm::vec3(0.0f, 0.0f, 0.0f);
         } Extension;

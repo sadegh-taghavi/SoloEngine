@@ -31,6 +31,15 @@ void S_VulkanPipeline::create( const std::vector<S_PipelineDescriptor> *descript
     if( count < 1 )
         return;
 
+    for( size_t i = 0; i < count; ++i )
+    {
+        if( !m_descriptors[i].Shader )
+        {
+            s_debugLayer( "S_VulkanPipeline::create() — descriptor", i, "has null Shader" );
+            return;
+        }
+    }
+
     m_layouts.resize( count );
     m_pipelines.resize( count );
 
@@ -72,6 +81,8 @@ void S_VulkanPipeline::create( const std::vector<S_PipelineDescriptor> *descript
     dynamicCreateInfoStates.resize( count );
     std::vector< VkGraphicsPipelineCreateInfo > pipelineCreateInfos;
     pipelineCreateInfos.resize( count );
+    std::vector< VkPipelineDepthStencilStateCreateInfo > depthStencils;
+    depthStencils.resize( count );
 
     S_VulkanShader *shader;
     VkShaderModule shaderModule;
@@ -243,6 +254,7 @@ void S_VulkanPipeline::create( const std::vector<S_PipelineDescriptor> *descript
 
         VK_RESULT_CHECK( vkCreatePipelineLayout( m_api->device(), &pipelineLayoutInfo, S_VulkanAllocator(),
                                                  &m_layouts[i]) );
+        shader->setPipelineLayout( m_layouts[i] );
 
         pipelineCreateInfos[i].sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         pipelineCreateInfos[i].stageCount = static_cast<uint32_t>( shaderStagess[i].size() );
@@ -254,19 +266,18 @@ void S_VulkanPipeline::create( const std::vector<S_PipelineDescriptor> *descript
         pipelineCreateInfos[i].pRasterizationState = &rasterizers[i];
         pipelineCreateInfos[i].pMultisampleState = &multisamplings[i];
 
-        VkPipelineDepthStencilStateCreateInfo depthStencil = {};
-        depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-        depthStencil.depthTestEnable = VK_TRUE;
-        depthStencil.depthWriteEnable = VK_TRUE;
-        depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
-        depthStencil.depthBoundsTestEnable = VK_FALSE;
-        depthStencil.minDepthBounds = 0.0f;
-        depthStencil.maxDepthBounds = 1.0f;
-        depthStencil.stencilTestEnable = VK_FALSE;
-        depthStencil.front = {};
-        depthStencil.back = {};
+        depthStencils[i].sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+        depthStencils[i].depthTestEnable = VK_TRUE;
+        depthStencils[i].depthWriteEnable = VK_TRUE;
+        depthStencils[i].depthCompareOp = VK_COMPARE_OP_LESS;
+        depthStencils[i].depthBoundsTestEnable = VK_FALSE;
+        depthStencils[i].minDepthBounds = 0.0f;
+        depthStencils[i].maxDepthBounds = 1.0f;
+        depthStencils[i].stencilTestEnable = VK_FALSE;
+        depthStencils[i].front = {};
+        depthStencils[i].back = {};
 
-        pipelineCreateInfos[i].pDepthStencilState =  &depthStencil;
+        pipelineCreateInfos[i].pDepthStencilState = &depthStencils[i];
         pipelineCreateInfos[i].pColorBlendState = &colorBlendings[i];
         pipelineCreateInfos[i].pDynamicState = nullptr;
 
@@ -292,11 +303,21 @@ void S_VulkanPipeline::destroy()
         vkDestroyPipeline( m_api->device(), m_pipelines.at( i ), S_VulkanAllocator() );
         vkDestroyPipelineLayout( m_api->device(), m_layouts.at( i ), S_VulkanAllocator() );
     }
+    m_pipelines.clear();
+    m_layouts.clear();
+    for( auto &desc : m_descriptors )
+    {
+        auto *shader = reinterpret_cast<S_VulkanShader *>( desc.Shader );
+        if( shader )
+            shader->setPipelineLayout( VK_NULL_HANDLE );
+    }
 }
 
 void S_VulkanPipeline::recreate()
 {
-    //    destroy();
+    if( m_descriptors.empty() )
+        return;
+    destroy();
     create();
 }
 

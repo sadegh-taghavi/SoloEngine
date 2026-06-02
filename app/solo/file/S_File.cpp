@@ -6,7 +6,7 @@
 
 using namespace solo;
 
-S_File::S_File( const std::string &fileName ) : m_isOpen( false ), m_resourceData( nullptr ), m_openMode( S_FileOpenMode::Read )
+S_File::S_File( const std::string &fileName ) : m_isResourceFile( false ), m_isOpen( false ), m_resourceData( nullptr ), m_openMode( S_FileOpenMode::Read )
 {
     setFileName( fileName );
 }
@@ -79,6 +79,7 @@ bool S_File::open(S_FileOpenMode mode)
         else
             close();
     }
+    m_openMode = mode;
     if( m_isResourceFile )
         m_isOpen = ( ( m_resourceData = S_Application::executingApplication()->
                      resourceManager()->resourceData( m_fileName ) ) != nullptr );

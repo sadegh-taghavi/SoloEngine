@@ -25,7 +25,7 @@ S_BaseApplication::S_BaseApplication(unsigned int width, unsigned int height)
 #elif defined(S_PLATFORM_ANDROID)
     m_window = std::make_unique<S_WindowAndroid>( width, height );
 #endif
-    //m_activeApplication = this;
+    m_activeApplication = this;
 }
 
 S_BaseApplication::~S_BaseApplication()
@@ -95,22 +95,27 @@ bool S_BaseApplication::exec(bool wait)
         switch (e->type())
         {
         case S_EventType::Mouse:
-            onMouseEvent( dynamic_cast<S_MouseEvent*>(e.get()) );
+            if( auto *ev = dynamic_cast<S_MouseEvent*>(e.get()) )
+                onMouseEvent( ev );
             break;
         case S_EventType::Touch:
-            onTouchEvent( dynamic_cast<S_TouchEvent*>(e.get()) );
+            if( auto *ev = dynamic_cast<S_TouchEvent*>(e.get()) )
+                onTouchEvent( ev );
             break;
         case S_EventType::Keyboard:
-            onKeyboardEvent( dynamic_cast<S_KeyboardEvent*>(e.get()) );
+            if( auto *ev = dynamic_cast<S_KeyboardEvent*>(e.get()) )
+                onKeyboardEvent( ev );
             break;
         case S_EventType::WindowCreate:
             onCreateEvent();
             break;
         case S_EventType::WindowResize:
-            onResizeEvent( dynamic_cast<S_WindowResizeEvent*>(e.get()) );
+            if( auto *ev = dynamic_cast<S_WindowResizeEvent*>(e.get()) )
+                onResizeEvent( ev );
             break;
         case S_EventType::WindowFocus:
-            onFocusEvent ( dynamic_cast<S_WindowFocusEvent*>(e.get()) );
+            if( auto *ev = dynamic_cast<S_WindowFocusEvent*>(e.get()) )
+                onFocusEvent( ev );
             break;
         case S_EventType::WindowPaint:
             onPaintEvent();

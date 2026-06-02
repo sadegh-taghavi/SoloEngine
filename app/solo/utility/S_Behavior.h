@@ -65,7 +65,13 @@ public:
             return;
         if( S_AnimationBase<T>::m_playState == S_AnimationPlayState::Playing )
         {
-            S_AnimationBase<T>::m_time += 1000.0f / m_duration[m_easeState] * S_Application::executingApplication()->renderer()->elapsedTimeUs() / 1000000.0f;
+            if( m_duration[m_easeState] <= 0.0f )
+            {
+                S_AnimationBase<T>::m_time = 1.0f;
+                S_AnimationBase<T>::m_playState = S_AnimationPlayState::Stoped;
+            }
+            else
+                S_AnimationBase<T>::m_time += 1000.0f / m_duration[m_easeState] * S_Application::executingApplication()->renderer()->elapsedTimeUs() / 1000000.0f;
 
             if( S_AnimationBase<T>::m_time >= 1.0f )
             {
@@ -85,7 +91,7 @@ public:
                     S_AnimationBase<T>::m_time = 0.0f;
                     S_AnimationBase<T>::m_playState = S_AnimationPlayState::Playing;
                     m_easeState = m_repeatedTo ? 1 : 2;
-                }else if( m_easeState == 1 && m_easeState == 1 && !m_repeatedTo )
+                }else if( m_easeState == 1 && !m_repeatedTo )
                 {
                     S_AnimationBase<T>::setFrom( S_AnimationBase<T>::m_current );
                     S_AnimationBase<T>::setTo( m_bufferTo );
