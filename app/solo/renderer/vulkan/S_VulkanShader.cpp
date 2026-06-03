@@ -7,8 +7,17 @@
 #include "solo/renderer/vulkan/S_VulkanTextureSampler.h"
 #include "solo/math/S_Math.h"
 #include <algorithm>
+#include <limits>
 
 using namespace solo;
+
+static uint64_t alignUp(uint64_t value, uint64_t alignment)
+{
+    return (value + alignment - 1) / alignment * alignment;
+}
+
+static constexpr uint32_t kMaxDrawsPerSlot  = 256;
+static constexpr uint32_t kMaxSetsPerShader = 8;
 
 S_VulkanShader::S_VulkanShader(S_VulkanRendererAPI *api, const std::string &vertexShader, const std::string &fragmentShader, const std::string &geometryShader, const std::string &computeShader):
     S_Shader(), m_maxUniformSetInStages(0), m_maxTextureSetInStages(0), m_commitsCount(0), m_uniformsMemorySize(0),
@@ -17,14 +26,14 @@ S_VulkanShader::S_VulkanShader(S_VulkanRendererAPI *api, const std::string &vert
 {
     std::array< VkDescriptorPoolSize, 2> poolSizes;
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount = (m_api->maxFramesInFlight() + 1) * 256 * 8;
+    poolSizes[0].descriptorCount = (m_api->maxFramesInFlight() + 1) * kMaxDrawsPerSlot * kMaxSetsPerShader;
     poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = (m_api->maxFramesInFlight() + 1) * 256 * 8;
+    poolSizes[1].descriptorCount = (m_api->maxFramesInFlight() + 1) * kMaxDrawsPerSlot * kMaxSetsPerShader;
     VkDescriptorPoolCreateInfo poolInfo = {};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = (m_api->maxFramesInFlight() + 1) * 256 * 8;
+    poolInfo.maxSets = (m_api->maxFramesInFlight() + 1) * kMaxDrawsPerSlot * kMaxSetsPerShader;
     VK_RESULT_CHECK( vkCreateDescriptorPool(m_api->device(), &poolInfo, S_VulkanAllocator(), &m_descriptorsPool) );
 
     m_bufferAlignment = glm::max( (uint64_t)1, (uint64_t)m_api->physicalDeviceProperties()->limits.minUniformBufferOffsetAlignment );
@@ -40,6 +49,11 @@ S_VulkanShader::S_VulkanShader(S_VulkanRendererAPI *api, const std::string &vert
         setShader( S_ShaderStage::ComputeShader, computeShader );
 
     uint32_t allStagesSetsCount = glm::max( m_maxUniformSetInStages, m_maxTextureSetInStages ) + 1;
+    if( allStagesSetsCount > kMaxSetsPerShader )
+    {
+        s_debugLayer( "S_VulkanShader: allStagesSetsCount", allStagesSetsCount, "> kMaxSetsPerShader", kMaxSetsPerShader, "— clamped" );
+        allStagesSetsCount = kMaxSetsPerShader;
+    }
 
     std::vector< std::vector<VkDescriptorSetLayoutBinding> > layoutBindingList( allStagesSetsCount );
 
@@ -49,18 +63,29 @@ S_VulkanShader::S_VulkanShader(S_VulkanRendererAPI *api, const std::string &vert
         binding.pImmutableSamplers = nullptr;
         for (auto &uniformBuffer: reflectionData.UniformBuffers)
         {
+            if( uniformBuffer.Set >= allStagesSetsCount )
+                continue;
             binding.binding = static_cast<unsigned int>(uniformBuffer.Binding);
             binding.stageFlags = m_STAGEMAP[ static_cast<int>( reflectionData.Reflection.Stage ) ];
             binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             binding.descriptorCount = uniformBuffer.ArraySize;
-            uniformBuffer.Offset = m_uniformsMemorySize; // globalOffset
-            uint64_t blockSize = uniformBuffer.ArraySize * uniformBuffer.BlockSize;
-            m_uniformsMemorySize += static_cast<uint32_t>((blockSize + m_bufferAlignment - 1) / m_bufferAlignment * m_bufferAlignment);
+            uint64_t blockSize = static_cast<uint64_t>(uniformBuffer.ArraySize) * uniformBuffer.BlockSize;
+            uint64_t aligned   = alignUp(blockSize, m_bufferAlignment);
+            uint64_t newSize   = static_cast<uint64_t>(m_uniformsMemorySize) + aligned;
+            if( newSize > std::numeric_limits<uint32_t>::max() )
+            {
+                s_debugLayer( "S_VulkanShader: uniform buffer total exceeds 4 GB — block skipped" );
+                continue;
+            }
+            uniformBuffer.Offset = m_uniformsMemorySize; // globalOffset — set after overflow check
+            m_uniformsMemorySize = static_cast<uint32_t>(newSize);
             layoutBindingList.at( uniformBuffer.Set ).push_back( binding );
         }
 
         for (auto texture: reflectionData.Textures)
         {
+            if( texture.Set >= allStagesSetsCount )
+                continue;
             binding.binding = static_cast<unsigned int>(texture.Binding);
             binding.stageFlags = m_STAGEMAP[ static_cast<int>( reflectionData.Reflection.Stage ) ];
             binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -73,7 +98,7 @@ S_VulkanShader::S_VulkanShader(S_VulkanRendererAPI *api, const std::string &vert
     {
         VkBufferCreateInfo uniformBufInfo = {};
         uniformBufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        uniformBufInfo.size = m_uniformsMemorySize * (m_api->maxFramesInFlight() + 1) * 256 * ( m_maxUniformSetInStages + 1 );
+        uniformBufInfo.size = static_cast<VkDeviceSize>(m_uniformsMemorySize) * (m_api->maxFramesInFlight() + 1) * kMaxDrawsPerSlot * ( m_maxUniformSetInStages + 1 );
         uniformBufInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         uniformBufInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
@@ -88,7 +113,7 @@ S_VulkanShader::S_VulkanShader(S_VulkanRendererAPI *api, const std::string &vert
 
     m_descriptorSetLayouts.resize( allStagesSetsCount, nullptr );
 
-    std::vector<VkDescriptorSetLayout> layouts( (m_api->maxFramesInFlight() + 1) * 256 * allStagesSetsCount );
+    std::vector<VkDescriptorSetLayout> layouts( (m_api->maxFramesInFlight() + 1) * kMaxDrawsPerSlot * allStagesSetsCount );
 
     for( uint32_t i = 0; i < allStagesSetsCount; ++i )
     {
@@ -98,7 +123,7 @@ S_VulkanShader::S_VulkanShader(S_VulkanRendererAPI *api, const std::string &vert
         layoutInfo.pBindings = layoutBindingList.at(i).data();
 
         VK_RESULT_CHECK( vkCreateDescriptorSetLayout(m_api->device(), &layoutInfo, S_VulkanAllocator(), &m_descriptorSetLayouts.at(i)) )
-        std::fill_n( layouts.begin() + (m_api->maxFramesInFlight() + 1) * 256 * i, (m_api->maxFramesInFlight() + 1) * 256, m_descriptorSetLayouts.at(i) );
+        std::fill_n( layouts.begin() + (m_api->maxFramesInFlight() + 1) * kMaxDrawsPerSlot * i, (m_api->maxFramesInFlight() + 1) * kMaxDrawsPerSlot, m_descriptorSetLayouts.at(i) );
     }
 
     VkDescriptorSetAllocateInfo allocInfo = {};
@@ -106,7 +131,7 @@ S_VulkanShader::S_VulkanShader(S_VulkanRendererAPI *api, const std::string &vert
     allocInfo.descriptorPool = m_descriptorsPool;
     allocInfo.descriptorSetCount = static_cast<uint32_t>( layouts.size() );
     allocInfo.pSetLayouts = layouts.data();
-    m_descriptorSets.resize( (m_api->maxFramesInFlight() + 1) * 256 * allStagesSetsCount );
+    m_descriptorSets.resize( (m_api->maxFramesInFlight() + 1) * kMaxDrawsPerSlot * allStagesSetsCount );
     VK_RESULT_CHECK( vkAllocateDescriptorSets( m_api->device(), &allocInfo, m_descriptorSets.data() ) );
 
     m_aboutToUseDescriptorSets.resize( allStagesSetsCount, nullptr );
@@ -138,16 +163,15 @@ void S_VulkanShader::updateUniformValue(const std::string &name, S_ShaderStage s
         return;
     auto uniformBuffer = &currentReflectionData->UniformBuffers.at( (*it).second );
 
-    if( m_commitsCount >= 256 )
-    {
-        s_debugLayer( "S_VulkanShader: exceeded 256 draw calls per frame-slot — uniform update dropped" );
+    if( m_commitsCount >= kMaxDrawsPerSlot )
         return;
-    }
-    uint32_t descriptorBaseIndex = ( uniformBuffer->Set * (m_api->maxFramesInFlight() + 1) * 256
-                                    + m_api->nextSwapchainImageIndex() * 256 ) + m_commitsCount;
+    if( uniformBuffer->Set >= m_aboutToUseDescriptorSets.size() )
+        return;
+    uint32_t descriptorBaseIndex = ( uniformBuffer->Set * (m_api->maxFramesInFlight() + 1) * kMaxDrawsPerSlot
+                                    + m_api->nextSwapchainImageIndex() * kMaxDrawsPerSlot ) + m_commitsCount;
 
-    size_t baseOffset = descriptorBaseIndex * m_uniformsMemorySize + uniformBuffer->Offset;
-    size_t copySize = uniformBuffer->ArraySize * uniformBuffer->BlockSize;
+    size_t baseOffset = static_cast<size_t>(descriptorBaseIndex) * m_uniformsMemorySize + uniformBuffer->Offset;
+    size_t copySize = static_cast<uint64_t>(uniformBuffer->ArraySize) * uniformBuffer->BlockSize;
 
     auto ptrAddress = reinterpret_cast<void *>(
                 reinterpret_cast<size_t>( m_uniformBuffersMappedData )
@@ -158,7 +182,7 @@ void S_VulkanShader::updateUniformValue(const std::string &name, S_ShaderStage s
     m_dirtyMin = std::min( m_dirtyMin, baseOffset );
     m_dirtyMax = std::max( m_dirtyMax, baseOffset + copySize );
 
-    size_t alignedSize = (copySize + m_bufferAlignment - 1) / m_bufferAlignment * m_bufferAlignment;
+    size_t alignedSize = alignUp(copySize, m_bufferAlignment);
 
     m_descriptorBufferInfos.push_back( std::make_unique<VkDescriptorBufferInfo>() );
     VkDescriptorBufferInfo *bufferInfo = (*(m_descriptorBufferInfos.end() - 1)).get();
@@ -194,8 +218,12 @@ void S_VulkanShader::updateTextureValue(const std::string &name, S_ShaderStage s
         return;
     auto textureBuffer = &currentReflectionData->Textures.at( (*it).second );
 
-    uint32_t descriptorBaseIndex = ( textureBuffer->Set * (m_api->maxFramesInFlight() + 1) * 256
-                                    + m_api->nextSwapchainImageIndex() * 256 ) + m_commitsCount;
+    if( m_commitsCount >= kMaxDrawsPerSlot )
+        return;
+    if( textureBuffer->Set >= m_aboutToUseDescriptorSets.size() )
+        return;
+    uint32_t descriptorBaseIndex = ( textureBuffer->Set * (m_api->maxFramesInFlight() + 1) * kMaxDrawsPerSlot
+                                    + m_api->nextSwapchainImageIndex() * kMaxDrawsPerSlot ) + m_commitsCount;
 
 
     m_descriptorImageInfos.push_back( std::make_unique<VkDescriptorImageInfo>() );
@@ -223,9 +251,17 @@ void S_VulkanShader::updateTextureValue(const std::string &name, S_ShaderStage s
     m_aboutToUseDescriptorSets[textureBuffer->Set] = descriptorWrite.dstSet;
 }
 
+void S_VulkanShader::clearPendingDescriptorState()
+{
+    m_aboutToWriteDescriptorSets.clear();
+    m_descriptorBufferInfos.clear();
+    m_descriptorImageInfos.clear();
+}
+
 void S_VulkanShader::bind()
 {
     std::fill( m_aboutToUseDescriptorSets.begin(), m_aboutToUseDescriptorSets.end(), nullptr );
+    clearPendingDescriptorState();
     m_commitsCount = 0;
     m_dirtyMin = SIZE_MAX;
     m_dirtyMax = 0;
@@ -240,6 +276,11 @@ void S_VulkanShader::commit()
         s_debugLayer( "S_VulkanShader::commit() called before setPipelineLayout()" );
         return;
     }
+    if( m_commitsCount >= kMaxDrawsPerSlot )
+    {
+        s_debugLayer( "S_VulkanShader: exceeded", kMaxDrawsPerSlot, "draw calls per frame-slot — draw skipped" );
+        return;
+    }
     if( m_aboutToWriteDescriptorSets.size() )
     {
         if( m_uniformBuffers != VK_NULL_HANDLE && m_dirtyMin < m_dirtyMax )
@@ -249,21 +290,31 @@ void S_VulkanShader::commit()
             m_dirtyMin = SIZE_MAX;
             m_dirtyMax = 0;
         }
-    }
-
-    if( m_aboutToWriteDescriptorSets.size() )
-    {
         vkUpdateDescriptorSets( m_api->device(), static_cast<uint32_t>( m_aboutToWriteDescriptorSets.size() ), m_aboutToWriteDescriptorSets.data(), 0, nullptr );
-        m_aboutToWriteDescriptorSets.clear();
-        m_descriptorBufferInfos.clear();
-        m_descriptorImageInfos.clear();
+        clearPendingDescriptorState();
     }
 
-    vkCmdBindDescriptorSets( m_api->nextFrameRenderCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-                             m_pipelineLayout, 0, static_cast<uint32_t>( m_aboutToUseDescriptorSets.size() ),
-                             m_aboutToUseDescriptorSets.data(),
-                             0, nullptr);
-    ++m_commitsCount;
+    uint32_t bindCount = 0;
+    bool validRange = true;
+    for( uint32_t i = 0; i < static_cast<uint32_t>( m_aboutToUseDescriptorSets.size() ); ++i )
+    {
+        if( m_aboutToUseDescriptorSets[i] != VK_NULL_HANDLE )
+            bindCount = i + 1;
+        else if( i < bindCount )
+        {
+            s_debugLayer( "S_VulkanShader: null descriptor set at slot", i, "— draw skipped" );
+            validRange = false;
+            break;
+        }
+    }
+    if( bindCount > 0 && validRange )
+    {
+        vkCmdBindDescriptorSets( m_api->nextFrameRenderCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                 m_pipelineLayout, 0, bindCount,
+                                 m_aboutToUseDescriptorSets.data(),
+                                 0, nullptr);
+        ++m_commitsCount;
+    }
 }
 
 void S_VulkanShader::setShader(S_ShaderStage stage, const std::string &name)

@@ -208,14 +208,6 @@ void S_VulkanPipeline::create( const std::vector<S_PipelineDescriptor> *descript
         multisamplings[i].alphaToOneEnable = VK_FALSE;
 
         colorBlendAttachments[i].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-        colorBlendAttachments[i].blendEnable = VK_FALSE;
-        colorBlendAttachments[i].srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-        colorBlendAttachments[i].dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-        colorBlendAttachments[i].colorBlendOp = VK_BLEND_OP_ADD;
-        colorBlendAttachments[i].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-        colorBlendAttachments[i].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-        colorBlendAttachments[i].alphaBlendOp = VK_BLEND_OP_ADD;
-
         colorBlendAttachments[i].blendEnable = VK_TRUE;
         colorBlendAttachments[i].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
         colorBlendAttachments[i].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;

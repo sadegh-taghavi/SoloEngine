@@ -133,7 +133,7 @@ S_VulkanTexture::S_VulkanTexture(S_VulkanRendererAPI *api, const std::string &te
             canUseFasterPath = false;
     }
 
-    uint32_t bufferSize = static_cast<uint32_t>(ktTexture->dataSize);
+    VkDeviceSize bufferSize = ktTexture->dataSize;
     uint32_t numCopyRegions;
     if (canUseFasterPath)
     {
@@ -141,7 +141,7 @@ S_VulkanTexture::S_VulkanTexture(S_VulkanRendererAPI *api, const std::string &te
     } else
     {
         numCopyRegions = ktTexture->isArray ? ktTexture->numLevels : ktTexture->numLevels * ktTexture->numFaces;
-        bufferSize += numCopyRegions * elementSize * 4;
+        bufferSize += static_cast<VkDeviceSize>(numCopyRegions) * elementSize * 4;
     }
     std::vector<VkBufferImageCopy> copyRegions(numCopyRegions);
 

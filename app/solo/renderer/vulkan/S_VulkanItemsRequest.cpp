@@ -18,6 +18,7 @@ void S_VulkanItemsRequest::queryItems()
 {
     m_enabledItems.clear();
     m_ownedEnabledItems.clear();
+    m_ownedEnabledItems.reserve( m_requestItems.size() );
     for ( size_t i = 0; i < m_requestItems.size(); ++i )
     {
         const std::string &active = m_requestItems.at( i );

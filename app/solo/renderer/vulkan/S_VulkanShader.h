@@ -39,6 +39,7 @@ public:
 
 private:
     void setShader(S_ShaderStage stage, const std::string &name );
+    void clearPendingDescriptorState();
     VkDescriptorPool m_descriptorsPool;
     uint32_t m_maxUniformSetInStages;
     uint32_t m_maxTextureSetInStages;
