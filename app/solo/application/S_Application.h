@@ -2,6 +2,7 @@
 #include "solo/platforms/S_BaseApplication.h"
 #include "solo/renderer/S_Renderer.h"
 #include "solo/resource/S_ResourceManager.h"
+#include <chrono>
 #include <memory>
 
 namespace solo
@@ -24,10 +25,12 @@ private:
     std::unique_ptr<S_Renderer> m_renderer;
     std::unique_ptr<S_ResourceManager> m_resourceManager;
     S_VertexBuffer *m_vVB = nullptr;
+    S_VertexBuffer *m_vGround = nullptr;
     S_Shader *m_vShader = nullptr;
     S_Texture *m_vTexture = nullptr;
     std::shared_ptr<class S_CameraPerspective> m_vCam;
     std::shared_ptr<class S_FirstPersonCameraController> m_vCamController;
+    std::chrono::steady_clock::time_point m_startTime;
 
 };
 

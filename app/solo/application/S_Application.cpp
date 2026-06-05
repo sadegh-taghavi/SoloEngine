@@ -8,7 +8,6 @@
 #include "solo/renderer/S_Camera.h"
 #include "solo/renderer/S_CameraController.h"
 #include <list>
-#include <random>
 
 using namespace solo;
 
@@ -20,6 +19,7 @@ solo::S_Application::S_Application(unsigned int width, unsigned int height) : S_
 void solo::S_Application::onCreateEvent()
 {
     s_debugLayer( "onCreateEvent" );
+    m_startTime = std::chrono::steady_clock::now();
     m_resourceManager = std::make_unique<S_ResourceManager>();
     m_renderer = std::make_unique<S_Renderer>();
 
@@ -50,38 +50,101 @@ void solo::S_Application::onCreateEvent()
     pd.Shader = m_vShader;
     m_renderer->createGraphicsPipeline({ pd });
 
-    m_vVB = m_renderer->createVertexBuffer(4, 6, 1600,
+    m_vVB = m_renderer->createVertexBuffer(24, 36, 1600,
         std::make_unique<S_VertexBufferDescriptorArray>(static_cast<uint32_t>(sizeof(Vertex)),   vertexDescs),
         std::make_unique<S_VertexBufferDescriptorArray>(static_cast<uint32_t>(sizeof(Instance)), instanceDescs));
 
-    auto vbr = m_vVB->beginVerticesData();
-    Vertex *v = reinterpret_cast<Vertex *>(vbr.first);
-    uint32_t *idx = reinterpret_cast<uint32_t *>(vbr.second);
-    v[0] = {{ -0.5f, 0.0f, -0.5f }, { 0.0f, 0.0f }};
-    v[1] = {{  0.5f, 0.0f, -0.5f }, { 1.0f, 0.0f }};
-    v[2] = {{ -0.5f, 0.0f,  0.5f }, { 0.0f, 1.0f }};
-    v[3] = {{  0.5f, 0.0f,  0.5f }, { 1.0f, 1.0f }};
-    idx[0]=0; idx[1]=1; idx[2]=2; idx[3]=2; idx[4]=1; idx[5]=3;
-    m_vVB->endVerticesData();
+    {
+        auto vbr = m_vVB->beginVerticesData();
+        Vertex   *v   = reinterpret_cast<Vertex *>(vbr.first);
+        uint32_t *idx = reinterpret_cast<uint32_t *>(vbr.second);
 
-    Instance *inst = reinterpret_cast<Instance *>(m_vVB->beginInstancesData());
-    std::mt19937 mt(std::random_device{}());
-    std::uniform_real_distribution<float> dist(-2.0f, 2.0f);
-    uint32_t cntr = 0;
-    for (int xx = -20; xx < 20; ++xx)
-        for (int zz = -20; zz < 20; ++zz)
+        constexpr float h = 0.4f;
+
+        v[ 0]={{ -h, 1.f, -h },{ 0.f, 0.f }};
+        v[ 1]={{ -h, 1.f,  h },{ 1.f, 0.f }};
+        v[ 2]={{  h, 1.f, -h },{ 0.f, 1.f }};
+        v[ 3]={{  h, 1.f,  h },{ 1.f, 1.f }};
+
+        v[ 4]={{ -h, 0.f, -h },{ 0.f, 0.f }};
+        v[ 5]={{  h, 0.f, -h },{ 1.f, 0.f }};
+        v[ 6]={{ -h, 0.f,  h },{ 0.f, 1.f }};
+        v[ 7]={{  h, 0.f,  h },{ 1.f, 1.f }};
+
+        v[ 8]={{ -h, 0.f,  h },{ 0.f, 0.f }};
+        v[ 9]={{  h, 0.f,  h },{ 1.f, 0.f }};
+        v[10]={{ -h, 1.f,  h },{ 0.f, 1.f }};
+        v[11]={{  h, 1.f,  h },{ 1.f, 1.f }};
+
+        v[12]={{  h, 0.f, -h },{ 0.f, 0.f }};
+        v[13]={{ -h, 0.f, -h },{ 1.f, 0.f }};
+        v[14]={{  h, 1.f, -h },{ 0.f, 1.f }};
+        v[15]={{ -h, 1.f, -h },{ 1.f, 1.f }};
+
+        v[16]={{  h, 0.f,  h },{ 0.f, 0.f }};
+        v[17]={{  h, 0.f, -h },{ 1.f, 0.f }};
+        v[18]={{  h, 1.f,  h },{ 0.f, 1.f }};
+        v[19]={{  h, 1.f, -h },{ 1.f, 1.f }};
+
+        v[20]={{ -h, 0.f, -h },{ 0.f, 0.f }};
+        v[21]={{ -h, 0.f,  h },{ 1.f, 0.f }};
+        v[22]={{ -h, 1.f, -h },{ 0.f, 1.f }};
+        v[23]={{ -h, 1.f,  h },{ 1.f, 1.f }};
+
+        uint32_t i = 0;
+        for (uint32_t f = 0; f < 6; ++f)
         {
-            inst[cntr].transform = glm::vec4(xx, dist(mt), zz, 0.0f);
-            inst[cntr].color     = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-            ++cntr;
+            const uint32_t b = f * 4;
+            idx[i++]=b+2;   idx[i++]=b+1; idx[i++]=b;
+            idx[i++]=b+2; idx[i++]=b+3; idx[i++]=b+1;
         }
-    m_vVB->endInstancesData();
+
+        m_vVB->endVerticesData();
+    }
+
+    {
+        Instance *inst = reinterpret_cast<Instance *>(m_vVB->beginInstancesData());
+        uint32_t cntr = 0;
+        for (int xx = -20; xx < 20; ++xx)
+            for (int zz = -20; zz < 20; ++zz)
+            {
+                inst[cntr].transform = glm::vec4(static_cast<float>(xx), 0.f, static_cast<float>(zz), 1.f);
+                inst[cntr].color     = glm::vec4(1.f);
+                ++cntr;
+            }
+        m_vVB->endInstancesData();
+    }
+
+    m_vGround = m_renderer->createVertexBuffer(4, 6, 1,
+        std::make_unique<S_VertexBufferDescriptorArray>(static_cast<uint32_t>(sizeof(Vertex)),   vertexDescs),
+        std::make_unique<S_VertexBufferDescriptorArray>(static_cast<uint32_t>(sizeof(Instance)), instanceDescs));
+
+    {
+        auto gbr = m_vGround->beginVerticesData();
+        Vertex   *gv   = reinterpret_cast<Vertex *>(gbr.first);
+        uint32_t *gidx = reinterpret_cast<uint32_t *>(gbr.second);
+
+        gv[0] = {{ -22.f, 0.f, -22.f }, { 0.f,  0.f }};
+        gv[1] = {{  22.f, 0.f, -22.f }, { 22.f, 0.f }};
+        gv[2] = {{ -22.f, 0.f,  22.f }, { 0.f,  22.f }};
+        gv[3] = {{  22.f, 0.f,  22.f }, { 22.f, 22.f }};
+        gidx[0]=0; gidx[1]=1; gidx[2]=2; gidx[3]=2; gidx[4]=1; gidx[5]=3;
+
+        m_vGround->endVerticesData();
+    }
+
+    {
+        Instance *ginst = reinterpret_cast<Instance *>(m_vGround->beginInstancesData());
+        ginst[0].transform = glm::vec4(0.f, -0.65f, 0.f, 0.f);
+        ginst[0].color     = glm::vec4(1.0f, 1.0f, 1.0f, 1.f);
+        m_vGround->endInstancesData();
+    }
 
     m_vTexture = m_renderer->createTexture("sr:/textures/sign.ktx");
     m_vTexture->setSampler(m_renderer->createTextureSampler(S_TextureSamplerDescriptor()));
 
     m_vCam = std::make_shared<S_CameraPerspective>();
-    m_vCam->setPosition(glm::vec3(0.0f, 2.0f, 10.0f));
+    m_vCam->setPosition(glm::vec3(0.f, 28.f, 40.f));
     m_vCamController = std::make_shared<S_FirstPersonCameraController>();
     m_vCamController->setCamera(m_vCam);
 
@@ -89,19 +152,36 @@ void solo::S_Application::onCreateEvent()
     {
         struct UPerObjectVS { glm::mat4 MVP; } uVS;
         struct UPerObjectFS { glm::vec4 Color; } uFS;
+        struct Instance { glm::vec4 transform; glm::vec4 color; };
+
+        const float elapsed = std::chrono::duration<float>(
+            std::chrono::steady_clock::now() - m_startTime).count();
+
+        Instance *inst = reinterpret_cast<Instance *>(m_vVB->beginInstancesData());
+        uint32_t cntr = 0;
+        for (int xx = -20; xx < 20; ++xx)
+            for (int zz = -20; zz < 20; ++zz)
+            {
+                const float y = 0.6f * std::sinf(xx * 0.3f + zz * 0.2f + elapsed * 2.0f);
+                inst[cntr].transform = glm::vec4(static_cast<float>(xx), y, static_cast<float>(zz), 1.f);
+                inst[cntr].color     = glm::vec4(1.f);
+                ++cntr;
+            }
+        m_vVB->endInstancesData();
 
         m_vCam->setWidth(static_cast<float>(window()->width()));
         m_vCam->setHeight(static_cast<float>(window()->height()));
         m_vCamController->update();
 
-        uVS.MVP = glm::mat4(1.0f) * m_vCam->viewProjection();
-        uFS.Color = glm::vec4(1.0f);
+        uVS.MVP   = m_vCam->viewProjection();
+        uFS.Color = glm::vec4(1.f);
 
         m_vShader->bind();
         m_vShader->updateTextureValue("texSampler", S_ShaderStage::FragmentShader, *m_vTexture);
         m_vShader->updateUniformValue("UPerObject", S_ShaderStage::VertexShader,   &uVS);
         m_vShader->updateUniformValue("UPerObject", S_ShaderStage::FragmentShader, &uFS);
         m_vShader->commit();
+        m_vGround->draw();
         m_vVB->draw();
     });
 
