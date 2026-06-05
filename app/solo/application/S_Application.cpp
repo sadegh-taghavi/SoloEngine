@@ -1,6 +1,5 @@
 #include "S_Application.h"
 #include "solo/debug/S_Debug.h"
-#include "solo/file/S_File.h"
 #include "solo/math/S_Math.h"
 #include "solo/renderer/S_RendererAPI.h"
 #include "solo/renderer/S_Shader.h"
@@ -20,7 +19,8 @@ void solo::S_Application::onCreateEvent()
 {
     s_debugLayer( "onCreateEvent" );
     m_startTime = std::chrono::steady_clock::now();
-    m_resourceManager = std::make_unique<S_ResourceManager>();
+    m_pack = std::make_unique<S_Pack>();
+    m_pack->open("resources.spk");
     m_renderer = std::make_unique<S_Renderer>();
 
     struct Vertex { glm::vec3 position; glm::vec2 texcoord; };
@@ -42,7 +42,7 @@ void solo::S_Application::onCreateEvent()
     instanceDescs[1].Offset = static_cast<uint32_t>(offsetof(Instance, color));
     instanceDescs[1].Format = S_VertexBufferDescriptorFormat::R32G32B32A32_SFLOAT;
 
-    m_vShader = m_renderer->createShader("sr:/shaders/vs", "sr:/shaders/ps", "", "");
+    m_vShader = m_renderer->createShader("shaders/vs", "shaders/ps", "", "");
 
     S_PipelineDescriptor pd;
     pd.VertexBufferDescriptorArray   = S_VertexBufferDescriptorArray(static_cast<uint32_t>(sizeof(Vertex)),   vertexDescs);
@@ -140,7 +140,7 @@ void solo::S_Application::onCreateEvent()
         m_vGround->endInstancesData();
     }
 
-    m_vTexture = m_renderer->createTexture("sr:/textures/sign.ktx");
+    m_vTexture = m_renderer->createTexture("textures/sign.ktx");
     m_vTexture->setSampler(m_renderer->createTextureSampler(S_TextureSamplerDescriptor()));
 
     m_vCam = std::make_shared<S_CameraPerspective>();
@@ -213,9 +213,9 @@ S_Renderer* S_Application::renderer() const
     return m_renderer.get();
 }
 
-S_ResourceManager *S_Application::resourceManager() const
+S_Pack *S_Application::pack() const
 {
-    return m_resourceManager.get();
+    return m_pack.get();
 }
 
 S_Application *S_Application::executingApplication()

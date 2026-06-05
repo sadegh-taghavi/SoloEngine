@@ -1,7 +1,5 @@
 #include "S_VulkanTextureSampler.h"
 #include "solo/renderer/vulkan/S_VulkanRendererAPI.h"
-#include "solo/resource/S_ResourceManager.h"
-#include "solo/application/S_Application.h"
 #include "solo/renderer/vulkan/S_VulkanAllocator.h"
 
 using namespace solo;

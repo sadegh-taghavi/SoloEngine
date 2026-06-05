@@ -24,10 +24,7 @@
 #include "renderer/S_RendererAPI.h"
 #include "renderer/S_Renderer.h"
 
-#include "resource/S_Resources.h"
-#include "resource/S_ResourceManager.h"
-
-#include "file/S_File.h"
+#include "pack/S_Pack.h"
 
 #include "application/S_Application.h"
 

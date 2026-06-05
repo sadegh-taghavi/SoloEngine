@@ -1,9 +1,7 @@
 #include "S_VulkanTexture.h"
 #include "solo/renderer/vulkan/S_VulkanRendererAPI.h"
-#include "solo/resource/S_ResourceManager.h"
 #include "solo/application/S_Application.h"
 #include "solo/renderer/vulkan/S_VulkanAllocator.h"
-#include "solo/file/S_File.h"
 #include "solo/math/S_Math.h"
 #include <vk_format.h>
 #include <ktx.h>
@@ -15,19 +13,15 @@ using namespace solo;
 S_VulkanTexture::S_VulkanTexture(S_VulkanRendererAPI *api, const std::string &texture) : S_Texture(), m_api( api )
 
 {
-    S_File file( texture );
-    if( !file.open() )
+    auto fileData = S_Application::executingApplication()->pack()->load(texture);
+    if( fileData.empty() )
     {
         s_debugLayer("Texture not found!", texture );
         return;
     }
 
-    std::vector<std::byte> fileData(file.size());
-    file.read( reinterpret_cast<char *>( fileData.data() ), fileData.size() );
-    file.close();
-
     ktxTexture* ktTexture;
-    if( ktxTexture_CreateFromMemory( reinterpret_cast<uint8_t *>( fileData.data() ), fileData.size(),
+    if( ktxTexture_CreateFromMemory( fileData.data(), fileData.size(),
                                      KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktTexture ) != KTX_SUCCESS )
     {
         s_debugLayer("Can't create texture!", texture );

@@ -1,7 +1,7 @@
 #pragma once
 #include "solo/platforms/S_BaseApplication.h"
 #include "solo/renderer/S_Renderer.h"
-#include "solo/resource/S_ResourceManager.h"
+#include "solo/pack/S_Pack.h"
 #include <chrono>
 #include <memory>
 
@@ -17,13 +17,13 @@ public:
     virtual void onResizeEvent(const S_WindowResizeEvent *event);
     virtual void onFocusEvent(const S_WindowFocusEvent *event);
     S_Renderer *renderer() const;
-    S_ResourceManager *resourceManager() const;
+    S_Pack *pack() const;
     static S_Application *executingApplication();
 
 private:
     char __padding[4];
     std::unique_ptr<S_Renderer> m_renderer;
-    std::unique_ptr<S_ResourceManager> m_resourceManager;
+    std::unique_ptr<S_Pack> m_pack;
     S_VertexBuffer *m_vVB = nullptr;
     S_VertexBuffer *m_vGround = nullptr;
     S_Shader *m_vShader = nullptr;

@@ -14,7 +14,6 @@
 #include <map>
 #include <array>
 #include "solo/application/S_Application.h"
-#include "solo/resource/S_ResourceManager.h"
 #include "solo/thread/S_Thread.h"
 #include "solo/utility/S_ElapsedTime.h"
 #include "solo/math/S_Math.h"

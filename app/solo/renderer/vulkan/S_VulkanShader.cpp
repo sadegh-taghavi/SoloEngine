@@ -1,6 +1,5 @@
 #include "S_VulkanShader.h"
 #include "solo/renderer/vulkan/S_VulkanRendererAPI.h"
-#include "solo/file/S_File.h"
 #include "solo/application/S_Application.h"
 #include "solo/renderer/vulkan/S_VulkanAllocator.h"
 #include "solo/renderer/vulkan/S_VulkanTexture.h"
@@ -323,28 +322,24 @@ void S_VulkanShader::setShader(S_ShaderStage stage, const std::string &name)
     std::string shaderCodeName = name + m_EXTENSIONS[ static_cast<int>(stage) ] + "c";
     std::string shaderReflectionName = name + m_EXTENSIONS[ static_cast<int>(stage) ] + "r";
 
-    S_File shaderCodeFile(shaderCodeName);
-    S_File shaderReflectionFile(shaderReflectionName);
-    if( !shaderCodeFile.open() )
+    auto* pack = S_Application::executingApplication()->pack();
+    auto reflData = pack->load(shaderReflectionName);
+    if( reflData.empty() )
+    {
+        s_debugLayer("Shader reflection not found!", shaderReflectionName );
+        return;
+    }
+    auto codeData = pack->load(shaderCodeName);
+    if( codeData.empty() )
     {
         s_debugLayer("Shader code not found!", shaderCodeName );
         return;
     }
 
-    if( !shaderReflectionFile.open() )
-    {
-        s_debugLayer("Shader reflection not found!", shaderReflectionName );
-        return;
-    }
-
-    std::vector<std::byte> fileData(shaderReflectionFile.size());
-    shaderReflectionFile.read( reinterpret_cast<char *>(fileData.data()), fileData.size() );
-    shaderReflectionFile.close();
-
     auto currentReflectionData = &m_shaderReflections[ static_cast<int>(stage) ];
     auto reflection = &currentReflectionData->Reflection;
 
-    auto dataPtr = fileData.data();
+    auto dataPtr = reflData.data();
 
     memcpy( reflection, dataPtr, sizeof(S_VulkanShaderReflection) );
 
@@ -385,14 +380,10 @@ void S_VulkanShader::setShader(S_ShaderStage stage, const std::string &name)
     m_maxUniformSetInStages = glm::max( m_maxUniformSetInStages, currentReflectionData->Reflection.MaxUniformBuffersSet );
     m_maxTextureSetInStages = glm::max( m_maxTextureSetInStages, currentReflectionData->Reflection.MaxTextureSet );
 
-    fileData.resize( shaderCodeFile.size() );
-    shaderCodeFile.read( reinterpret_cast<char *>(fileData.data()), fileData.size() );
-    shaderCodeFile.close();
-
     VkShaderModuleCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    createInfo.codeSize = fileData.size();
-    createInfo.pCode = reinterpret_cast<const uint32_t*>(fileData.data());
+    createInfo.codeSize = codeData.size();
+    createInfo.pCode = reinterpret_cast<const uint32_t*>(codeData.data());
     VK_RESULT_CHECK( vkCreateShaderModule( m_api->device(), &createInfo, S_VulkanAllocator(),
                                            &m_shaderModules[static_cast<int>(stage)]) );
 }

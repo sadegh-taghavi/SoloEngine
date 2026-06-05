@@ -1,5 +1,5 @@
 
-#include "solo/file/S_File.h"
+#include "solo/application/S_Application.h"
 #include <vector>
 #include "solo/debug/S_Debug.h"
 #include "solo/math/S_Math.h"
@@ -364,16 +364,12 @@ void S_Model::loadSkins(tinygltf::Model &gltfModel)
 S_Model::S_Model(const std::string &model)
 {
     m_path = model;
-    S_File file( model );
-    if( !file.open() )
+    auto fileData = S_Application::executingApplication()->pack()->load(model);
+    if( fileData.empty() )
     {
         s_debugLayer("Model not found!", model );
         return;
     }
-
-    std::vector<std::byte> fileData(file.size());
-    file.read( reinterpret_cast<char *>( fileData.data() ), fileData.size() );
-    file.close();
 
     tinygltf::Model gltfModel;
     tinygltf::TinyGLTF gltfContext;
@@ -381,14 +377,12 @@ S_Model::S_Model(const std::string &model)
     std::string warning;
     m_fsCallbacks.FileExists = [](const std::string &abs_filename, void *)->bool
     {
-        S_File file( abs_filename );
-        return file.exist();
+        return S_Application::executingApplication()->pack()->exists(abs_filename);
     };
 
     m_fsCallbacks.ExpandFilePath = [](const std::string &filepath, void *userData)->std::string
     {
         S_Model* model = reinterpret_cast<S_Model *>( userData );
-
         std::string outPath;
         auto lastSlashPos = model->path().find_last_of("/");
         if( lastSlashPos == std::string::npos )
@@ -400,13 +394,10 @@ S_Model::S_Model(const std::string &model)
 
     m_fsCallbacks.ReadWholeFile = [](std::vector<unsigned char> *out, std::string *err, const std::string &filepath, void *)->bool
     {
-        S_File file( filepath );
-        if( !file.open() )
+        auto data = S_Application::executingApplication()->pack()->load(filepath);
+        if( data.empty() )
             return false;
-        out->resize(file.size());
-        file.read( reinterpret_cast<char *>( out->data() ), out->size() );
-        file.close();
-
+        out->assign(data.begin(), data.end());
         return true;
     };
 
