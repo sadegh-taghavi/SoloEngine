@@ -21,6 +21,7 @@
 #include "platforms/S_WindowEvent.h"
 #include "platforms/S_BaseApplication.h"
 
+#include "renderer/S_Handle.h"
 #include "renderer/S_RendererAPI.h"
 #include "renderer/S_Renderer.h"
 

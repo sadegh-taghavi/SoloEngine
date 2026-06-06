@@ -3,6 +3,7 @@
 #include "solo/renderer/vulkan/S_VulkanShader.h"
 #include "solo/renderer/vulkan/S_VulkanTexture.h"
 #include "solo/renderer/vulkan/S_VulkanTextureSampler.h"
+#include "solo/renderer/vulkan/S_VulkanMesh.h"
 #include "S_VulkanRendererAPI.h"
 #include "S_VulkanPipeline.h"
 #include "S_VulkanAllocator.h"
@@ -57,11 +58,19 @@ S_VulkanTextureSampler *S_VulkanItemsManager::createTextureSampler(const S_Textu
     return (--it)->get();
 }
 
+S_VulkanMesh *S_VulkanItemsManager::createMesh(const std::string &path)
+{
+    m_meshes.push_back( std::make_unique<S_VulkanMesh>( m_api, path ) );
+    auto it = m_meshes.end();
+    return (--it)->get();
+}
+
 void S_VulkanItemsManager::destroy()
 {
     m_vertexBuffers.clear();
     m_shaders.clear();
     m_textures.clear();
     m_textureSamplers.clear();
+    m_meshes.clear();
 }
 

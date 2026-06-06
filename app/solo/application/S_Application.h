@@ -23,11 +23,12 @@ public:
 private:
     char __padding[4];
     std::unique_ptr<S_Renderer> m_renderer;
-    std::unique_ptr<S_Pack> m_pack;
-    S_VertexBuffer *m_vVB = nullptr;
-    S_VertexBuffer *m_vGround = nullptr;
-    S_Shader *m_vShader = nullptr;
-    S_Texture *m_vTexture = nullptr;
+    std::unique_ptr<S_Pack>     m_pack;
+    S_VertexBufferHandle m_vVB;
+    S_VertexBufferHandle m_vGround;
+    S_ShaderHandle       m_vShader;
+    S_TextureHandle      m_vTexture;
+    S_SamplerHandle      m_vSampler;
     std::shared_ptr<class S_CameraPerspective> m_vCam;
     std::shared_ptr<class S_FirstPersonCameraController> m_vCamController;
     std::chrono::steady_clock::time_point m_startTime;

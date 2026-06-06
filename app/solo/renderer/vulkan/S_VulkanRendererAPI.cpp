@@ -8,6 +8,7 @@
 #include "S_VulkanShader.h"
 #include "S_VulkanTexture.h"
 #include "S_VulkanTextureSampler.h"
+#include "S_VulkanMesh.h"
 #include "solo/platforms/S_Window.h"
 #include "solo/platforms/S_SystemDetect.h"
 #include "solo/debug/S_Debug.h"
@@ -1194,6 +1195,11 @@ S_Texture *S_VulkanRendererAPI::createTexture(const std::string &texture)
 S_TextureSampler *S_VulkanRendererAPI::createTextureSampler(const S_TextureSamplerDescriptor &descriptor)
 {
     return m_itemsManager->createTextureSampler(descriptor);
+}
+
+S_Mesh *S_VulkanRendererAPI::createMesh(const std::string &path)
+{
+    return m_itemsManager->createMesh(path);
 }
 
 VkInstance S_VulkanRendererAPI::instance() const

@@ -47,7 +47,7 @@ void solo::S_Application::onCreateEvent()
     S_PipelineDescriptor pd;
     pd.VertexBufferDescriptorArray   = S_VertexBufferDescriptorArray(static_cast<uint32_t>(sizeof(Vertex)),   vertexDescs);
     pd.InstanceBufferDescriptorArray = S_VertexBufferDescriptorArray(static_cast<uint32_t>(sizeof(Instance)), instanceDescs);
-    pd.Shader = m_vShader;
+    pd.Shader = m_renderer->getShader(m_vShader);
     m_renderer->createGraphicsPipeline({ pd });
 
     m_vVB = m_renderer->createVertexBuffer(24, 36, 1600,
@@ -55,7 +55,8 @@ void solo::S_Application::onCreateEvent()
         std::make_unique<S_VertexBufferDescriptorArray>(static_cast<uint32_t>(sizeof(Instance)), instanceDescs));
 
     {
-        auto vbr = m_vVB->beginVerticesData();
+        auto* vb  = m_renderer->getVertexBuffer(m_vVB);
+        auto  vbr = vb->beginVerticesData();
         Vertex   *v   = reinterpret_cast<Vertex *>(vbr.first);
         uint32_t *idx = reinterpret_cast<uint32_t *>(vbr.second);
 
@@ -95,16 +96,17 @@ void solo::S_Application::onCreateEvent()
         for (uint32_t f = 0; f < 6; ++f)
         {
             const uint32_t b = f * 4;
-            idx[i++]=b+2;   idx[i++]=b+1; idx[i++]=b;
+            idx[i++]=b+2; idx[i++]=b+1; idx[i++]=b;
             idx[i++]=b+2; idx[i++]=b+3; idx[i++]=b+1;
         }
 
-        m_vVB->endVerticesData();
+        vb->endVerticesData();
     }
 
     {
-        Instance *inst = reinterpret_cast<Instance *>(m_vVB->beginInstancesData());
-        uint32_t cntr = 0;
+        auto*     vb   = m_renderer->getVertexBuffer(m_vVB);
+        Instance* inst = reinterpret_cast<Instance *>(vb->beginInstancesData());
+        uint32_t  cntr = 0;
         for (int xx = -20; xx < 20; ++xx)
             for (int zz = -20; zz < 20; ++zz)
             {
@@ -112,7 +114,7 @@ void solo::S_Application::onCreateEvent()
                 inst[cntr].color     = glm::vec4(1.f);
                 ++cntr;
             }
-        m_vVB->endInstancesData();
+        vb->endInstancesData();
     }
 
     m_vGround = m_renderer->createVertexBuffer(4, 6, 1,
@@ -120,9 +122,10 @@ void solo::S_Application::onCreateEvent()
         std::make_unique<S_VertexBufferDescriptorArray>(static_cast<uint32_t>(sizeof(Instance)), instanceDescs));
 
     {
-        auto gbr = m_vGround->beginVerticesData();
-        Vertex   *gv   = reinterpret_cast<Vertex *>(gbr.first);
-        uint32_t *gidx = reinterpret_cast<uint32_t *>(gbr.second);
+        auto*     ground = m_renderer->getVertexBuffer(m_vGround);
+        auto      gbr    = ground->beginVerticesData();
+        Vertex*   gv     = reinterpret_cast<Vertex *>(gbr.first);
+        uint32_t* gidx   = reinterpret_cast<uint32_t *>(gbr.second);
 
         gv[0] = {{ -22.f, 0.f, -22.f }, { 0.f,  0.f }};
         gv[1] = {{  22.f, 0.f, -22.f }, { 22.f, 0.f }};
@@ -130,18 +133,20 @@ void solo::S_Application::onCreateEvent()
         gv[3] = {{  22.f, 0.f,  22.f }, { 22.f, 22.f }};
         gidx[0]=0; gidx[1]=1; gidx[2]=2; gidx[3]=2; gidx[4]=1; gidx[5]=3;
 
-        m_vGround->endVerticesData();
+        ground->endVerticesData();
     }
 
     {
-        Instance *ginst = reinterpret_cast<Instance *>(m_vGround->beginInstancesData());
+        auto*     ground = m_renderer->getVertexBuffer(m_vGround);
+        Instance* ginst  = reinterpret_cast<Instance *>(ground->beginInstancesData());
         ginst[0].transform = glm::vec4(0.f, -0.65f, 0.f, 0.f);
         ginst[0].color     = glm::vec4(1.0f, 1.0f, 1.0f, 1.f);
-        m_vGround->endInstancesData();
+        ground->endInstancesData();
     }
 
     m_vTexture = m_renderer->createTexture("textures/sign.ktx");
-    m_vTexture->setSampler(m_renderer->createTextureSampler(S_TextureSamplerDescriptor()));
+    m_vSampler = m_renderer->createTextureSampler(S_TextureSamplerDescriptor());
+    m_renderer->getTexture(m_vTexture)->setSampler(m_renderer->getSampler(m_vSampler));
 
     m_vCam = std::make_shared<S_CameraPerspective>();
     m_vCam->setPosition(glm::vec3(0.f, 28.f, 40.f));
@@ -157,8 +162,13 @@ void solo::S_Application::onCreateEvent()
         const float elapsed = std::chrono::duration<float>(
             std::chrono::steady_clock::now() - m_startTime).count();
 
-        Instance *inst = reinterpret_cast<Instance *>(m_vVB->beginInstancesData());
-        uint32_t cntr = 0;
+        auto* vb     = m_renderer->getVertexBuffer(m_vVB);
+        auto* ground = m_renderer->getVertexBuffer(m_vGround);
+        auto* shader = m_renderer->getShader(m_vShader);
+        auto* tex    = m_renderer->getTexture(m_vTexture);
+
+        Instance* inst = reinterpret_cast<Instance *>(vb->beginInstancesData());
+        uint32_t  cntr = 0;
         for (int xx = -20; xx < 20; ++xx)
             for (int zz = -20; zz < 20; ++zz)
             {
@@ -167,7 +177,7 @@ void solo::S_Application::onCreateEvent()
                 inst[cntr].color     = glm::vec4(1.f);
                 ++cntr;
             }
-        m_vVB->endInstancesData();
+        vb->endInstancesData();
 
         m_vCam->setWidth(static_cast<float>(window()->width()));
         m_vCam->setHeight(static_cast<float>(window()->height()));
@@ -176,13 +186,13 @@ void solo::S_Application::onCreateEvent()
         uVS.MVP   = m_vCam->viewProjection();
         uFS.Color = glm::vec4(1.f);
 
-        m_vShader->bind();
-        m_vShader->updateTextureValue("texSampler", S_ShaderStage::FragmentShader, *m_vTexture);
-        m_vShader->updateUniformValue("UPerObject", S_ShaderStage::VertexShader,   &uVS);
-        m_vShader->updateUniformValue("UPerObject", S_ShaderStage::FragmentShader, &uFS);
-        m_vShader->commit();
-        m_vGround->draw();
-        m_vVB->draw();
+        shader->bind();
+        shader->updateTextureValue("texSampler", S_ShaderStage::FragmentShader, *tex);
+        shader->updateUniformValue("UPerObject", S_ShaderStage::VertexShader,   &uVS);
+        shader->updateUniformValue("UPerObject", S_ShaderStage::FragmentShader, &uFS);
+        shader->commit();
+        ground->draw();
+        vb->draw();
     });
 
     S_BaseApplication::onCreateEvent();
@@ -222,4 +232,3 @@ S_Application *S_Application::executingApplication()
 {
     return static_cast<S_Application *>( S_BaseApplication::executingApplication() );
 }
-

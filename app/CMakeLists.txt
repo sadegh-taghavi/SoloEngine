@@ -20,6 +20,7 @@ endif()
 add_compile_definitions(
         SOLO_ENABLE_DEBUG_LAYER=1
         # SOLO_ENABLE_VULKAN_VALIDATION_LAYER=1
+        GLM_FORCE_DEPTH_ZERO_TO_ONE
         )
 
 include_directories(
@@ -69,6 +70,8 @@ set(SOURCE
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_Model.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_Scene.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/pack/S_Pack.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/mesh/S_Mesh.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanMesh.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/application/S_Application.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/ktx/lib/checkheader.c
@@ -126,6 +129,10 @@ set(HEADERS
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_Model.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_Scene.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/pack/S_Pack.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_Handle.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/mesh/S_MeshBin.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/mesh/S_Mesh.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanMesh.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/application/S_Application.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/Solo.h
 )

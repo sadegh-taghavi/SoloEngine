@@ -81,6 +81,7 @@ public:
     virtual S_Texture *createTexture(const std::string &texture);
 
     virtual S_TextureSampler *createTextureSampler(const S_TextureSamplerDescriptor &descriptor);
+    virtual S_Mesh *createMesh(const std::string &path);
 
     VkInstance instance() const;
 

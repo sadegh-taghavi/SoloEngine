@@ -17,28 +17,80 @@ S_RendererAPI *S_Renderer::api() const
     return m_api.get();
 }
 
-S_VertexBuffer *S_Renderer::createVertexBuffer(uint32_t verticesCount, uint32_t indicesCount, uint32_t instancesCount,
-                                               std::unique_ptr<S_VertexBufferDescriptorArray> verticesDescriptorArray,
-                                               std::unique_ptr<S_VertexBufferDescriptorArray> instancesDescriptorArray)
+S_VertexBufferHandle S_Renderer::createVertexBuffer(uint32_t verticesCount, uint32_t indicesCount, uint32_t instancesCount,
+                                                     std::unique_ptr<S_VertexBufferDescriptorArray> verticesDescriptorArray,
+                                                     std::unique_ptr<S_VertexBufferDescriptorArray> instancesDescriptorArray)
 {
-    return m_api->createVertexBuffer(verticesCount, indicesCount, instancesCount,
-                                     std::move(verticesDescriptorArray),
-                                     std::move(instancesDescriptorArray) );
+    S_VertexBuffer* raw = m_api->createVertexBuffer(verticesCount, indicesCount, instancesCount,
+                                                     std::move(verticesDescriptorArray),
+                                                     std::move(instancesDescriptorArray));
+    return poolInsert<S_VertexBuffer, 2>(m_vbSlots, m_freeVB, raw);
 }
 
-S_Shader *S_Renderer::createShader(const std::string &vertexShader, const std::string &fragmentShader, const std::string &geometryShader, const std::string &computeShader)
+S_ShaderHandle S_Renderer::createShader(const std::string &vertexShader, const std::string &fragmentShader,
+                                         const std::string &geometryShader, const std::string &computeShader)
 {
-    return m_api->createShader( vertexShader, fragmentShader, geometryShader, computeShader );
+    std::string key = vertexShader + '\n' + fragmentShader + '\n' + geometryShader + '\n' + computeShader;
+    auto it = m_shaderCache.find(key);
+    if (it != m_shaderCache.end()) return it->second;
+    S_Shader* raw = m_api->createShader(vertexShader, fragmentShader, geometryShader, computeShader);
+    if (!raw) return {};
+    S_ShaderHandle h = poolInsert<S_Shader, 1>(m_shaderSlots, m_freeShader, raw);
+    m_shaderCache[key] = h;
+    return h;
 }
 
-S_Texture *S_Renderer::createTexture(const std::string &texture)
+S_TextureHandle S_Renderer::createTexture(const std::string &texture)
 {
-    return m_api->createTexture( texture );
+    auto it = m_textureCache.find(texture);
+    if (it != m_textureCache.end()) return it->second;
+    S_Texture* raw = m_api->createTexture(texture);
+    if (!raw) return {};
+    S_TextureHandle h = poolInsert<S_Texture, 0>(m_textureSlots, m_freeTexture, raw);
+    m_textureCache[texture] = h;
+    return h;
 }
 
-S_TextureSampler *S_Renderer::createTextureSampler(const S_TextureSamplerDescriptor &descriptor)
+S_SamplerHandle S_Renderer::createTextureSampler(const S_TextureSamplerDescriptor &descriptor)
 {
-    return m_api->createTextureSampler(descriptor);
+    S_TextureSampler* raw = m_api->createTextureSampler(descriptor);
+    return poolInsert<S_TextureSampler, 3>(m_samplerSlots, m_freeSampler, raw);
+}
+
+S_VertexBuffer* S_Renderer::getVertexBuffer(S_VertexBufferHandle h) const
+{
+    return poolGet<S_VertexBuffer, 2>(m_vbSlots, h);
+}
+
+S_Shader* S_Renderer::getShader(S_ShaderHandle h) const
+{
+    return poolGet<S_Shader, 1>(m_shaderSlots, h);
+}
+
+S_Texture* S_Renderer::getTexture(S_TextureHandle h) const
+{
+    return poolGet<S_Texture, 0>(m_textureSlots, h);
+}
+
+S_TextureSampler* S_Renderer::getSampler(S_SamplerHandle h) const
+{
+    return poolGet<S_TextureSampler, 3>(m_samplerSlots, h);
+}
+
+S_MeshHandle S_Renderer::createMesh(const std::string &path)
+{
+    auto it = m_meshCache.find(path);
+    if (it != m_meshCache.end()) return it->second;
+    S_Mesh* raw = m_api->createMesh(path);
+    if (!raw) return {};
+    S_MeshHandle h = poolInsert<S_Mesh, 4>(m_meshSlots, m_freeMesh, raw);
+    m_meshCache[path] = h;
+    return h;
+}
+
+S_Mesh* S_Renderer::getMesh(S_MeshHandle h) const
+{
+    return poolGet<S_Mesh, 4>(m_meshSlots, h);
 }
 
 void S_Renderer::createGraphicsPipeline(const std::vector<S_PipelineDescriptor> &descriptors)
@@ -53,12 +105,10 @@ void S_Renderer::setRenderCallback(std::function<void()> callback)
 
 void S_Renderer::beginScene(std::shared_ptr<S_Scene> scene)
 {
-
 }
 
 void S_Renderer::endScene()
 {
-
 }
 
 void S_Renderer::drawFrame()
@@ -84,5 +134,4 @@ uint64_t S_Renderer::elapsedTimeUs()
 
 S_Renderer::~S_Renderer()
 {
-
 }
