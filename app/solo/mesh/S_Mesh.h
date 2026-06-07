@@ -17,6 +17,7 @@ public:
     uint32_t                         primitiveCount() const;
     const std::vector<MeshBinPrimitive>& primitives() const;
     bool                             isSkinned()      const;
+    virtual void                     draw()            {}
 
 protected:
     uint32_t                      m_vertexCount    = 0;

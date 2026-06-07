@@ -275,6 +275,8 @@ void S_VulkanShader::commit()
         s_debugLayer( "S_VulkanShader::commit() called before setPipelineLayout()" );
         return;
     }
+    if( m_pipeline != VK_NULL_HANDLE )
+        vkCmdBindPipeline( m_api->nextFrameRenderCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline );
     if( m_commitsCount >= kMaxDrawsPerSlot )
     {
         s_debugLayer( "S_VulkanShader: exceeded", kMaxDrawsPerSlot, "draw calls per frame-slot — draw skipped" );
@@ -391,6 +393,11 @@ void S_VulkanShader::setShader(S_ShaderStage stage, const std::string &name)
 void S_VulkanShader::setPipelineLayout(VkPipelineLayout layout)
 {
     m_pipelineLayout = layout;
+}
+
+void S_VulkanShader::setPipeline(VkPipeline pipeline)
+{
+    m_pipeline = pipeline;
 }
 
 VkShaderModule S_VulkanShader::shaderModule(S_ShaderStage type)

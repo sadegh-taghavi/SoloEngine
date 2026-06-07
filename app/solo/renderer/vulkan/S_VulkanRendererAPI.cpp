@@ -1097,8 +1097,6 @@ void S_VulkanRendererAPI::drawFrame()
 
     vkCmdBeginRenderPass( m_nextFrameRenderCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE );
 
-    vkCmdBindPipeline( m_nextFrameRenderCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelines->pipelines()->at(0) );
-
     if( m_renderCallback )
         m_renderCallback();
 

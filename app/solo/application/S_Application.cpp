@@ -4,6 +4,8 @@
 #include "solo/renderer/S_RendererAPI.h"
 #include "solo/renderer/S_Shader.h"
 #include "solo/renderer/S_Texture.h"
+#include "solo/mesh/S_Mesh.h"
+#include "solo/renderer/S_Scene.h"
 #include "solo/renderer/S_Camera.h"
 #include "solo/renderer/S_CameraController.h"
 #include <list>
@@ -48,7 +50,25 @@ void solo::S_Application::onCreateEvent()
     pd.VertexBufferDescriptorArray   = S_VertexBufferDescriptorArray(static_cast<uint32_t>(sizeof(Vertex)),   vertexDescs);
     pd.InstanceBufferDescriptorArray = S_VertexBufferDescriptorArray(static_cast<uint32_t>(sizeof(Instance)), instanceDescs);
     pd.Shader = m_renderer->getShader(m_vShader);
-    m_renderer->createGraphicsPipeline({ pd });
+
+    m_meshShader = m_renderer->createShader("shaders/mesh", "shaders/mesh", "", "");
+
+    std::vector<S_VertexBufferDescriptor> meshPosDescs(1);
+    meshPosDescs[0].Size   = static_cast<uint32_t>(sizeof(float) * 3);
+    meshPosDescs[0].Offset = 0;
+    meshPosDescs[0].Format = S_VertexBufferDescriptorFormat::R32G32B32_SFLOAT;
+
+    S_PipelineDescriptor meshPd;
+    meshPd.VertexBufferDescriptorArray   = S_VertexBufferDescriptorArray(static_cast<uint32_t>(sizeof(MeshBinPosition)), meshPosDescs);
+    meshPd.InstanceBufferDescriptorArray = S_VertexBufferDescriptorArray();
+    meshPd.Shader = m_renderer->getShader(m_meshShader);
+
+    m_renderer->createGraphicsPipeline({ pd, meshPd });
+
+    S_MeshHandle shotgun = m_renderer->createMesh("models/scene.mesh.bin");
+    glm::mat4 shotgunTransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 1.0f, 0.0f))
+                               * glm::scale(glm::mat4(1.0f), glm::vec3(10.0f));
+    m_scene.addNode(shotgun, shotgunTransform);
 
     m_vVB = m_renderer->createVertexBuffer(24, 36, 1600,
         std::make_unique<S_VertexBufferDescriptorArray>(static_cast<uint32_t>(sizeof(Vertex)),   vertexDescs),
@@ -193,6 +213,22 @@ void solo::S_Application::onCreateEvent()
         shader->commit();
         ground->draw();
         vb->draw();
+
+        auto* meshShader = m_renderer->getShader(m_meshShader);
+        if (meshShader)
+        {
+            struct UMeshVS { glm::mat4 MVP; } uMVS;
+            for (const auto& sceneNode : m_scene.nodes())
+            {
+                auto* mesh = m_renderer->getMesh(sceneNode.mesh);
+                if (!mesh) continue;
+                uMVS.MVP = m_vCam->viewProjection() * sceneNode.transform;
+                meshShader->bind();
+                meshShader->updateUniformValue("UPerObject", S_ShaderStage::VertexShader, &uMVS);
+                meshShader->commit();
+                mesh->draw();
+            }
+        }
     });
 
     S_BaseApplication::onCreateEvent();

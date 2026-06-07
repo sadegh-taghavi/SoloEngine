@@ -114,6 +114,18 @@ S_VulkanMesh::S_VulkanMesh(S_VulkanRendererAPI* api, const std::string& path)
             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
             m_skinAlloc);
     }
+
+}
+
+void S_VulkanMesh::draw()
+{
+    VkCommandBuffer cmd    = m_api->nextFrameRenderCommandBuffer();
+    VkDeviceSize    offset = 0;
+    vkCmdBindVertexBuffers(cmd, 0, 1, &m_positionBuffer, &offset);
+    vkCmdBindIndexBuffer(cmd, m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+    for (const auto& prim : m_primitives)
+        vkCmdDrawIndexed(cmd, prim.indexCount, 1, prim.indexOffset,
+                         static_cast<int32_t>(prim.vertexOffset), 0);
 }
 
 S_VulkanMesh::~S_VulkanMesh()

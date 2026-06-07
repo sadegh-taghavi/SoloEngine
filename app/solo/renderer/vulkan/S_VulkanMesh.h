@@ -20,6 +20,7 @@ public:
     VkBuffer rasterAttribBuffer() const { return m_rasterAttribBuffer; }
     VkBuffer rtHitDataBuffer()    const { return m_rtHitDataBuffer; }
     VkBuffer skinBuffer()         const { return m_skinBuffer; }
+    void     draw()               override;
 
 private:
     static VkBuffer uploadBuffer(S_VulkanRendererAPI* api, const void* data, VkDeviceSize size,

@@ -286,6 +286,13 @@ void S_VulkanPipeline::create( const std::vector<S_PipelineDescriptor> *descript
                                                 static_cast<uint32_t>(pipelineCreateInfos.size()),
                                                 pipelineCreateInfos.data(), S_VulkanAllocator(),
                                                 &m_pipelines[0] ) );
+
+    for( size_t i = 0; i < m_descriptors.size(); ++i )
+    {
+        auto* shader = reinterpret_cast<S_VulkanShader*>( m_descriptors.at(i).Shader );
+        if( shader )
+            shader->setPipeline( m_pipelines[i] );
+    }
 }
 
 void S_VulkanPipeline::destroy()
@@ -301,7 +308,10 @@ void S_VulkanPipeline::destroy()
     {
         auto *shader = reinterpret_cast<S_VulkanShader *>( desc.Shader );
         if( shader )
+        {
             shader->setPipelineLayout( VK_NULL_HANDLE );
+            shader->setPipeline( VK_NULL_HANDLE );
+        }
     }
 }
 

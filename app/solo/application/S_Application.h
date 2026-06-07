@@ -1,6 +1,7 @@
 #pragma once
 #include "solo/platforms/S_BaseApplication.h"
 #include "solo/renderer/S_Renderer.h"
+#include "solo/renderer/S_Scene.h"
 #include "solo/pack/S_Pack.h"
 #include <chrono>
 #include <memory>
@@ -29,6 +30,8 @@ private:
     S_ShaderHandle       m_vShader;
     S_TextureHandle      m_vTexture;
     S_SamplerHandle      m_vSampler;
+    S_ShaderHandle       m_meshShader;
+    S_Scene              m_scene;
     std::shared_ptr<class S_CameraPerspective> m_vCam;
     std::shared_ptr<class S_FirstPersonCameraController> m_vCamController;
     std::chrono::steady_clock::time_point m_startTime;
