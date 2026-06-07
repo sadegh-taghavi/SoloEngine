@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 #include "solo/renderer/S_Handle.h"
+#include "solo/renderer/S_PerFrame.h"
 #include "solo/renderer/S_VertexBuffer.h"
 #include "solo/renderer/S_TextureSampler.h"
 #include "solo/renderer/S_PipelineDescriptor.h"
@@ -44,6 +45,7 @@ public:
     S_TextureSampler* getSampler(S_SamplerHandle h) const;
     S_MeshHandle      createMesh(const std::string &path);
     S_Mesh*           getMesh(S_MeshHandle h) const;
+    void              updatePerFrame(const S_PerFrameData& data);
 
     void createGraphicsPipeline(const std::vector<S_PipelineDescriptor> &descriptors);
     void setRenderCallback(std::function<void()> callback);

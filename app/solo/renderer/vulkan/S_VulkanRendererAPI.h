@@ -11,6 +11,7 @@
 namespace solo
 {
 class S_VulkanItemsManager;
+class S_VulkanPerFrame;
 
 #ifdef SOLO_ENABLE_DEBUG_LAYER
 static const char* ShowVkResult(VkResult err)
@@ -82,6 +83,8 @@ public:
 
     virtual S_TextureSampler *createTextureSampler(const S_TextureSamplerDescriptor &descriptor);
     virtual S_Mesh *createMesh(const std::string &path);
+    virtual void    updatePerFrame(const void* data, size_t size);
+    VkDescriptorSet currentPerFrameSet() const;
 
     VkInstance instance() const;
 
@@ -214,6 +217,7 @@ private:
     uint32_t m_nextSwapchainImageIndex;
     VmaAllocator m_vmaAllocator;
     std::unique_ptr<S_VulkanItemsManager> m_itemsManager;
+    std::unique_ptr<S_VulkanPerFrame>     m_perFrame;
     VkPhysicalDeviceProperties m_physicalDeviceProperties;
 
     VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);

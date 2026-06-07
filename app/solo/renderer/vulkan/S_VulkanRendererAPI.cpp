@@ -9,6 +9,8 @@
 #include "S_VulkanTexture.h"
 #include "S_VulkanTextureSampler.h"
 #include "S_VulkanMesh.h"
+#include "S_VulkanPerFrame.h"
+#include "solo/renderer/S_PerFrame.h"
 #include "solo/platforms/S_Window.h"
 #include "solo/platforms/S_SystemDetect.h"
 #include "solo/debug/S_Debug.h"
@@ -987,6 +989,7 @@ S_VulkanRendererAPI::S_VulkanRendererAPI() : S_RendererAPI (), m_nextFrameRender
     createRenderPass();
     m_pipelines = std::make_unique<S_VulkanPipeline>( this );
     m_itemsManager = std::make_unique<S_VulkanItemsManager>(this);
+    m_perFrame     = std::make_unique<S_VulkanPerFrame>(this, m_MAX_FRAMES_IN_FLIGHT, sizeof(S_PerFrameData));
     createDepthResources();
     createFramebuffers();
     createCommandPool();
@@ -1028,6 +1031,7 @@ S_VulkanRendererAPI::~S_VulkanRendererAPI()
     vkDestroyCommandPool( m_device, m_commandPoolTransfers, S_VulkanAllocator() );
     vkDestroyCommandPool( m_device, m_commandPoolGraphics, S_VulkanAllocator() );
     destroyWindowSurface();
+    m_perFrame.reset();
     vmaDestroyAllocator( m_vmaAllocator );
     vkDestroyDevice( m_device, S_VulkanAllocator() );
 #if defined( SOLO_ENABLE_DEBUG_LAYER ) && defined (SOLO_ENABLE_VULKAN_VALIDATION_LAYER)
@@ -1198,6 +1202,17 @@ S_TextureSampler *S_VulkanRendererAPI::createTextureSampler(const S_TextureSampl
 S_Mesh *S_VulkanRendererAPI::createMesh(const std::string &path)
 {
     return m_itemsManager->createMesh(path);
+}
+
+void S_VulkanRendererAPI::updatePerFrame(const void* data, size_t size)
+{
+    if( m_perFrame )
+        m_perFrame->update(data, m_nextSwapchainImageIndex);
+}
+
+VkDescriptorSet S_VulkanRendererAPI::currentPerFrameSet() const
+{
+    return m_perFrame ? m_perFrame->set(m_nextSwapchainImageIndex) : VK_NULL_HANDLE;
 }
 
 VkInstance S_VulkanRendererAPI::instance() const

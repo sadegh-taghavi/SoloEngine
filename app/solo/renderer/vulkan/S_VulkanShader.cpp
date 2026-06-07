@@ -277,6 +277,15 @@ void S_VulkanShader::commit()
     }
     if( m_pipeline != VK_NULL_HANDLE )
         vkCmdBindPipeline( m_api->nextFrameRenderCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline );
+
+    if( !m_aboutToUseDescriptorSets.empty() && m_aboutToUseDescriptorSets[0] == VK_NULL_HANDLE )
+    {
+        VkDescriptorSet pfSet = m_api->currentPerFrameSet();
+        if( pfSet != VK_NULL_HANDLE )
+            vkCmdBindDescriptorSets( m_api->nextFrameRenderCommandBuffer(),
+                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                     m_pipelineLayout, 0, 1, &pfSet, 0, nullptr );
+    }
     if( m_commitsCount >= kMaxDrawsPerSlot )
     {
         s_debugLayer( "S_VulkanShader: exceeded", kMaxDrawsPerSlot, "draw calls per frame-slot — draw skipped" );
@@ -295,25 +304,30 @@ void S_VulkanShader::commit()
         clearPendingDescriptorState();
     }
 
-    uint32_t bindCount = 0;
-    bool validRange = true;
+    uint32_t firstSet = std::numeric_limits<uint32_t>::max();
+    uint32_t lastSet  = 0;
+    bool     valid    = true;
     for( uint32_t i = 0; i < static_cast<uint32_t>( m_aboutToUseDescriptorSets.size() ); ++i )
     {
         if( m_aboutToUseDescriptorSets[i] != VK_NULL_HANDLE )
-            bindCount = i + 1;
-        else if( i < bindCount )
         {
-            s_debugLayer( "S_VulkanShader: null descriptor set at slot", i, "— draw skipped" );
-            validRange = false;
+            if( firstSet == std::numeric_limits<uint32_t>::max() ) firstSet = i;
+            lastSet = i;
+        }
+        else if( firstSet != std::numeric_limits<uint32_t>::max() )
+        {
+            s_debugLayer( "S_VulkanShader: null descriptor set gap at slot", i, "— draw skipped" );
+            valid = false;
             break;
         }
     }
-    if( bindCount > 0 && validRange )
+    if( firstSet != std::numeric_limits<uint32_t>::max() && valid )
     {
+        uint32_t count = lastSet - firstSet + 1;
         vkCmdBindDescriptorSets( m_api->nextFrameRenderCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                 m_pipelineLayout, 0, bindCount,
-                                 m_aboutToUseDescriptorSets.data(),
-                                 0, nullptr);
+                                 m_pipelineLayout, firstSet, count,
+                                 m_aboutToUseDescriptorSets.data() + firstSet,
+                                 0, nullptr );
         ++m_commitsCount;
     }
 }

@@ -93,6 +93,11 @@ S_Mesh* S_Renderer::getMesh(S_MeshHandle h) const
     return poolGet<S_Mesh, 4>(m_meshSlots, h);
 }
 
+void S_Renderer::updatePerFrame(const S_PerFrameData& data)
+{
+    m_api->updatePerFrame(&data, sizeof(data));
+}
+
 void S_Renderer::createGraphicsPipeline(const std::vector<S_PipelineDescriptor> &descriptors)
 {
     m_api->createGraphicsPipeline(descriptors);

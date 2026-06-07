@@ -6,6 +6,7 @@
 #include "solo/renderer/S_Texture.h"
 #include "solo/mesh/S_Mesh.h"
 #include "solo/renderer/S_Scene.h"
+#include "solo/renderer/S_PerFrame.h"
 #include "solo/renderer/S_Camera.h"
 #include "solo/renderer/S_CameraController.h"
 #include <list>
@@ -214,17 +215,24 @@ void solo::S_Application::onCreateEvent()
         ground->draw();
         vb->draw();
 
-        auto* meshShader = m_renderer->getShader(m_meshShader);
-        if (meshShader)
         {
-            struct UMeshVS { glm::mat4 MVP; } uMVS;
+            S_PerFrameData pfd;
+            pfd.VP   = m_vCam->viewProjection();
+            pfd.time = elapsed;
+            m_renderer->updatePerFrame(pfd);
+        }
+
+        auto* meshShader = m_renderer->getShader(m_meshShader);
+        if (meshShader && !m_scene.nodes().empty())
+        {
+            struct PerObject { glm::mat4 model; } po;
+            meshShader->bind();
             for (const auto& sceneNode : m_scene.nodes())
             {
                 auto* mesh = m_renderer->getMesh(sceneNode.mesh);
                 if (!mesh) continue;
-                uMVS.MVP = m_vCam->viewProjection() * sceneNode.transform;
-                meshShader->bind();
-                meshShader->updateUniformValue("UPerObject", S_ShaderStage::VertexShader, &uMVS);
+                po.model = sceneNode.transform;
+                meshShader->updateUniformValue("PerObject", S_ShaderStage::VertexShader, &po);
                 meshShader->commit();
                 mesh->draw();
             }
