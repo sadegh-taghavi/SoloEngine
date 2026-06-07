@@ -1,5 +1,7 @@
 #include "S_Renderer.h"
 #include "S_RendererAPI.h"
+#include "S_Shader.h"
+#include "solo/mesh/S_Mesh.h"
 #include "S_Scene.h"
 #include "solo/platforms/S_BaseApplication.h"
 #include "solo/debug/S_Debug.h"
@@ -96,6 +98,43 @@ S_Mesh* S_Renderer::getMesh(S_MeshHandle h) const
 void S_Renderer::updatePerFrame(const S_PerFrameData& data)
 {
     m_api->updatePerFrame(&data, sizeof(data));
+}
+
+uint32_t S_Renderer::createMaterial()
+{
+    return m_materialPool.allocate();
+}
+
+void S_Renderer::submitDraw(S_MeshHandle mesh, const glm::mat4& transform, uint32_t materialID)
+{
+    m_queue.submit(mesh, transform, materialID);
+}
+
+void S_Renderer::flushDraws(S_ShaderHandle shaderH)
+{
+    if( m_queue.empty() ) return;
+    auto* shader = getShader(shaderH);
+    if( !shader ) return;
+
+    shader->bind();
+    shader->commit();
+
+    std::vector<S_ResolvedDraw> resolved;
+    resolved.reserve(m_queue.draws().size());
+    for( const auto& draw : m_queue.draws() )
+    {
+        auto* mesh = getMesh(draw.mesh);
+        if( mesh ) resolved.push_back({ mesh, draw.instanceIndex, draw.materialID });
+    }
+
+    m_api->flushRenderQueue(shader, resolved,
+                             m_queue.transforms().data(),
+                             static_cast<uint32_t>(m_queue.transforms().size()));
+}
+
+void S_Renderer::clearDraws()
+{
+    m_queue.clear();
 }
 
 void S_Renderer::createGraphicsPipeline(const std::vector<S_PipelineDescriptor> &descriptors)

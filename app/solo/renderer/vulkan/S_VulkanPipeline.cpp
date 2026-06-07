@@ -6,6 +6,8 @@
 #include "solo/debug/S_Debug.h"
 #include "solo/renderer/S_Shader.h"
 #include "solo/renderer/vulkan/S_VulkanShader.h"
+#include "solo/renderer/vulkan/S_VulkanPerFrame.h"
+#include "solo/renderer/vulkan/S_VulkanBindless.h"
 #include <stdint.h>
 #include <algorithm>
 #include <set>
@@ -236,13 +238,31 @@ void S_VulkanPipeline::create( const std::vector<S_PipelineDescriptor> *descript
         //        dynamicStates.pDynamicStates = dynamicStates;
 
 
-        VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-        pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>( shader->descriptorSetLayouts()->size() );
+        std::vector<VkDescriptorSetLayout> finalLayouts;
+        if( m_descriptors.at(i).UseEngineGlobals )
+        {
+            finalLayouts.push_back( m_api->perFrame()->setLayout() );   // set=0
+            finalLayouts.push_back( m_api->bindless()->setLayout() );   // set=1
+            auto& shaderLayouts = *shader->descriptorSetLayouts();
+            for( size_t s = 2; s < shaderLayouts.size(); ++s )
+                finalLayouts.push_back( shaderLayouts[s] );
+        }
+        else
+        {
+            finalLayouts = *shader->descriptorSetLayouts();
+        }
 
-        pipelineLayoutInfo.pSetLayouts = shader->descriptorSetLayouts()->data();
-        pipelineLayoutInfo.pushConstantRangeCount = 0;
-        pipelineLayoutInfo.pPushConstantRanges = nullptr;
+        VkPushConstantRange pcRange{};
+        pcRange.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
+        pcRange.offset     = 0;
+        pcRange.size       = 8;
+
+        VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+        pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        pipelineLayoutInfo.setLayoutCount         = static_cast<uint32_t>( finalLayouts.size() );
+        pipelineLayoutInfo.pSetLayouts            = finalLayouts.empty() ? nullptr : finalLayouts.data();
+        pipelineLayoutInfo.pushConstantRangeCount = 1;
+        pipelineLayoutInfo.pPushConstantRanges    = &pcRange;
 
         VK_RESULT_CHECK( vkCreatePipelineLayout( m_api->device(), &pipelineLayoutInfo, S_VulkanAllocator(),
                                                  &m_layouts[i]) );

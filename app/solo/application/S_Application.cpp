@@ -62,14 +62,16 @@ void solo::S_Application::onCreateEvent()
     S_PipelineDescriptor meshPd;
     meshPd.VertexBufferDescriptorArray   = S_VertexBufferDescriptorArray(static_cast<uint32_t>(sizeof(MeshBinPosition)), meshPosDescs);
     meshPd.InstanceBufferDescriptorArray = S_VertexBufferDescriptorArray();
-    meshPd.Shader = m_renderer->getShader(m_meshShader);
+    meshPd.Shader           = m_renderer->getShader(m_meshShader);
+    meshPd.UseEngineGlobals = true;
 
     m_renderer->createGraphicsPipeline({ pd, meshPd });
 
-    S_MeshHandle shotgun = m_renderer->createMesh("models/scene.mesh.bin");
+    S_MeshHandle shotgun    = m_renderer->createMesh("models/scene.mesh.bin");
+    uint32_t     shotgunMat = m_renderer->createMaterial();
     glm::mat4 shotgunTransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 1.0f, 0.0f))
                                * glm::scale(glm::mat4(1.0f), glm::vec3(10.0f));
-    m_scene.addNode(shotgun, shotgunTransform);
+    m_scene.addNode(shotgun, shotgunTransform, shotgunMat);
 
     m_vVB = m_renderer->createVertexBuffer(24, 36, 1600,
         std::make_unique<S_VertexBufferDescriptorArray>(static_cast<uint32_t>(sizeof(Vertex)),   vertexDescs),
@@ -222,21 +224,10 @@ void solo::S_Application::onCreateEvent()
             m_renderer->updatePerFrame(pfd);
         }
 
-        auto* meshShader = m_renderer->getShader(m_meshShader);
-        if (meshShader && !m_scene.nodes().empty())
-        {
-            struct PerObject { glm::mat4 model; } po;
-            meshShader->bind();
-            for (const auto& sceneNode : m_scene.nodes())
-            {
-                auto* mesh = m_renderer->getMesh(sceneNode.mesh);
-                if (!mesh) continue;
-                po.model = sceneNode.transform;
-                meshShader->updateUniformValue("PerObject", S_ShaderStage::VertexShader, &po);
-                meshShader->commit();
-                mesh->draw();
-            }
-        }
+        m_renderer->clearDraws();
+        for (const auto& node : m_scene.nodes())
+            m_renderer->submitDraw(node.mesh, node.transform, node.materialID);
+        m_renderer->flushDraws(m_meshShader);
     });
 
     S_BaseApplication::onCreateEvent();

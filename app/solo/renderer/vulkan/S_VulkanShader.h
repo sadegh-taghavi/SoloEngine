@@ -32,8 +32,9 @@ public:
     void updateTextureValue( const std::string &name, S_ShaderStage stage, const S_Texture &texture, uint32_t arrayIndex = 0 );
     void bind();
     void commit();
-    void setPipelineLayout(VkPipelineLayout layout);
-    void setPipeline(VkPipeline pipeline);
+    void             setPipelineLayout(VkPipelineLayout layout);
+    void             setPipeline(VkPipeline pipeline);
+    VkPipelineLayout pipelineLayout() const { return m_pipelineLayout; }
     VkShaderModule shaderModule( S_ShaderStage type );
     const S_ShaderReflectionData *shaderReflection( S_ShaderStage type );
     const std::vector<VkDescriptorSetLayout> *descriptorSetLayouts();

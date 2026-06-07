@@ -10,7 +10,8 @@ struct S_PipelineDescriptor
 {
     S_VertexBufferDescriptorArray VertexBufferDescriptorArray;
     S_VertexBufferDescriptorArray InstanceBufferDescriptorArray;
-    S_Shader *Shader;
+    S_Shader*                     Shader              = nullptr;
+    bool                          UseEngineGlobals    = false;
 };
 
 }

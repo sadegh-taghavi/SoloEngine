@@ -73,6 +73,8 @@ set(SOURCE
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/mesh/S_Mesh.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanMesh.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanPerFrame.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanBindless.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_RenderQueue.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/application/S_Application.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/ktx/lib/checkheader.c
@@ -135,7 +137,10 @@ set(HEADERS
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/mesh/S_Mesh.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanMesh.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanPerFrame.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanBindless.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_PerFrame.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_RenderQueue.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_MaterialPool.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/application/S_Application.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/Solo.h
 )

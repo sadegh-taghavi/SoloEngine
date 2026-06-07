@@ -9,8 +9,11 @@
 #include "S_VulkanTexture.h"
 #include "S_VulkanTextureSampler.h"
 #include "S_VulkanMesh.h"
+#include "S_VulkanShader.h"
 #include "S_VulkanPerFrame.h"
+#include "S_VulkanBindless.h"
 #include "solo/renderer/S_PerFrame.h"
+#include "solo/renderer/S_RendererAPI.h"
 #include "solo/platforms/S_Window.h"
 #include "solo/platforms/S_SystemDetect.h"
 #include "solo/debug/S_Debug.h"
@@ -990,6 +993,7 @@ S_VulkanRendererAPI::S_VulkanRendererAPI() : S_RendererAPI (), m_nextFrameRender
     m_pipelines = std::make_unique<S_VulkanPipeline>( this );
     m_itemsManager = std::make_unique<S_VulkanItemsManager>(this);
     m_perFrame     = std::make_unique<S_VulkanPerFrame>(this, m_MAX_FRAMES_IN_FLIGHT, sizeof(S_PerFrameData));
+    m_bindless     = std::make_unique<S_VulkanBindless>(this, m_MAX_FRAMES_IN_FLIGHT);
     createDepthResources();
     createFramebuffers();
     createCommandPool();
@@ -1031,6 +1035,7 @@ S_VulkanRendererAPI::~S_VulkanRendererAPI()
     vkDestroyCommandPool( m_device, m_commandPoolTransfers, S_VulkanAllocator() );
     vkDestroyCommandPool( m_device, m_commandPoolGraphics, S_VulkanAllocator() );
     destroyWindowSurface();
+    m_bindless.reset();
     m_perFrame.reset();
     vmaDestroyAllocator( m_vmaAllocator );
     vkDestroyDevice( m_device, S_VulkanAllocator() );
@@ -1213,6 +1218,32 @@ void S_VulkanRendererAPI::updatePerFrame(const void* data, size_t size)
 VkDescriptorSet S_VulkanRendererAPI::currentPerFrameSet() const
 {
     return m_perFrame ? m_perFrame->set(m_nextSwapchainImageIndex) : VK_NULL_HANDLE;
+}
+
+S_VulkanPerFrame* S_VulkanRendererAPI::perFrame() const  { return m_perFrame.get(); }
+S_VulkanBindless* S_VulkanRendererAPI::bindless() const  { return m_bindless.get(); }
+
+void S_VulkanRendererAPI::flushRenderQueue(S_Shader* shader,
+                                            const std::vector<S_ResolvedDraw>& draws,
+                                            const glm::mat4* transforms,
+                                            uint32_t instanceCount)
+{
+    if( draws.empty() ) return;
+
+    auto* vkShader = static_cast<S_VulkanShader*>( shader );
+    VkCommandBuffer cmd = m_nextFrameRenderCommandBuffer;
+
+    m_bindless->uploadTransforms(transforms, instanceCount, m_nextSwapchainImageIndex);
+    m_bindless->bind(cmd, vkShader->pipelineLayout(), m_nextSwapchainImageIndex);
+
+    for( const auto& draw : draws )
+    {
+        struct PC { uint32_t instanceIndex; uint32_t materialID; };
+        PC pc = { draw.instanceIndex, draw.materialID };
+        vkCmdPushConstants(cmd, vkShader->pipelineLayout(), VK_SHADER_STAGE_ALL_GRAPHICS,
+                           0, sizeof(PC), &pc);
+        static_cast<S_VulkanMesh*>( draw.mesh )->draw();
+    }
 }
 
 VkInstance S_VulkanRendererAPI::instance() const

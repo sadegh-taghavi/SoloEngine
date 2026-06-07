@@ -7,12 +7,18 @@ layout(set = 0, binding = 0) uniform PerFrame {
     float time;
 } perFrame;
 
-layout(set = 1, binding = 0) uniform PerObject {
-    mat4 model;
-} perObject;
+layout(set = 1, binding = 0) readonly buffer InstanceTransforms {
+    mat4 data[];
+} transforms;
+
+layout(push_constant) uniform PC {
+    uint instanceIndex;
+    uint materialID;
+} pc;
 
 void main()
 {
-    gl_Position   = perFrame.VP * perObject.model * vec4(inPosition, 1.0);
+    mat4 model    = transforms.data[pc.instanceIndex];
+    gl_Position   = perFrame.VP * model * vec4(inPosition, 1.0);
     gl_Position.y = -gl_Position.y;
 }

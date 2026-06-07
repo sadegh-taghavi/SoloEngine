@@ -6,6 +6,8 @@
 #include <vector>
 #include "solo/renderer/S_Handle.h"
 #include "solo/renderer/S_PerFrame.h"
+#include "solo/renderer/S_RenderQueue.h"
+#include "solo/renderer/S_MaterialPool.h"
 #include "solo/renderer/S_VertexBuffer.h"
 #include "solo/renderer/S_TextureSampler.h"
 #include "solo/renderer/S_PipelineDescriptor.h"
@@ -46,6 +48,10 @@ public:
     S_MeshHandle      createMesh(const std::string &path);
     S_Mesh*           getMesh(S_MeshHandle h) const;
     void              updatePerFrame(const S_PerFrameData& data);
+    uint32_t          createMaterial();
+    void              submitDraw(S_MeshHandle mesh, const glm::mat4& transform, uint32_t materialID = 0);
+    void              flushDraws(S_ShaderHandle shader);
+    void              clearDraws();
 
     void createGraphicsPipeline(const std::vector<S_PipelineDescriptor> &descriptors);
     void setRenderCallback(std::function<void()> callback);
@@ -94,6 +100,9 @@ private:
     std::unordered_map<std::string, S_TextureHandle> m_textureCache;
     std::unordered_map<std::string, S_ShaderHandle>  m_shaderCache;
     std::unordered_map<std::string, S_MeshHandle>    m_meshCache;
+
+    S_RenderQueue  m_queue;
+    S_MaterialPool m_materialPool;
 
     S_ElapsedTime m_elapsedTime;
     uint64_t m_elapsedTimeUs = 0;

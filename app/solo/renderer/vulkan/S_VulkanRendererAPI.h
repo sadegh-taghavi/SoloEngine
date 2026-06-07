@@ -12,6 +12,8 @@ namespace solo
 {
 class S_VulkanItemsManager;
 class S_VulkanPerFrame;
+class S_VulkanBindless;
+struct S_ResolvedDraw;
 
 #ifdef SOLO_ENABLE_DEBUG_LAYER
 static const char* ShowVkResult(VkResult err)
@@ -85,6 +87,12 @@ public:
     virtual S_Mesh *createMesh(const std::string &path);
     virtual void    updatePerFrame(const void* data, size_t size);
     VkDescriptorSet currentPerFrameSet() const;
+    virtual void    flushRenderQueue(S_Shader* shader,
+                                     const std::vector<S_ResolvedDraw>& draws,
+                                     const glm::mat4* transforms,
+                                     uint32_t instanceCount);
+    S_VulkanPerFrame*  perFrame()  const;
+    S_VulkanBindless*  bindless()  const;
 
     VkInstance instance() const;
 
@@ -218,6 +226,7 @@ private:
     VmaAllocator m_vmaAllocator;
     std::unique_ptr<S_VulkanItemsManager> m_itemsManager;
     std::unique_ptr<S_VulkanPerFrame>     m_perFrame;
+    std::unique_ptr<S_VulkanBindless>     m_bindless;
     VkPhysicalDeviceProperties m_physicalDeviceProperties;
 
     VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);

@@ -4,6 +4,7 @@
 #include <functional>
 #include "solo/renderer/S_TextureSampler.h"
 #include "solo/renderer/S_PipelineDescriptor.h"
+#include "solo/math/S_Math.h"
 #include <stdint.h>
 #include <memory>
 
@@ -16,6 +17,13 @@ class S_Shader;
 class S_Texture;
 class S_TextureSampler;
 class S_Mesh;
+
+struct S_ResolvedDraw
+{
+    S_Mesh*  mesh;
+    uint32_t instanceIndex;
+    uint32_t materialID;
+};
 
 class S_RendererAPI
 {
@@ -30,6 +38,10 @@ public:
     virtual S_TextureSampler *createTextureSampler(const S_TextureSamplerDescriptor &descriptor) = 0;
     virtual S_Mesh *createMesh(const std::string &path) = 0;
     virtual void    updatePerFrame(const void* data, size_t size) = 0;
+    virtual void    flushRenderQueue(S_Shader* shader,
+                                     const std::vector<S_ResolvedDraw>& draws,
+                                     const glm::mat4* transforms,
+                                     uint32_t instanceCount) = 0;
 
     virtual void createGraphicsPipeline(const std::vector<S_PipelineDescriptor> &descriptors) = 0;
     void setRenderCallback(std::function<void()> callback) { m_renderCallback = std::move(callback); }
