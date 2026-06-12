@@ -34,7 +34,13 @@ include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/VMA330/include
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/imgui
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/stb
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/JoltPhysics
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/miniaudio
         )
+
+file(GLOB_RECURSE JOLT_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/JoltPhysics/Jolt/*.cpp)
+add_library(Jolt STATIC ${JOLT_SOURCES})
+target_include_directories(Jolt PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/JoltPhysics)
 
 set(SOURCE
         ${SOURCE}
@@ -83,6 +89,8 @@ set(SOURCE
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/input/S_InputMap.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/input/S_Gestures.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/input/S_Gamepad.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/physics/S_Physics.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/audio/S_Audio.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/imgui/imgui.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/imgui/imgui_draw.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/imgui/imgui_tables.cpp
@@ -185,6 +193,7 @@ if (NOT ANDROID)
         target_link_libraries(
                 ${PROJECT_NAME}
                 ${Vulkan_LIBRARY}
+                Jolt
         )
 
         if(WIN32)
@@ -245,5 +254,6 @@ if (ANDROID)
                 log
                 native_app_glue
                 vulkan
+                Jolt
         )
 endif(ANDROID)

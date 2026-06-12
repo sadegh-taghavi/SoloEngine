@@ -4,7 +4,10 @@
 #include "solo/renderer/S_Scene.h"
 #include "solo/renderer/S_Animator.h"
 #include "solo/ui/S_UI.h"
+#include "solo/physics/S_Physics.h"
+#include "solo/audio/S_Audio.h"
 #include "solo/pack/S_Pack.h"
+#include <vector>
 #include <chrono>
 #include <memory>
 
@@ -27,11 +30,6 @@ private:
     char __padding[4];
     std::unique_ptr<S_Renderer> m_renderer;
     std::unique_ptr<S_Pack>     m_pack;
-    S_VertexBufferHandle m_vVB;
-    S_VertexBufferHandle m_vGround;
-    S_ShaderHandle       m_vShader;
-    S_TextureHandle      m_vTexture;
-    S_SamplerHandle      m_vSampler;
     S_ShaderHandle       m_meshShader;
     S_ShaderHandle       m_skinnedShader;
     S_Scene              m_scene;
@@ -41,6 +39,12 @@ private:
     std::unique_ptr<S_UI> m_ui;
     glm::vec2            m_foxPos     = { 8.0f, 0.0f }; // x, z on the ground plane
     float                m_foxHeading = 0.0f;
+    std::unique_ptr<S_Physics> m_physics;
+    std::unique_ptr<S_Audio>   m_audio;
+    S_MeshHandle              m_boxMesh;
+    uint32_t                  m_boxMat = 0;
+    std::vector<S_BodyHandle> m_boxes;
+    int                       m_spawnCounter = 0;
     std::shared_ptr<class S_CameraPerspective> m_vCam;
     std::shared_ptr<class S_FirstPersonCameraController> m_vCamController;
     std::chrono::steady_clock::time_point m_startTime;

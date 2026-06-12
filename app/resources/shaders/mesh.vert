@@ -16,9 +16,13 @@ layout(push_constant) uniform PC {
     uint materialID;
 } pc;
 
+layout(location = 0) out vec3 outWorldPos;
+
 void main()
 {
     mat4 model    = transforms.data[pc.instanceIndex];
-    gl_Position   = perFrame.VP * model * vec4(inPosition, 1.0);
+    vec4 worldPos = model * vec4(inPosition, 1.0);
+    outWorldPos   = worldPos.xyz;
+    gl_Position   = perFrame.VP * worldPos;
     gl_Position.y = -gl_Position.y;
 }

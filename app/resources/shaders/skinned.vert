@@ -23,6 +23,8 @@ layout(push_constant) uniform PC {
     uint paletteOffset;
 } pc;
 
+layout(location = 0) out vec3 outWorldPos;
+
 void main()
 {
     mat4 skin = inWeights.x * palettes.data[pc.paletteOffset + inJoints.x]
@@ -31,6 +33,8 @@ void main()
               + inWeights.w * palettes.data[pc.paletteOffset + inJoints.w];
 
     mat4 model    = transforms.data[pc.instanceIndex];
-    gl_Position   = perFrame.VP * model * skin * vec4(inPosition, 1.0);
+    vec4 worldPos = model * skin * vec4(inPosition, 1.0);
+    outWorldPos   = worldPos.xyz;
+    gl_Position   = perFrame.VP * worldPos;
     gl_Position.y = -gl_Position.y;
 }
