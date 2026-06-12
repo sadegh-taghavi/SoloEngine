@@ -46,6 +46,9 @@ private:
 
     HINSTANCE m_hInstance;
     HWND m_hWnd;
+    int  m_capturedButtons = 0;
+    int  m_touchIds[10] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+    int  m_touchActive = 0;
 };
 }
 #endif

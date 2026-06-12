@@ -2,10 +2,12 @@
 #include "solo/renderer/vulkan/S_VulkanRendererAPI.h"
 #include "solo/renderer/vulkan/S_VulkanAllocator.h"
 #include "solo/platforms/S_InputEvent.h"
+#include "solo/platforms/S_BaseApplication.h"
 #include "solo/debug/S_Debug.h"
 
 #include <imgui.h>
 #include <imgui_impl_vulkan.h>
+#include <cstring>
 
 using namespace solo;
 
@@ -70,6 +72,8 @@ void S_ImGuiLayer::newFrame(uint32_t width, uint32_t height)
     ImGuiIO& io    = ImGui::GetIO();
     io.DisplaySize = ImVec2(static_cast<float>(width), static_cast<float>(height));
     io.DeltaTime   = dt > 0.0f ? dt : 1.0f / 60.0f;
+    if (auto* app = S_BaseApplication::executingApplication())
+        io.FontGlobalScale = app->window()->scaleFactor();
 
     ImGui_ImplVulkan_NewFrame();
     ImGui::NewFrame();
@@ -89,6 +93,12 @@ void S_ImGuiLayer::onMouseEvent(const S_MouseEvent* event)
 
     io.AddMousePosEvent(static_cast<float>(event->x()), static_cast<float>(event->y()));
 
+    if (event->state() == S_MouseEventState::Wheel)
+    {
+        io.AddMouseWheelEvent(0.0f, static_cast<float>(event->z()) / 120.0f);
+        return;
+    }
+
     if (event->state() == S_MouseEventState::Down || event->state() == S_MouseEventState::Up)
     {
         int button = -1;
@@ -104,7 +114,70 @@ void S_ImGuiLayer::onMouseEvent(const S_MouseEvent* event)
     }
 }
 
+// S_Key uses HID usage codes
+static ImGuiKey hidToImGuiKey(uint32_t hid)
+{
+    if (hid >= 4 && hid <= 29)   return static_cast<ImGuiKey>(ImGuiKey_A + (hid - 4));
+    if (hid >= 30 && hid <= 38)  return static_cast<ImGuiKey>(ImGuiKey_1 + (hid - 30));
+    switch (hid)
+    {
+    case 39:  return ImGuiKey_0;
+    case 40:  return ImGuiKey_Enter;
+    case 41:  return ImGuiKey_Escape;
+    case 42:  return ImGuiKey_Backspace;
+    case 43:  return ImGuiKey_Tab;
+    case 44:  return ImGuiKey_Space;
+    case 73:  return ImGuiKey_Insert;
+    case 74:  return ImGuiKey_Home;
+    case 75:  return ImGuiKey_PageUp;
+    case 76:  return ImGuiKey_Delete;
+    case 77:  return ImGuiKey_End;
+    case 78:  return ImGuiKey_PageDown;
+    case 79:  return ImGuiKey_RightArrow;
+    case 80:  return ImGuiKey_LeftArrow;
+    case 81:  return ImGuiKey_DownArrow;
+    case 82:  return ImGuiKey_UpArrow;
+    case 224: return ImGuiKey_LeftCtrl;
+    case 225: return ImGuiKey_LeftShift;
+    case 226: return ImGuiKey_LeftAlt;
+    case 228: return ImGuiKey_RightCtrl;
+    case 229: return ImGuiKey_RightShift;
+    case 230: return ImGuiKey_RightAlt;
+    default:  return ImGuiKey_None;
+    }
+}
+
+void S_ImGuiLayer::onKeyboardEvent(const S_KeyboardEvent* event)
+{
+    if (!m_initialized) return;
+    ImGuiIO& io = ImGui::GetIO();
+
+    const uint32_t hid  = static_cast<uint32_t>(event->key());
+    const bool     down = event->state() == S_KeyboardEventState::Down;
+
+    if (hid == 224 || hid == 228) io.AddKeyEvent(ImGuiMod_Ctrl, down);
+    if (hid == 225 || hid == 229) io.AddKeyEvent(ImGuiMod_Shift, down);
+    if (hid == 226 || hid == 230) io.AddKeyEvent(ImGuiMod_Alt, down);
+
+    ImGuiKey key = hidToImGuiKey(hid);
+    if (key != ImGuiKey_None)
+        io.AddKeyEvent(key, down);
+}
+
+void S_ImGuiLayer::onCharacterEvent(const S_CharacterEvent* event)
+{
+    if (!m_initialized) return;
+    char utf8[5] = {};
+    memcpy(utf8, event->character(), 4);
+    ImGui::GetIO().AddInputCharactersUTF8(utf8);
+}
+
 bool S_ImGuiLayer::wantCaptureMouse() const
 {
     return m_initialized && ImGui::GetIO().WantCaptureMouse;
+}
+
+bool S_ImGuiLayer::wantCaptureKeyboard() const
+{
+    return m_initialized && ImGui::GetIO().WantCaptureKeyboard;
 }

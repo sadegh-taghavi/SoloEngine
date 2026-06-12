@@ -339,6 +339,9 @@ void S_UI::beginFrame(uint32_t width, uint32_t height)
     m_screenH = height;
     m_vertices.clear();
     m_indices.clear();
+    m_prevHitRects.swap(m_hitRects);
+    m_hitRects.clear();
+    m_pointerHeldOnWidget = false; // widgets re-assert this while they hold the pointer
 
     auto now = std::chrono::steady_clock::now();
     float dt = std::chrono::duration<float>(now - m_lastFrame).count();
@@ -504,14 +507,32 @@ void S_UI::text(const std::string& str, float x, float y, float pixelHeight, uin
     }
 }
 
+void S_UI::registerHitRect(float x, float y, float w, float h)
+{
+    m_hitRects.push_back({ x, y, w, h });
+}
+
+bool S_UI::wantCaptureMouse() const
+{
+    if (m_pointerHeldOnWidget)
+        return true;
+    for (const glm::vec4& r : m_prevHitRects)
+        if (m_pointerX >= r.x && m_pointerX <= r.x + r.z &&
+            m_pointerY >= r.y && m_pointerY <= r.y + r.w)
+            return true;
+    return false;
+}
+
 void S_UI::panel(float x, float y, float w, float h, uint32_t tint)
 {
     sprite9("panel", x, y, w, h, tint);
+    registerHitRect(x, y, w, h);
 }
 
 bool S_UI::button(const char* id, const std::string& label, float x, float y, float w, float h)
 {
     ButtonState& state = m_buttons[id];
+    registerHitRect(x, y, w, h);
 
     const bool inside = m_pointerX >= x && m_pointerX <= x + w &&
                         m_pointerY >= y && m_pointerY <= y + h;
@@ -527,6 +548,8 @@ bool S_UI::button(const char* id, const std::string& label, float x, float y, fl
     }
     if (!m_pointerDown)
         state.held = false;
+    if (state.held)
+        m_pointerHeldOnWidget = true;
 
     // pressed scale + hover tint
     const float scale = 1.0f - 0.07f * state.press;
@@ -535,8 +558,45 @@ bool S_UI::button(const char* id, const std::string& label, float x, float y, fl
 
     uint32_t tint = state.hovered ? rgba(255, 255, 255) : rgba(225, 228, 235);
     sprite9("button", sx, sy, sw, sh, tint);
-    text(label, sx + sw * 0.5f, sy + (sh - 22.0f * scale) * 0.5f - 4.0f, 22.0f * scale,
+    const float labelPx = 22.0f * m_scale * scale;
+    text(label, sx + sw * 0.5f, sy + (sh - labelPx) * 0.5f - 4.0f * m_scale, labelPx,
          rgba(255, 255, 255), true);
 
     return clicked;
+}
+
+glm::vec2 S_UI::joystick(const char* id, float centerX, float centerY, float radius)
+{
+    JoystickState& state = m_joysticks[id];
+
+    const float baseX = centerX - radius, baseY = centerY - radius, baseSize = radius * 2.0f;
+    registerHitRect(baseX, baseY, baseSize, baseSize);
+
+    const float dx = m_pointerX - centerX, dy = m_pointerY - centerY;
+    const bool insideBase = dx * dx + dy * dy <= radius * radius;
+
+    if (m_pointerClicked && insideBase)
+        state.active = true;
+    if (!m_pointerDown)
+        state.active = false;
+
+    if (state.active)
+    {
+        m_pointerHeldOnWidget = true;
+        glm::vec2 v(dx / radius, dy / radius);
+        float len = glm::length(v);
+        state.value = (len > 1.0f) ? v / len : v;
+    }
+    else
+        state.value = { 0.0f, 0.0f };
+
+    sprite9("knob", baseX, baseY, baseSize, baseSize, rgba(40, 44, 58, 170));
+
+    const float knobR = radius * 0.42f;
+    const float kx = centerX + state.value.x * (radius - knobR);
+    const float ky = centerY + state.value.y * (radius - knobR);
+    sprite9("knob", kx - knobR, ky - knobR, knobR * 2.0f, knobR * 2.0f,
+            state.active ? rgba(140, 180, 255, 235) : rgba(110, 130, 180, 200));
+
+    return state.value;
 }

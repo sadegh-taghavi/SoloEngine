@@ -42,7 +42,11 @@ public:
 
     unsigned int height() const;
 
+    // display scale (1.0 = 96 dpi); multiply UI sizes by this
+    float scaleFactor() const { return m_scale; }
+
 protected:
+    float m_scale = 1.0f;
     static const unsigned char m_MAX_KEY_STATE = 255;
     S_TouchEvent m_touchEvent;
     bool         m_keyState[m_MAX_KEY_STATE];

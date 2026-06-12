@@ -154,6 +154,7 @@ enum class S_MouseEventState
     Up = 0,
     Down = 1,
     Move = 2,
+    Wheel = 3,
 };
 
 enum class S_TouchEventState

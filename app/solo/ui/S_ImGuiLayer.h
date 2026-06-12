@@ -8,6 +8,7 @@ namespace solo
 class S_VulkanRendererAPI;
 class S_MouseEvent;
 class S_KeyboardEvent;
+class S_CharacterEvent;
 
 // Engine-integrated Dear ImGui layer for tools/debug UI. Rendering goes through
 // the engine's render pass; input is fed from the engine event system (not the
@@ -22,8 +23,11 @@ public:
     void render(VkCommandBuffer cmd);
 
     void onMouseEvent(const S_MouseEvent* event);
+    void onKeyboardEvent(const S_KeyboardEvent* event);
+    void onCharacterEvent(const S_CharacterEvent* event);
 
     bool wantCaptureMouse() const;
+    bool wantCaptureKeyboard() const;
 
     static S_ImGuiLayer* instance() { return s_instance; }
 

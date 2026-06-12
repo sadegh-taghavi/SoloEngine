@@ -513,8 +513,8 @@ static void compileUI(const std::string& ttfPath, const std::string& outputPath)
     for (auto& g : glyphBitmaps)
         if (g.pixels) stbtt_FreeSDF(g.pixels, nullptr);
 
-    // procedural sprite atlas: "panel" and "button" 9-slice sprites
-    constexpr uint32_t kSprAtlasW = 128, kSprAtlasH = 64, kSprSize = 64;
+    // procedural sprite atlas: "panel"/"button" 9-slice sprites + circular "knob"
+    constexpr uint32_t kSprAtlasW = 192, kSprAtlasH = 64, kSprSize = 64;
     std::vector<uint8_t> spritePixels(kSprAtlasW * kSprAtlasH * 4, 0);
     std::vector<UIBinSprite> sprites;
 
@@ -522,10 +522,13 @@ static void compileUI(const std::string& ttfPath, const std::string& outputPath)
     const uint8_t panelBorder[4] = { 90, 100, 130, 255 };
     const uint8_t btnFill[4]     = { 52, 110, 220, 255 };
     const uint8_t btnBorder[4]   = { 130, 175, 255, 255 };
-    drawNineSliceSprite(spritePixels, kSprAtlasW, 0,        0, kSprSize, 14.0f, panelFill, panelBorder);
-    drawNineSliceSprite(spritePixels, kSprAtlasW, kSprSize, 0, kSprSize, 18.0f, btnFill,   btnBorder);
+    const uint8_t knobFill[4]    = { 235, 238, 248, 255 };
+    const uint8_t knobBorder[4]  = { 255, 255, 255, 255 };
+    drawNineSliceSprite(spritePixels, kSprAtlasW, 0,            0, kSprSize, 14.0f, panelFill, panelBorder);
+    drawNineSliceSprite(spritePixels, kSprAtlasW, kSprSize,     0, kSprSize, 18.0f, btnFill,   btnBorder);
+    drawNineSliceSprite(spritePixels, kSprAtlasW, kSprSize * 2, 0, kSprSize, kSprSize * 0.5f - 2.0f, knobFill, knobBorder); // full radius = circle
 
-    auto addSprite = [&](const char* name, uint32_t x, uint32_t y)
+    auto addSprite = [&](const char* name, uint32_t x, uint32_t y, float border)
     {
         UIBinSprite s{};
         strncpy(s.name, name, sizeof(s.name) - 1);
@@ -533,12 +536,13 @@ static void compileUI(const std::string& ttfPath, const std::string& outputPath)
         s.v0 = static_cast<float>(y)            / kSprAtlasH;
         s.u1 = static_cast<float>(x + kSprSize) / kSprAtlasW;
         s.v1 = static_cast<float>(y + kSprSize) / kSprAtlasH;
-        s.borderL = s.borderT = s.borderR = s.borderB = 22.0f;
+        s.borderL = s.borderT = s.borderR = s.borderB = border;
         s.pixelWidth = s.pixelHeight = static_cast<float>(kSprSize);
         sprites.push_back(s);
     };
-    addSprite("panel",  0,        0);
-    addSprite("button", kSprSize, 0);
+    addSprite("panel",  0,            0, 22.0f);
+    addSprite("button", kSprSize,     0, 22.0f);
+    addSprite("knob",   kSprSize * 2, 0, 0.0f); // border 0: stretches as one quad, stays circular
 
     UIBinHeader header{};
     header.magic           = UI_BIN_MAGIC;

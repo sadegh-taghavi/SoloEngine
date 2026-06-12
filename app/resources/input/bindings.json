@@ -1,0 +1,10 @@
+{
+    "actions": {
+        "Jump":     [ "Key.Space", "Pad.A" ],
+        "NextClip": [ "Key.Tab",   "Pad.Y" ]
+    },
+    "axes": {
+        "MoveX": [ { "pos": "Key.Right", "neg": "Key.Left" }, { "pad": "LeftX" } ],
+        "MoveY": [ { "pos": "Key.Up",    "neg": "Key.Down" }, { "pad": "LeftY" } ]
+    }
+}

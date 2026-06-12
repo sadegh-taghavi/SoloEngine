@@ -80,6 +80,9 @@ set(SOURCE
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_Animator.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/ui/S_ImGuiLayer.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/ui/S_UI.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/input/S_InputMap.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/input/S_Gestures.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/input/S_Gamepad.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/imgui/imgui.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/imgui/imgui_draw.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/imgui/imgui_tables.cpp
@@ -183,6 +186,13 @@ if (NOT ANDROID)
                 ${PROJECT_NAME}
                 ${Vulkan_LIBRARY}
         )
+
+        if(WIN32)
+                target_link_libraries(
+                        ${PROJECT_NAME}
+                        xinput9_1_0
+                )
+        endif(WIN32)
 
         string(REPLACE "\\" "/" VULKAN_SDK_NORM "$ENV{VULKAN_SDK}")
         add_compile_definitions(

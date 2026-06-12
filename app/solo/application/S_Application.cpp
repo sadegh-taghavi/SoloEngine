@@ -104,6 +104,8 @@ void solo::S_Application::onCreateEvent()
     m_ui = std::make_unique<S_UI>(static_cast<S_VulkanRendererAPI*>(m_renderer->api()),
                                   "fonts/Roboto-Regular.ui.bin");
 
+    inputMap()->load("input/bindings.json");
+
     m_vVB = m_renderer->createVertexBuffer(24, 36, 1600,
         std::make_unique<S_VertexBufferDescriptorArray>(static_cast<uint32_t>(sizeof(Vertex)),   vertexDescs),
         std::make_unique<S_VertexBufferDescriptorArray>(static_cast<uint32_t>(sizeof(Instance)), instanceDescs));
@@ -280,11 +282,15 @@ void solo::S_Application::onCreateEvent()
         }
 
         // native UI demo: anchored bottom panel, SDF text, animated 9-slice button
+        // all sizes in logical units * display scale, so high-DPI keeps physical size
+        const float uiScale = window()->scaleFactor();
+        m_ui->setScale(uiScale);
         {
             auto* foxMesh = m_renderer->getMesh(m_foxMesh);
-            glm::vec4 r = m_ui->anchoredRect(0.5f, 1.0f, 0.0f, -95.0f, 430.0f, 150.0f);
+            glm::vec4 r = m_ui->anchoredRect(0.5f, 1.0f, 0.0f, -95.0f * uiScale,
+                                             430.0f * uiScale, 150.0f * uiScale);
             m_ui->panel(r.x, r.y, r.z, r.w);
-            m_ui->text("SOLO ENGINE", r.x + r.z * 0.5f, r.y + 16.0f, 28.0f,
+            m_ui->text("SOLO ENGINE", r.x + r.z * 0.5f, r.y + 16.0f * uiScale, 28.0f * uiScale,
                        S_UI::rgba(235, 240, 255), true);
 
             if (foxMesh && !foxMesh->animations().empty())
@@ -292,9 +298,42 @@ void solo::S_Application::onCreateEvent()
                 int  clip = m_foxAnimator->clip();
                 int  next = (clip + 1) % static_cast<int>(foxMesh->animations().size());
                 if (m_ui->button("nextClip", "Play: " + foxMesh->animations()[next].name,
-                                 r.x + r.z * 0.5f - 120.0f, r.y + 62.0f, 240.0f, 56.0f))
+                                 r.x + r.z * 0.5f - 120.0f * uiScale, r.y + 62.0f * uiScale,
+                                 240.0f * uiScale, 56.0f * uiScale))
                     m_foxAnimator->setClip(static_cast<uint32_t>(next));
             }
+        }
+
+        // virtual joystick feeds the action map; fox moves via MoveX/MoveY axes
+        // (arrow keys are bound to the same axes in input/bindings.json)
+        {
+            const float dt = static_cast<float>(m_renderer->elapsedTimeUs()) / 1000000.0f;
+
+            glm::vec4 jr = m_ui->anchoredRect(0.0f, 1.0f, 130.0f * uiScale, -130.0f * uiScale, 0.0f, 0.0f);
+            glm::vec2 stick = m_ui->joystick("move", jr.x, jr.y, 85.0f * uiScale);
+            inputMap()->setVirtualAxis("MoveX", stick.x);
+            inputMap()->setVirtualAxis("MoveY", -stick.y); // stick up = forward
+
+            const float mx = inputMap()->axis("MoveX");
+            const float my = inputMap()->axis("MoveY");
+            const bool  moving = std::fabs(mx) > 0.05f || std::fabs(my) > 0.05f;
+            if (moving)
+            {
+                const float speed = 8.0f;
+                m_foxPos.x += mx * speed * dt;
+                m_foxPos.y -= my * speed * dt; // forward = -Z
+                m_foxPos = glm::clamp(m_foxPos, glm::vec2(-20.0f), glm::vec2(20.0f));
+                m_foxHeading = std::atan2(mx, -my);
+                if (m_foxAnimator->clip() != m_renderer->getMesh(m_foxMesh)->findAnimation("Run"))
+                    m_foxAnimator->setClip("Run");
+            }
+            else if (m_foxAnimator->clip() == m_renderer->getMesh(m_foxMesh)->findAnimation("Run"))
+                m_foxAnimator->setClip("Survey");
+
+            m_scene.node(m_foxNode).transform =
+                glm::translate(glm::mat4(1.0f), glm::vec3(m_foxPos.x, 0.0f, m_foxPos.y))
+                * glm::rotate(glm::mat4(1.0f), m_foxHeading, glm::vec3(0.0f, 1.0f, 0.0f))
+                * glm::scale(glm::mat4(1.0f), glm::vec3(0.05f));
         }
 
         m_foxAnimator->update(static_cast<float>(m_renderer->elapsedTimeUs()) / 1000000.0f);

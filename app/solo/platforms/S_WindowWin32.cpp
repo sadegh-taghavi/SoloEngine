@@ -16,6 +16,11 @@ int main(int, char **)
 
 #define WM_RESHAPE (WM_USER + 0)
 #define WM_ACTIVE  (WM_USER + 1)
+#define WM_DPI     (WM_USER + 2)
+
+#ifndef WM_DPICHANGED
+#define WM_DPICHANGED 0x02E0
+#endif
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -24,6 +29,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_CLOSE:
         PostMessage(hWnd, WM_CLOSE, 0, 0);
         return 0;
+    case WM_DPICHANGED: // sent (not posted), so handled here and relayed to the queue
+    {
+        RECT* r = reinterpret_cast<RECT*>(lParam);
+        SetWindowPos(hWnd, nullptr, r->left, r->top, r->right - r->left, r->bottom - r->top,
+                     SWP_NOZORDER | SWP_NOACTIVATE);
+        PostMessage(hWnd, WM_DPI, wParam, 0);
+        PostMessage(hWnd, WM_RESHAPE, 0, 0);
+        return 0;
+    }
     case WM_DESTROY:
         PostQuitMessage(0);
         return 0;
@@ -49,6 +63,19 @@ S_WindowWin32::S_WindowWin32(unsigned int width, unsigned int height)
     m_width  = width;
     m_height = height;
     m_running = true;
+
+    // per-monitor-v2 DPI awareness (resolved dynamically; Win10 1703+), so the
+    // swapchain gets real pixels instead of OS bitmap stretching
+    {
+        using SetCtxFn = BOOL(WINAPI*)(DPI_AWARENESS_CONTEXT);
+        HMODULE user32 = GetModuleHandleW(L"user32.dll");
+        auto setCtx = reinterpret_cast<SetCtxFn>(
+            reinterpret_cast<void*>(GetProcAddress(user32, "SetProcessDpiAwarenessContext")));
+        if (setCtx)
+            setCtx(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+        else
+            SetProcessDPIAware();
+    }
 
     m_hInstance = GetModuleHandle(nullptr);
 
@@ -82,6 +109,14 @@ S_WindowWin32::S_WindowWin32(unsigned int width, unsigned int height)
                             nullptr,
                             m_hInstance,
                             nullptr);
+    {
+        using GetDpiFn = UINT(WINAPI*)(HWND);
+        auto getDpi = reinterpret_cast<GetDpiFn>(reinterpret_cast<void*>(
+            GetProcAddress(GetModuleHandleW(L"user32.dll"), "GetDpiForWindow")));
+        if (getDpi)
+            m_scale = static_cast<float>(getDpi(m_hWnd)) / 96.0f;
+    }
+
     m_eventFIFO.push(std::make_unique<S_WindowCreateEvent>());
     m_eventFIFO.push(std::make_unique<S_WindowResizeEvent>(width, height));
 }
@@ -159,6 +194,8 @@ std::unique_ptr<S_Event> solo::S_WindowWin32::getEvent(bool wait_for_event)
         }
         case WM_LBUTTONDOWN:
         {
+            SetCapture( m_hWnd ); // keep receiving Up even when dragged outside the window
+            ++m_capturedButtons;
             m_mouseEvent.setState( S_MouseEventState::Down );
             m_mouseEvent.setButton( S_MouseButton::Left );
             m_mouseEvent.setX( static_cast<unsigned int>(x) );
@@ -168,6 +205,8 @@ std::unique_ptr<S_Event> solo::S_WindowWin32::getEvent(bool wait_for_event)
         }
         case WM_MBUTTONDOWN:
         {
+            SetCapture( m_hWnd );
+            ++m_capturedButtons;
             m_mouseEvent.setState( S_MouseEventState::Down );
             m_mouseEvent.setButton( S_MouseButton::Middle );
             m_mouseEvent.setX( static_cast<unsigned int>(x) );
@@ -177,6 +216,8 @@ std::unique_ptr<S_Event> solo::S_WindowWin32::getEvent(bool wait_for_event)
         }
         case WM_RBUTTONDOWN:
         {
+            SetCapture( m_hWnd );
+            ++m_capturedButtons;
             m_mouseEvent.setState( S_MouseEventState::Down );
             m_mouseEvent.setButton( S_MouseButton::Right );
             m_mouseEvent.setX( static_cast<unsigned int>(x) );
@@ -186,6 +227,7 @@ std::unique_ptr<S_Event> solo::S_WindowWin32::getEvent(bool wait_for_event)
         }
         case WM_LBUTTONUP  :
         {
+            if( m_capturedButtons > 0 && --m_capturedButtons == 0 ) ReleaseCapture();
             m_mouseEvent.setState( S_MouseEventState::Up );
             m_mouseEvent.setButton( S_MouseButton::Left );
             m_mouseEvent.setX( static_cast<unsigned int>(x) );
@@ -195,6 +237,7 @@ std::unique_ptr<S_Event> solo::S_WindowWin32::getEvent(bool wait_for_event)
         }
         case WM_MBUTTONUP  :
         {
+            if( m_capturedButtons > 0 && --m_capturedButtons == 0 ) ReleaseCapture();
             m_mouseEvent.setState( S_MouseEventState::Up );
             m_mouseEvent.setButton( S_MouseButton::Middle );
             m_mouseEvent.setX( static_cast<unsigned int>(x) );
@@ -204,6 +247,7 @@ std::unique_ptr<S_Event> solo::S_WindowWin32::getEvent(bool wait_for_event)
         }
         case WM_RBUTTONUP  :
         {
+            if( m_capturedButtons > 0 && --m_capturedButtons == 0 ) ReleaseCapture();
             m_mouseEvent.setState( S_MouseEventState::Up );
             m_mouseEvent.setButton( S_MouseButton::Right );
             m_mouseEvent.setX( static_cast<unsigned int>(x) );
@@ -213,13 +257,59 @@ std::unique_ptr<S_Event> solo::S_WindowWin32::getEvent(bool wait_for_event)
         }
         case WM_MOUSEWHEEL:
         {
-            int wheel = /*(*/GET_WHEEL_DELTA_WPARAM(msg.wParam) /*> 0) ? 4 : 5*/;
+            int wheel = GET_WHEEL_DELTA_WPARAM(msg.wParam);
             POINT point = {x, y};
             ScreenToClient(msg.hwnd, &point);
             m_mouseEvent.setX( static_cast<unsigned int>(point.x) );
             m_mouseEvent.setY( static_cast<unsigned int>(point.y) );
-            m_mouseEvent.setZ( wheel );
-            event = std::make_unique<S_MouseEvent>( m_mouseEvent.button(), m_mouseEvent.state(), m_mouseEvent.x(), m_mouseEvent.y(), m_mouseEvent.z() );
+            event = std::make_unique<S_MouseEvent>( S_MouseButton::None, S_MouseEventState::Wheel,
+                                                    m_mouseEvent.x(), m_mouseEvent.y(), wheel );
+            break;
+        }
+        case WM_POINTERDOWN:
+        case WM_POINTERUPDATE:
+        case WM_POINTERUP:
+        {
+            POINTER_INPUT_TYPE ptype;
+            POINTER_INFO pointerInfo;
+            UINT32 pid = GET_POINTERID_WPARAM(msg.wParam);
+            if (GetPointerType(pid, &ptype) && ptype == PT_TOUCH && GetPointerInfo(pid, &pointerInfo))
+            {
+                POINT pt = pointerInfo.ptPixelLocation;
+                ScreenToClient(m_hWnd, &pt);
+
+                S_TouchEventState tstate = S_TouchEventState::Move;
+                if (msg.message == WM_POINTERDOWN) tstate = S_TouchEventState::Down;
+                if (msg.message == WM_POINTERUP)   tstate = S_TouchEventState::Up;
+
+                // pack active pointers into stable slots keyed by pointer id
+                int slot = -1, freeSlot = -1;
+                for (int i = 0; i < 10; ++i)
+                {
+                    if (m_touchIds[i] == static_cast<int>(pid)) { slot = i; break; }
+                    if (m_touchIds[i] < 0 && freeSlot < 0) freeSlot = i;
+                }
+                if (slot < 0 && msg.message == WM_POINTERDOWN && freeSlot >= 0)
+                {
+                    slot = freeSlot;
+                    m_touchIds[slot] = static_cast<int>(pid);
+                    ++m_touchActive;
+                }
+                if (slot >= 0)
+                {
+                    m_touchEvent.setPointByIndex(static_cast<unsigned int>(slot),
+                        S_TouchPoint(tstate, static_cast<float>(pt.x), static_cast<float>(pt.y), static_cast<int>(pid)));
+                    m_touchEvent.setActiveCount(static_cast<unsigned int>(m_touchActive));
+                    auto out = std::make_unique<S_TouchEvent>();
+                    *out = m_touchEvent;
+                    event = std::move(out);
+                    if (msg.message == WM_POINTERUP)
+                    {
+                        m_touchIds[slot] = -1;
+                        if (m_touchActive > 0) --m_touchActive;
+                    }
+                }
+            }
             break;
         }
         case WM_KEYDOWN   :
@@ -250,6 +340,12 @@ std::unique_ptr<S_Event> solo::S_WindowWin32::getEvent(bool wait_for_event)
         {
             m_focus = msg.wParam != WA_INACTIVE;
             event = std::make_unique<S_WindowFocusEvent>(m_focus);
+            break;
+        }
+        case WM_DPI:
+        {
+            m_scale = static_cast<float>(LOWORD(msg.wParam)) / 96.0f;
+            event = std::make_unique<S_Event>(S_EventType::Other);
             break;
         }
         case WM_RESHAPE:

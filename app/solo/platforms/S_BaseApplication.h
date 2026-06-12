@@ -3,8 +3,12 @@
 #include "S_Event.h"
 #include "S_InputEvent.h"
 #include "S_WindowEvent.h"
+#include "solo/input/S_InputMap.h"
+#include "solo/input/S_Gestures.h"
+#include "solo/input/S_Gamepad.h"
 #include <array>
 #include <memory>
+#include <chrono>
 
 namespace solo
 {
@@ -43,6 +47,7 @@ public:
     virtual void onMouseEvent(const S_MouseEvent *event);
     virtual void onTouchEvent(const S_TouchEvent *event);
     virtual void onKeyboardEvent(const S_KeyboardEvent *event);
+    virtual void onCharacterEvent(const S_CharacterEvent *event);
     virtual void onResizeEvent(const S_WindowResizeEvent *event);
     virtual void onFocusEvent(const S_WindowFocusEvent *event);
     virtual void onCreateEvent() = 0;
@@ -54,13 +59,20 @@ public:
     S_Window *window() const;
     static S_BaseApplication *executingApplication();
     const S_InputState *inputState() const;
+    S_InputMap *inputMap();
+    const S_GestureRecognizer *gestures() const;
+    const S_GamepadState *gamepad() const;
 
 private:
     S_BaseApplication( unsigned int width, unsigned int height );
     virtual ~S_BaseApplication();
     static S_BaseApplication *m_activeApplication;
     std::unique_ptr<S_Window> m_window;
-    S_InputState m_inputState;
+    S_InputState        m_inputState;
+    S_InputMap          m_inputMap;
+    S_GestureRecognizer m_gestures;
+    S_Gamepad           m_gamepad;
+    std::chrono::steady_clock::time_point m_lastSpin = std::chrono::steady_clock::now();
 };
 
 }

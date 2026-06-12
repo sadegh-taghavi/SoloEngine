@@ -39,6 +39,8 @@ private:
     std::unique_ptr<S_Animator> m_foxAnimator;
     uint32_t             m_foxNode = 0;
     std::unique_ptr<S_UI> m_ui;
+    glm::vec2            m_foxPos     = { 8.0f, 0.0f }; // x, z on the ground plane
+    float                m_foxHeading = 0.0f;
     std::shared_ptr<class S_CameraPerspective> m_vCam;
     std::shared_ptr<class S_FirstPersonCameraController> m_vCamController;
     std::chrono::steady_clock::time_point m_startTime;

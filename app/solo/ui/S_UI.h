@@ -50,6 +50,14 @@ public:
     // widgets
     void panel(float x, float y, float w, float h, uint32_t tint = 0xFFFFFFFF);
     bool button(const char* id, const std::string& label, float x, float y, float w, float h);
+    glm::vec2 joystick(const char* id, float centerX, float centerY, float radius); // normalized [-1,1] offset
+
+    // true when the pointer is over (or interacting with) any widget submitted last frame
+    bool wantCaptureMouse() const;
+
+    // display scale; widget-internal sizes (button label) multiply by this
+    void  setScale(float s) { m_scale = s; }
+    float scale() const     { return m_scale; }
 
     static uint32_t rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255)
     {
@@ -68,6 +76,14 @@ private:
         bool  held    = false;
         float press   = 0.0f; // 0 = idle, 1 = fully pressed (eased)
     };
+
+    struct JoystickState
+    {
+        bool      active = false;
+        glm::vec2 value  = { 0.0f, 0.0f };
+    };
+
+    void registerHitRect(float x, float y, float w, float h);
 
     void quad(float x, float y, float w, float h, float u0, float v0, float u1, float v1,
               uint32_t color, float mode);
@@ -99,7 +115,12 @@ private:
     bool  m_pointerClicked = false; // down edge this frame
     bool  m_pointerReleased = false;
 
-    std::unordered_map<std::string, ButtonState> m_buttons;
+    std::unordered_map<std::string, ButtonState>   m_buttons;
+    std::unordered_map<std::string, JoystickState> m_joysticks;
+    std::vector<glm::vec4> m_hitRects;     // widgets submitted this frame
+    std::vector<glm::vec4> m_prevHitRects; // last frame's, used for capture query
+    bool                   m_pointerHeldOnWidget = false;
+    float                  m_scale = 1.0f;
     std::chrono::steady_clock::time_point        m_lastFrame;
 
     // vulkan
