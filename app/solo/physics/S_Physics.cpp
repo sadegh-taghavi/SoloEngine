@@ -14,6 +14,9 @@
 #include <Jolt/Physics/Body/BodyInterface.h>
 #include <Jolt/Physics/Body/Body.h>
 #include <Jolt/Physics/Collision/ContactListener.h>
+#include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
+#include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
+#include <Jolt/Physics/Character/CharacterVirtual.h>
 
 #include <thread>
 #include <mutex>
@@ -281,4 +284,102 @@ void S_Physics::addImpulse(S_BodyHandle body, const glm::vec3& impulse)
 void S_Physics::setGravity(const glm::vec3& gravity)
 {
     m_impl->system->SetGravity(toJolt(gravity));
+}
+
+// ---- S_Character ----
+
+struct S_Character::Impl
+{
+    JPH::Ref<JPH::CharacterVirtual> character;
+    JPH::PhysicsSystem*             system        = nullptr;
+    JPH::TempAllocator*             tempAllocator = nullptr;
+    bool wasOnGround = false;
+    bool landed      = false;
+};
+
+S_Character::S_Character() : m_impl(std::make_unique<Impl>()) {}
+S_Character::~S_Character() = default;
+
+std::unique_ptr<S_Character> S_Physics::createCharacter(float radius, float halfHeight,
+                                                        const glm::vec3& position)
+{
+    auto out = std::unique_ptr<S_Character>(new S_Character());
+    S_Character::Impl& impl = *out->m_impl;
+    impl.system        = m_impl->system.get();
+    impl.tempAllocator = m_impl->tempAllocator.get();
+
+    // capsule offset upward so the character's position is at its feet
+    const float centerY = halfHeight + radius;
+    JPH::Ref<JPH::Shape> shape =
+        JPH::RotatedTranslatedShapeSettings(JPH::Vec3(0, centerY, 0), JPH::Quat::sIdentity(),
+                                            new JPH::CapsuleShape(halfHeight, radius))
+            .Create().Get();
+
+    JPH::Ref<JPH::CharacterVirtualSettings> settings = new JPH::CharacterVirtualSettings();
+    settings->mShape            = shape;
+    settings->mMaxSlopeAngle    = JPH::DegreesToRadians(50.0f);
+    settings->mSupportingVolume = JPH::Plane(JPH::Vec3::sAxisY(), -radius); // accept ground contact on the lower sphere
+
+    impl.character = new JPH::CharacterVirtual(settings, toJolt(position) , JPH::Quat::sIdentity(),
+                                               0, m_impl->system.get());
+    return out;
+}
+
+void S_Character::update(float dtSeconds, const glm::vec3& desiredVelocity, bool jump)
+{
+    Impl& impl = *m_impl;
+    if (!impl.character || dtSeconds <= 0.0f)
+        return;
+
+    const bool grounded =
+        impl.character->GetGroundState() == JPH::CharacterVirtual::EGroundState::OnGround;
+
+    float vy = impl.character->GetLinearVelocity().GetY();
+    if (grounded)
+    {
+        vy = 0.0f;
+        if (jump)
+            vy = m_jumpSpeed;
+    }
+    else
+        vy += impl.system->GetGravity().GetY() * dtSeconds;
+
+    impl.character->SetLinearVelocity(JPH::Vec3(desiredVelocity.x, vy, desiredVelocity.z));
+
+    impl.character->Update(dtSeconds, impl.system->GetGravity(),
+                           impl.system->GetDefaultBroadPhaseLayerFilter(Layers::MOVING),
+                           impl.system->GetDefaultLayerFilter(Layers::MOVING),
+                           {}, {}, *impl.tempAllocator);
+
+    const bool nowGrounded =
+        impl.character->GetGroundState() == JPH::CharacterVirtual::EGroundState::OnGround;
+    impl.landed      = nowGrounded && !impl.wasOnGround;
+    impl.wasOnGround = nowGrounded;
+}
+
+glm::vec3 S_Character::position() const
+{
+    JPH::RVec3 p = m_impl->character->GetPosition();
+    return { static_cast<float>(p.GetX()), static_cast<float>(p.GetY()), static_cast<float>(p.GetZ()) };
+}
+
+glm::vec3 S_Character::velocity() const
+{
+    JPH::Vec3 v = m_impl->character->GetLinearVelocity();
+    return { v.GetX(), v.GetY(), v.GetZ() };
+}
+
+bool S_Character::isOnGround() const
+{
+    return m_impl->character->GetGroundState() == JPH::CharacterVirtual::EGroundState::OnGround;
+}
+
+bool S_Character::justLanded() const
+{
+    return m_impl->landed;
+}
+
+void S_Character::teleport(const glm::vec3& position)
+{
+    m_impl->character->SetPosition(toJolt(position));
 }

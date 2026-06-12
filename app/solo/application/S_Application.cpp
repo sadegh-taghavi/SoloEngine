@@ -86,6 +86,8 @@ void solo::S_Application::onCreateEvent()
     m_boxMesh = m_renderer->createMesh("models/Box.mesh.bin");
     m_boxMat  = m_renderer->createMaterial();
 
+    m_foxCharacter = m_physics->createCharacter(0.6f, 0.6f, glm::vec3(8.0f, 0.0f, 0.0f));
+
     m_audio = std::make_unique<S_Audio>();
 
     m_vCam = std::make_shared<S_CameraPerspective>();
@@ -100,7 +102,15 @@ void solo::S_Application::onCreateEvent()
 
         m_vCam->setWidth(static_cast<float>(window()->width()));
         m_vCam->setHeight(static_cast<float>(window()->height()));
-        m_vCamController->update();
+        if (m_followCam)
+        {
+            const glm::vec3 foxPos = m_foxCharacter->position();
+            m_vCam->setPosition(foxPos + glm::vec3(0.0f, 6.0f, 12.0f));
+            m_vCam->setTarget(foxPos + glm::vec3(0.0f, 1.5f, 0.0f));
+            m_vCam->update();
+        }
+        else
+            m_vCamController->update();
 
         m_audio->setListener(m_vCam->position(),
                              glm::normalize(m_vCam->target() - m_vCam->position()));
@@ -117,6 +127,7 @@ void solo::S_Application::onCreateEvent()
             ImGui::Begin("Solo Debug");
             ImGui::Text("%.1f fps (%.2f ms)", ImGui::GetIO().Framerate, 1000.0f / ImGui::GetIO().Framerate);
             ImGui::Text("audio voices: %u", m_audio->activeVoices());
+            ImGui::Checkbox("Follow camera", &m_followCam);
             ImGui::SeparatorText("Fox animation");
 
             auto* foxMesh = m_renderer->getMesh(m_foxMesh);
@@ -182,8 +193,8 @@ void solo::S_Application::onCreateEvent()
             }
         }
 
-        // virtual joystick feeds the action map; fox moves via MoveX/MoveY axes
-        // (arrow keys are bound to the same axes in input/bindings.json)
+        // virtual joystick feeds the action map; the fox is a Jolt character:
+        // capsule collision vs ground and boxes, gravity, jumping (Space / Pad.A)
         {
             const float dt = static_cast<float>(m_renderer->elapsedTimeUs()) / 1000000.0f;
 
@@ -194,14 +205,19 @@ void solo::S_Application::onCreateEvent()
 
             const float mx = inputMap()->axis("MoveX");
             const float my = inputMap()->axis("MoveY");
-            const bool  moving = std::fabs(mx) > 0.05f || std::fabs(my) > 0.05f;
+            const float speed = 8.0f;
+            glm::vec3 desired(mx * speed, 0.0f, -my * speed); // forward = -Z
+
+            m_foxCharacter->update(dt, desired, inputMap()->actionPressed("Jump"));
+
+            if (m_foxCharacter->justLanded())
+                m_audio->play("sounds/thud.wav", m_foxCharacter->position(), 0.35f);
+
+            const glm::vec3 vel = m_foxCharacter->velocity();
+            const bool moving = glm::length(glm::vec2(vel.x, vel.z)) > 0.5f;
             if (moving)
             {
-                const float speed = 8.0f;
-                m_foxPos.x += mx * speed * dt;
-                m_foxPos.y -= my * speed * dt; // forward = -Z
-                m_foxPos = glm::clamp(m_foxPos, glm::vec2(-20.0f), glm::vec2(20.0f));
-                m_foxHeading = std::atan2(mx, -my);
+                m_foxHeading = std::atan2(vel.x, vel.z);
                 if (m_foxAnimator->clip() != m_renderer->getMesh(m_foxMesh)->findAnimation("Run"))
                     m_foxAnimator->setClip("Run");
             }
@@ -209,7 +225,7 @@ void solo::S_Application::onCreateEvent()
                 m_foxAnimator->setClip("Survey");
 
             m_scene.node(m_foxNode).transform =
-                glm::translate(glm::mat4(1.0f), glm::vec3(m_foxPos.x, 0.0f, m_foxPos.y))
+                glm::translate(glm::mat4(1.0f), m_foxCharacter->position())
                 * glm::rotate(glm::mat4(1.0f), m_foxHeading, glm::vec3(0.0f, 1.0f, 0.0f))
                 * glm::scale(glm::mat4(1.0f), glm::vec3(0.05f));
         }

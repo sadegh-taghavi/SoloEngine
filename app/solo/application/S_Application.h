@@ -37,9 +37,10 @@ private:
     std::unique_ptr<S_Animator> m_foxAnimator;
     uint32_t             m_foxNode = 0;
     std::unique_ptr<S_UI> m_ui;
-    glm::vec2            m_foxPos     = { 8.0f, 0.0f }; // x, z on the ground plane
     float                m_foxHeading = 0.0f;
-    std::unique_ptr<S_Physics> m_physics;
+    bool                 m_followCam  = true;
+    std::unique_ptr<S_Physics>   m_physics;
+    std::unique_ptr<S_Character> m_foxCharacter;
     std::unique_ptr<S_Audio>   m_audio;
     S_MeshHandle              m_boxMesh;
     uint32_t                  m_boxMat = 0;
