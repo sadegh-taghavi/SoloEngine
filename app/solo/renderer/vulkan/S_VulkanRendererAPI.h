@@ -104,6 +104,9 @@ public:
     // skinned draws for the next frame's compute-skin + dynamic BLAS pre-pass
     void setRtSkinnedInstances(std::vector<S_VulkanRT::SkinnedInstance>&& instances);
 
+    void updateMaterialTable(const std::vector<struct S_MaterialRecord>& records,
+                             const std::vector<class S_Texture*>& textures);
+
     VkInstance instance() const;
 
     VkPhysicalDevice physicalDevice() const;

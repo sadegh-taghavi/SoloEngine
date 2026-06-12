@@ -33,6 +33,21 @@ public:
     {
         VkDeviceAddress blasAddress = 0;
         glm::mat4       transform   = glm::mat4(1.0f);
+        // hit-shading data, written to the shade SSBO at the instance's custom index
+        uint64_t indexAddress   = 0;
+        uint64_t hitDataAddress = 0;
+        uint32_t materialBase   = 0; // first global material ID, or the fallback ID
+        uint32_t useLocalMaterial = 0;
+    };
+
+    // GPU layout of the per-instance shade record (std430, 32 bytes)
+    struct ShadeRecord
+    {
+        uint64_t indexAddress;
+        uint64_t hitDataAddress;
+        uint32_t materialBase;
+        uint32_t useLocalMaterial;
+        uint32_t pad0, pad1;
     };
 
     // skinned draw captured for the next frame's pre-pass (compute skin + BLAS rebuild)
@@ -41,6 +56,10 @@ public:
         class S_Mesh*          mesh = nullptr;
         glm::mat4              transform = glm::mat4(1.0f);
         std::vector<glm::mat4> palette;
+        uint64_t indexAddress     = 0;
+        uint64_t hitDataAddress   = 0;
+        uint32_t materialBase     = 0;
+        uint32_t useLocalMaterial = 0;
     };
 
     S_VulkanRT(S_VulkanRendererAPI* api, uint32_t frameCount);
@@ -62,6 +81,7 @@ public:
     void buildTlas(VkCommandBuffer cmd, const std::vector<Instance>& instances, uint32_t frameIndex);
 
     VkAccelerationStructureKHR tlas(uint32_t frameIndex) const { return m_tlas[frameIndex].as; }
+    VkBuffer shadeBuffer(uint32_t frameIndex) const { return m_tlas[frameIndex].shadeBuffer; }
 
 private:
     static constexpr uint32_t kMaxFrames = 4;
@@ -78,6 +98,9 @@ private:
         VkBuffer       scratch                   = VK_NULL_HANDLE;
         VmaAllocation  scratchAlloc              = VK_NULL_HANDLE;
         VkDeviceAddress scratchAddress           = 0;
+        VkBuffer       shadeBuffer               = VK_NULL_HANDLE;
+        VmaAllocation  shadeAlloc                = VK_NULL_HANDLE;
+        void*          shadeMapped               = nullptr;
     };
 
     VkDeviceAddress bufferAddress(VkBuffer buffer) const;

@@ -31,7 +31,7 @@ S_VulkanTexture::S_VulkanTexture(S_VulkanRendererAPI *api, const std::string &te
     uint32_t elementSize = ktxTexture_GetElementSize(ktTexture);
     bool canUseFasterPath;
     uint32_t numImageLayers = ktTexture->numLayers;
-    VkImageCreateFlagBits createFlags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+    VkImageCreateFlags createFlags = 0;
     VkImageType imageType;
     VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D;
     VkFormat vkFormat;
@@ -63,6 +63,7 @@ S_VulkanTexture::S_VulkanTexture(S_VulkanRendererAPI *api, const std::string &te
     case 3:
         imageType = VK_IMAGE_TYPE_3D;
         viewType = VK_IMAGE_VIEW_TYPE_3D;
+        createFlags |= VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT; // only legal on 3D images
         break;
     }
 

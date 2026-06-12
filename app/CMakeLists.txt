@@ -93,6 +93,7 @@ set(SOURCE
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/input/S_Gamepad.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/physics/S_Physics.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/audio/S_Audio.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/scene/S_EntityScene.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/imgui/imgui.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/imgui/imgui_draw.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/imgui/imgui_tables.cpp

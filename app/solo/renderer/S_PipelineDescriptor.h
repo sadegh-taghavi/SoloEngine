@@ -11,6 +11,7 @@ struct S_PipelineDescriptor
     S_VertexBufferDescriptorArray VertexBufferDescriptorArray;
     S_VertexBufferDescriptorArray InstanceBufferDescriptorArray;
     S_VertexBufferDescriptorArray SkinBufferDescriptorArray;     // second per-vertex stream (binding 1)
+    S_VertexBufferDescriptorArray AttribBufferDescriptorArray;   // raster attribs (binding 1, or 2 when skinned)
     S_Shader*                     Shader              = nullptr;
     bool                          UseEngineGlobals    = false;
 };

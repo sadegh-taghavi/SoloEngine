@@ -2,7 +2,7 @@
 #include <cstdint>
 
 static constexpr uint32_t MESH_BIN_MAGIC   = 0x4853454D;
-static constexpr uint32_t MESH_BIN_VERSION = 2;
+static constexpr uint32_t MESH_BIN_VERSION = 4;
 
 enum MeshBinFlags : uint32_t
 {
@@ -44,11 +44,22 @@ struct MeshBinHeader
     uint32_t animationCount;
     uint32_t channelCount;      // total channels across all animations
     uint32_t keyFloatCount;     // floats in the keyframe data blob
-    uint32_t pad;
+    uint32_t materialCount;     // v3: MeshBinMaterial records
     uint64_t jointOffset;       // MeshBinJoint[jointCount]
     uint64_t animationOffset;   // MeshBinAnimation[animationCount]
     uint64_t channelOffset;     // MeshBinAnimChannel[channelCount]
     uint64_t keyDataOffset;     // float[keyFloatCount]
+    uint64_t materialOffset;    // v3: MeshBinMaterial[materialCount]
+};
+
+struct MeshBinMaterial
+{
+    float baseColorFactor[4];
+    float metallicFactor;
+    float roughnessFactor;
+    char  baseColorPath[64];         // pack-relative KTX paths, empty = none
+    char  normalPath[64];
+    char  metallicRoughnessPath[64];
 };
 
 struct MeshBinJoint

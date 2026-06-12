@@ -17,6 +17,18 @@
 namespace solo
 {
 
+// GPU material record, std430-compatible (48 bytes)
+struct S_MaterialRecord
+{
+    glm::vec4 baseColorFactor = glm::vec4(1.0f);
+    float     metallicFactor  = 0.0f;
+    float     roughnessFactor = 1.0f;
+    uint32_t  baseColorTexSlot = 0;
+    uint32_t  normalTexSlot    = 0; // 0 = none (slot 0 is white, never a normal map)
+    uint32_t  mrTexSlot        = 0; // 0 = none
+    uint32_t  pad[3] = {};
+};
+
 class S_BaseApplication;
 class S_RendererAPI;
 class S_Scene;
@@ -48,7 +60,13 @@ public:
     S_MeshHandle      createMesh(const std::string &path);
     S_Mesh*           getMesh(S_MeshHandle h) const;
     void              updatePerFrame(const S_PerFrameData& data);
-    uint32_t          createMaterial();
+    uint32_t          createMaterial(); // plain white
+    uint32_t          createMaterial(const glm::vec4& baseColorFactor,
+                                     const std::string& baseColorTexture = std::string(),
+                                     float metallic = 0.0f, float roughness = 1.0f,
+                                     const std::string& normalTexture = std::string(),
+                                     const std::string& metallicRoughnessTexture = std::string());
+    uint32_t          textureSlot(const std::string& packPath); // bindless slot, cached by path
     void              submitDraw(S_MeshHandle mesh, const glm::mat4& transform, uint32_t materialID = 0);
     void              submitDraw(S_MeshHandle mesh, const glm::mat4& transform, uint32_t materialID,
                                  const std::vector<glm::mat4>& jointPalette);
@@ -105,6 +123,12 @@ private:
 
     S_RenderQueue  m_queue;
     S_MaterialPool m_materialPool;
+
+    void syncMaterials();
+    std::vector<S_MaterialRecord> m_materialRecords;
+    std::vector<S_Texture*>       m_materialTextures; // slot-ordered
+    std::unordered_map<std::string, uint32_t> m_textureSlotCache;
+    bool m_materialsDirty = true;
 
     S_ElapsedTime m_elapsedTime;
     uint64_t m_elapsedTimeUs = 0;

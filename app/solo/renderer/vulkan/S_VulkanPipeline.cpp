@@ -157,6 +157,10 @@ void S_VulkanPipeline::create( const std::vector<S_PipelineDescriptor> *descript
             fillVertexBindingsAndAttributes( m_descriptors.at(i).InstanceBufferDescriptorArray, 1, VK_VERTEX_INPUT_RATE_INSTANCE );
         if(m_descriptors.at(i).SkinBufferDescriptorArray.stride() > 0 )
             fillVertexBindingsAndAttributes( m_descriptors.at(i).SkinBufferDescriptorArray, 1, VK_VERTEX_INPUT_RATE_VERTEX );
+        if(m_descriptors.at(i).AttribBufferDescriptorArray.stride() > 0 )
+            fillVertexBindingsAndAttributes( m_descriptors.at(i).AttribBufferDescriptorArray,
+                                             m_descriptors.at(i).SkinBufferDescriptorArray.stride() > 0 ? 2u : 1u,
+                                             VK_VERTEX_INPUT_RATE_VERTEX );
 
         vertexInputInfos[i].sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         vertexInputInfos[i].vertexBindingDescriptionCount = static_cast<uint32_t>( bindingDescriptions.at(i).size() );

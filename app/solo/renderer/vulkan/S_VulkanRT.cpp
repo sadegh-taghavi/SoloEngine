@@ -99,6 +99,12 @@ S_VulkanRT::S_VulkanRT(S_VulkanRendererAPI* api, uint32_t frameCount)
         VK_RESULT_CHECK( vmaCreateBuffer(m_api->vmaAllocator(), &bufCI, &hostAlloc, &f.instanceBuffer, &f.instanceAlloc, &info) )
         f.instanceMapped  = info.pMappedData;
         f.instanceAddress = bufferAddress(f.instanceBuffer);
+
+        // hit-shading records, indexed by instanceCustomIndex
+        bufCI.size  = kMaxRtInstances * sizeof(ShadeRecord);
+        bufCI.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        VK_RESULT_CHECK( vmaCreateBuffer(m_api->vmaAllocator(), &bufCI, &hostAlloc, &f.shadeBuffer, &f.shadeAlloc, &info) )
+        f.shadeMapped = info.pMappedData;
     }
 
     m_available = true;
@@ -122,6 +128,7 @@ S_VulkanRT::~S_VulkanRT()
         if (f.buffer)         vmaDestroyBuffer(m_api->vmaAllocator(), f.buffer, f.alloc);
         if (f.scratch)        vmaDestroyBuffer(m_api->vmaAllocator(), f.scratch, f.scratchAlloc);
         if (f.instanceBuffer) vmaDestroyBuffer(m_api->vmaAllocator(), f.instanceBuffer, f.instanceAlloc);
+        if (f.shadeBuffer)    vmaDestroyBuffer(m_api->vmaAllocator(), f.shadeBuffer, f.shadeAlloc);
     }
     if (m_buildPool)
         vkDestroyCommandPool(device, m_buildPool, S_VulkanAllocator());
@@ -341,7 +348,8 @@ void S_VulkanRT::buildTlas(VkCommandBuffer cmd, const std::vector<Instance>& ins
     uint32_t count = static_cast<uint32_t>(instances.size());
     if (count > kMaxRtInstances) count = kMaxRtInstances;
 
-    auto* dst = static_cast<VkAccelerationStructureInstanceKHR*>(f.instanceMapped);
+    auto* dst   = static_cast<VkAccelerationStructureInstanceKHR*>(f.instanceMapped);
+    auto* shade = static_cast<ShadeRecord*>(f.shadeMapped);
     for (uint32_t i = 0; i < count; ++i)
     {
         const Instance& in = instances[i];
@@ -355,10 +363,20 @@ void S_VulkanRT::buildTlas(VkCommandBuffer cmd, const std::vector<Instance>& ins
         vi.instanceShaderBindingTableRecordOffset = 0;
         vi.flags                                  = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
         vi.accelerationStructureReference         = in.blasAddress;
+
+        shade[i].indexAddress     = in.indexAddress;
+        shade[i].hitDataAddress   = in.hitDataAddress;
+        shade[i].materialBase     = in.materialBase;
+        shade[i].useLocalMaterial = in.useLocalMaterial;
+        shade[i].pad0 = shade[i].pad1 = 0;
     }
     if (count)
+    {
         vmaFlushAllocation(m_api->vmaAllocator(), f.instanceAlloc, 0,
                            count * sizeof(VkAccelerationStructureInstanceKHR));
+        vmaFlushAllocation(m_api->vmaAllocator(), f.shadeAlloc, 0,
+                           count * sizeof(ShadeRecord));
+    }
 
     VkAccelerationStructureGeometryKHR geometry{};
     geometry.sType        = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;

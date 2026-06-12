@@ -11,7 +11,8 @@ struct S_PerFrameData
     float     rtShadows = 1.f; // 0/1 toggle for ray-query shadows
     float     pad[2]    = {};
     glm::vec4 lightDir  = glm::vec4(0.35f, 0.9f, 0.25f, 0.0f); // world-space, toward the light
+    glm::vec4 cameraPos = glm::vec4(0.0f);                     // world-space, w unused
 };
-static_assert(sizeof(S_PerFrameData) == 96, "S_PerFrameData must be 96 bytes");
+static_assert(sizeof(S_PerFrameData) == 112, "S_PerFrameData must be 112 bytes");
 
 }

@@ -357,6 +357,7 @@ void S_VulkanRendererAPI::createDevice()
     features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
     features12.bufferDeviceAddress = VK_TRUE;
     features12.descriptorIndexing  = VK_TRUE;
+    features12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE; // RT hit shading samples by hit material
 
     VkPhysicalDeviceAccelerationStructureFeaturesKHR asFeatures = {};
     asFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
@@ -1031,9 +1032,14 @@ S_VulkanRendererAPI::S_VulkanRendererAPI() : S_RendererAPI (), m_nextFrameRender
     if( m_rt->available() )
     {
         VkAccelerationStructureKHR tlases[m_MAX_FRAMES_IN_FLIGHT];
+        VkBuffer shadeBuffers[m_MAX_FRAMES_IN_FLIGHT];
         for( uint32_t i = 0; i < m_MAX_FRAMES_IN_FLIGHT; ++i )
-            tlases[i] = m_rt->tlas(i);
+        {
+            tlases[i]       = m_rt->tlas(i);
+            shadeBuffers[i] = m_rt->shadeBuffer(i);
+        }
         m_bindless->setTlas(tlases);
+        m_bindless->setRtShadeBuffers(shadeBuffers);
     }
     createDepthResources();
     createFramebuffers();
@@ -1188,7 +1194,17 @@ void S_VulkanRendererAPI::drawFrame()
                         mesh->vertexCount(), mesh->indexBuffer(), mesh->indexCount(),
                         m_nextSwapchainImageIndex);
                     if( addr )
-                        allInstances.push_back({ addr, m_rtSkinned[i].transform });
+                    {
+                        const auto& e = m_rtSkinned[i];
+                        S_VulkanRT::Instance inst;
+                        inst.blasAddress      = addr;
+                        inst.transform        = e.transform;
+                        inst.indexAddress     = e.indexAddress;
+                        inst.hitDataAddress   = e.hitDataAddress;
+                        inst.materialBase     = e.materialBase;
+                        inst.useLocalMaterial = e.useLocalMaterial;
+                        allInstances.push_back(inst);
+                    }
                 }
                 m_rt->barrierBlasToTlas(m_nextFrameRenderCommandBuffer);
             }
@@ -1340,6 +1356,12 @@ void S_VulkanRendererAPI::setRtSkinnedInstances(std::vector<S_VulkanRT::SkinnedI
     m_rtSkinned = std::move(instances);
 }
 
+void S_VulkanRendererAPI::updateMaterialTable(const std::vector<S_MaterialRecord>& records,
+                                              const std::vector<S_Texture*>& textures)
+{
+    m_bindless->setMaterials(records, textures);
+}
+
 uint32_t S_VulkanRendererAPI::swapchainImageCount() const
 {
     return static_cast<uint32_t>( m_swapChainImages.size() );
@@ -1364,11 +1386,21 @@ void S_VulkanRendererAPI::flushRenderQueue(S_Shader* shader,
 
     for( const auto& draw : draws )
     {
+        auto* mesh = static_cast<S_VulkanMesh*>( draw.mesh );
+        mesh->bindBuffers(cmd);
+
         struct PC { uint32_t instanceIndex; uint32_t materialID; uint32_t paletteOffset; uint32_t pad; };
-        PC pc = { draw.instanceIndex, draw.materialID, draw.paletteOffset, 0 };
-        vkCmdPushConstants(cmd, vkShader->pipelineLayout(), VK_SHADER_STAGE_ALL_GRAPHICS,
-                           0, sizeof(PC), &pc);
-        static_cast<S_VulkanMesh*>( draw.mesh )->draw();
+        for( const auto& prim : mesh->primitives() )
+        {
+            // mesh-authored materials win; app-provided ID is the fallback tint
+            PC pc = { draw.instanceIndex,
+                      mesh->globalMaterialID(prim.materialID, draw.materialID),
+                      draw.paletteOffset, 0 };
+            vkCmdPushConstants(cmd, vkShader->pipelineLayout(), VK_SHADER_STAGE_ALL_GRAPHICS,
+                               0, sizeof(PC), &pc);
+            vkCmdDrawIndexed(cmd, prim.indexCount, 1, prim.indexOffset,
+                             static_cast<int32_t>(prim.vertexOffset), 0);
+        }
     }
 }
 

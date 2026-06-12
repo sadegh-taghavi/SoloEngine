@@ -12,6 +12,12 @@ using namespace solo;
 S_Renderer::S_Renderer()
 {
     m_api = std::make_unique<S_VulkanRendererAPI>();
+
+    // pinned bindless texture slots the shader addresses directly:
+    // 0 = white, 1 = prefiltered HDR environment, 2 = irradiance
+    textureSlot("textures/white.ktx");
+    textureSlot("textures/env.ktx");
+    textureSlot("textures/env_irr.ktx");
 }
 
 S_RendererAPI *S_Renderer::api() const
@@ -85,6 +91,23 @@ S_MeshHandle S_Renderer::createMesh(const std::string &path)
     if (it != m_meshCache.end()) return it->second;
     S_Mesh* raw = m_api->createMesh(path);
     if (!raw) return {};
+
+    // resolve the mesh's glTF materials into the global material table
+    if (!raw->pendingMaterials().empty())
+    {
+        std::vector<uint32_t> ids;
+        ids.reserve(raw->pendingMaterials().size());
+        for (const MeshBinMaterial& m : raw->pendingMaterials())
+            ids.push_back(createMaterial(
+                glm::vec4(m.baseColorFactor[0], m.baseColorFactor[1],
+                          m.baseColorFactor[2], m.baseColorFactor[3]),
+                m.baseColorPath[0] ? std::string(m.baseColorPath) : std::string(),
+                m.metallicFactor, m.roughnessFactor,
+                m.normalPath[0] ? std::string(m.normalPath) : std::string(),
+                m.metallicRoughnessPath[0] ? std::string(m.metallicRoughnessPath) : std::string()));
+        raw->setGlobalMaterialIDs(std::move(ids));
+    }
+
     S_MeshHandle h = poolInsert<S_Mesh, 4>(m_meshSlots, m_freeMesh, raw);
     m_meshCache[path] = h;
     return h;
@@ -100,9 +123,55 @@ void S_Renderer::updatePerFrame(const S_PerFrameData& data)
     m_api->updatePerFrame(&data, sizeof(data));
 }
 
+uint32_t S_Renderer::textureSlot(const std::string& packPath)
+{
+    auto it = m_textureSlotCache.find(packPath);
+    if (it != m_textureSlotCache.end())
+        return it->second;
+
+    S_Texture* tex = getTexture(createTexture(packPath));
+    if (!tex)
+    {
+        s_debugLayer("S_Renderer: material texture missing, using white:", packPath);
+        return 0;
+    }
+    const uint32_t slot = static_cast<uint32_t>(m_materialTextures.size());
+    m_materialTextures.push_back(tex);
+    m_textureSlotCache[packPath] = slot;
+    m_materialsDirty = true;
+    return slot;
+}
+
 uint32_t S_Renderer::createMaterial()
 {
-    return m_materialPool.allocate();
+    return createMaterial(glm::vec4(1.0f));
+}
+
+uint32_t S_Renderer::createMaterial(const glm::vec4& baseColorFactor, const std::string& baseColorTexture,
+                                    float metallic, float roughness,
+                                    const std::string& normalTexture,
+                                    const std::string& metallicRoughnessTexture)
+{
+    if (m_materialTextures.empty())
+        textureSlot("textures/white.ktx"); // slot 0 = default white
+
+    S_MaterialRecord rec;
+    rec.baseColorFactor  = baseColorFactor;
+    rec.metallicFactor   = metallic;
+    rec.roughnessFactor  = roughness;
+    rec.baseColorTexSlot = baseColorTexture.empty()         ? 0u : textureSlot(baseColorTexture);
+    rec.normalTexSlot    = normalTexture.empty()            ? 0u : textureSlot(normalTexture);
+    rec.mrTexSlot        = metallicRoughnessTexture.empty() ? 0u : textureSlot(metallicRoughnessTexture);
+    m_materialRecords.push_back(rec);
+    m_materialsDirty = true;
+    return static_cast<uint32_t>(m_materialRecords.size() - 1);
+}
+
+void S_Renderer::syncMaterials()
+{
+    if (!m_materialsDirty) return;
+    static_cast<S_VulkanRendererAPI*>(m_api.get())->updateMaterialTable(m_materialRecords, m_materialTextures);
+    m_materialsDirty = false;
 }
 
 void S_Renderer::submitDraw(S_MeshHandle mesh, const glm::mat4& transform, uint32_t materialID)
@@ -124,6 +193,8 @@ void S_Renderer::flushDraws(S_ShaderHandle shaderH, S_ShaderHandle skinnedShader
     auto* skinnedShader = getShader(skinnedShaderH);
     if( !shader ) return;
 
+    syncMaterials();
+
     // static draws double as next frame's TLAS instances; skinned draws are
     // captured with their palettes for the compute-skin + dynamic BLAS pre-pass
     std::vector<S_VulkanRT::Instance>        rtInstances;
@@ -136,8 +207,21 @@ void S_Renderer::flushDraws(S_ShaderHandle shaderH, S_ShaderHandle skinnedShader
     {
         auto* mesh = getMesh(draw.mesh);
         if( !mesh ) continue;
+        const uint32_t matBase  = mesh->hasMaterials() ? mesh->globalMaterialID(0, draw.materialID)
+                                                       : draw.materialID;
+        const uint32_t useLocal = mesh->hasMaterials() ? 1u : 0u;
+
         if( draw.paletteOffset == S_NO_PALETTE && mesh->blasAddress() != 0 )
-            rtInstances.push_back({ mesh->blasAddress(), m_queue.transforms()[draw.instanceIndex] });
+        {
+            S_VulkanRT::Instance inst;
+            inst.blasAddress      = mesh->blasAddress();
+            inst.transform        = m_queue.transforms()[draw.instanceIndex];
+            inst.indexAddress     = mesh->indexAddress();
+            inst.hitDataAddress   = mesh->hitDataAddress();
+            inst.materialBase     = matBase;
+            inst.useLocalMaterial = useLocal;
+            rtInstances.push_back(inst);
+        }
         // skinned draws fall back to the static shader (bind pose) when no skinned shader given
         if( skinnedShader && draw.paletteOffset != S_NO_PALETTE )
         {
@@ -151,6 +235,10 @@ void S_Renderer::flushDraws(S_ShaderHandle shaderH, S_ShaderHandle skinnedShader
                 entry.transform = m_queue.transforms()[draw.instanceIndex];
                 entry.palette.assign(m_queue.palettes().begin() + draw.paletteOffset,
                                      m_queue.palettes().begin() + draw.paletteOffset + jointCount);
+                entry.indexAddress     = mesh->indexAddress();
+                entry.hitDataAddress   = mesh->hitDataAddress();
+                entry.materialBase     = matBase;
+                entry.useLocalMaterial = useLocal;
                 rtSkinned.push_back(std::move(entry));
             }
         }

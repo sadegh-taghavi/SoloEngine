@@ -21,8 +21,11 @@ public:
     VkBuffer rasterAttribBuffer() const { return m_rasterAttribBuffer; }
     VkBuffer rtHitDataBuffer()    const { return m_rtHitDataBuffer; }
     VkBuffer skinBuffer()         const { return m_skinBuffer; }
+    void     bindBuffers(VkCommandBuffer cmd);
     void     draw()               override;
     uint64_t blasAddress()        const override { return m_blas.address; }
+    uint64_t indexAddress()       const override { return m_indexAddress; }
+    uint64_t hitDataAddress()     const override { return m_hitDataAddress; }
 
 private:
     static VkBuffer uploadBuffer(S_VulkanRendererAPI* api, const void* data, VkDeviceSize size,
@@ -41,6 +44,8 @@ private:
     VkBuffer      m_skinBuffer         = VK_NULL_HANDLE;
     VmaAllocation m_skinAlloc          = VK_NULL_HANDLE;
     S_VulkanRT::Blas m_blas;
+    uint64_t         m_indexAddress   = 0;
+    uint64_t         m_hitDataAddress = 0;
 };
 
 }

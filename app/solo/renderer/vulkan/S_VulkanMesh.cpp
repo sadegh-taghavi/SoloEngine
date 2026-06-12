@@ -114,7 +114,7 @@ S_VulkanMesh::S_VulkanMesh(S_VulkanRendererAPI* api, const std::string& path)
 
     m_rtHitDataBuffer = uploadBuffer(api, d + header.rtHitDataOffset,
         header.vertexCount * sizeof(MeshBinRTHitData),
-        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
         m_rtHitDataAlloc);
 
     if ((header.flags & MESH_BIN_FLAG_SKINNED) && header.skinOffset != 0)
@@ -125,21 +125,47 @@ S_VulkanMesh::S_VulkanMesh(S_VulkanRendererAPI* api, const std::string& path)
             m_skinAlloc);
     }
 
+    if (header.materialCount && header.materialOffset)
+    {
+        m_pendingMaterials.resize(header.materialCount);
+        memcpy(m_pendingMaterials.data(), d + header.materialOffset,
+               header.materialCount * sizeof(MeshBinMaterial));
+    }
+
     loadAnimationData(d, header);
 
     if (api->rt() && api->rt()->available())
+    {
         m_blas = api->rt()->buildBlas(m_positionBuffer, header.vertexCount,
                                       m_indexBuffer, header.indexCount);
+
+        VkBufferDeviceAddressInfo addrInfo{};
+        addrInfo.sType   = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+        addrInfo.buffer  = m_indexBuffer;
+        m_indexAddress   = vkGetBufferDeviceAddress(api->device(), &addrInfo);
+        addrInfo.buffer  = m_rtHitDataBuffer;
+        m_hitDataAddress = vkGetBufferDeviceAddress(api->device(), &addrInfo);
+    }
+}
+
+void S_VulkanMesh::bindBuffers(VkCommandBuffer cmd)
+{
+    VkDeviceSize offset = 0;
+    vkCmdBindVertexBuffers(cmd, 0, 1, &m_positionBuffer, &offset);
+    if (m_skinBuffer) // skinned layout: positions@0, skin@1, attribs@2
+    {
+        vkCmdBindVertexBuffers(cmd, 1, 1, &m_skinBuffer, &offset);
+        vkCmdBindVertexBuffers(cmd, 2, 1, &m_rasterAttribBuffer, &offset);
+    }
+    else              // static layout: positions@0, attribs@1
+        vkCmdBindVertexBuffers(cmd, 1, 1, &m_rasterAttribBuffer, &offset);
+    vkCmdBindIndexBuffer(cmd, m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 }
 
 void S_VulkanMesh::draw()
 {
-    VkCommandBuffer cmd    = m_api->nextFrameRenderCommandBuffer();
-    VkDeviceSize    offset = 0;
-    vkCmdBindVertexBuffers(cmd, 0, 1, &m_positionBuffer, &offset);
-    if (m_skinBuffer) // binding 1 feeds the skinned pipeline; unused bindings are ignored
-        vkCmdBindVertexBuffers(cmd, 1, 1, &m_skinBuffer, &offset);
-    vkCmdBindIndexBuffer(cmd, m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+    VkCommandBuffer cmd = m_api->nextFrameRenderCommandBuffer();
+    bindBuffers(cmd);
     for (const auto& prim : m_primitives)
         vkCmdDrawIndexed(cmd, prim.indexCount, 1, prim.indexOffset,
                          static_cast<int32_t>(prim.vertexOffset), 0);

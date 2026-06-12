@@ -1,6 +1,7 @@
 #include "S_VulkanBindless.h"
 #include "S_VulkanRendererAPI.h"
 #include "S_VulkanAllocator.h"
+#include "S_VulkanTexture.h"
 #include <vector>
 #include <cstring>
 
@@ -11,7 +12,7 @@ S_VulkanBindless::S_VulkanBindless(S_VulkanRendererAPI* api, uint32_t frameCount
 {
     VkDevice device = m_api->device();
 
-    VkDescriptorSetLayoutBinding bindings[3]{};
+    VkDescriptorSetLayoutBinding bindings[6]{};
     bindings[0].binding         = 0; // instance transforms
     bindings[0].descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     bindings[0].descriptorCount = 1;
@@ -24,25 +25,50 @@ S_VulkanBindless::S_VulkanBindless(S_VulkanRendererAPI* api, uint32_t frameCount
     bindings[2].descriptorType  = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
     bindings[2].descriptorCount = 1;
     bindings[2].stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
+    bindings[3].binding         = 3; // material table
+    bindings[3].descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    bindings[3].descriptorCount = 1;
+    bindings[3].stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
+    bindings[4].binding         = 4; // material textures
+    bindings[4].descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    bindings[4].descriptorCount = kMaxTextures;
+    bindings[4].stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
+    bindings[5].binding         = 5; // RT per-instance shade records
+    bindings[5].descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    bindings[5].descriptorCount = 1;
+    bindings[5].stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
 
     VkDescriptorSetLayoutCreateInfo layoutCI{};
     layoutCI.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutCI.bindingCount = 3;
+    layoutCI.bindingCount = 6;
     layoutCI.pBindings    = bindings;
     VK_RESULT_CHECK( vkCreateDescriptorSetLayout(device, &layoutCI, S_VulkanAllocator(), &m_setLayout) )
 
-    VkDescriptorPoolSize poolSizes[2]{};
+    VkDescriptorPoolSize poolSizes[3]{};
     poolSizes[0].type            = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    poolSizes[0].descriptorCount = m_frameCount * 2;
+    poolSizes[0].descriptorCount = m_frameCount * 4;
     poolSizes[1].type            = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
     poolSizes[1].descriptorCount = m_frameCount;
+    poolSizes[2].type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSizes[2].descriptorCount = m_frameCount * kMaxTextures;
 
     VkDescriptorPoolCreateInfo poolCI{};
     poolCI.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolCI.poolSizeCount = 2;
+    poolCI.poolSizeCount = 3;
     poolCI.pPoolSizes    = poolSizes;
     poolCI.maxSets       = m_frameCount;
     VK_RESULT_CHECK( vkCreateDescriptorPool(device, &poolCI, S_VulkanAllocator(), &m_pool) )
+
+    VkSamplerCreateInfo samplerCI{};
+    samplerCI.sType        = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerCI.magFilter    = VK_FILTER_LINEAR;
+    samplerCI.minFilter    = VK_FILTER_LINEAR;
+    samplerCI.mipmapMode   = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerCI.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerCI.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerCI.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerCI.maxLod       = VK_LOD_CLAMP_NONE;
+    VK_RESULT_CHECK( vkCreateSampler(device, &samplerCI, S_VulkanAllocator(), &m_textureSampler) )
 
     std::vector<VkDescriptorSetLayout> layouts(m_frameCount, m_setLayout);
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -75,25 +101,33 @@ S_VulkanBindless::S_VulkanBindless(S_VulkanRendererAPI* api, uint32_t frameCount
                                          &m_paletteBuffers[i], &m_paletteAllocs[i], &info) )
         m_paletteMapped[i] = info.pMappedData;
 
-        VkDescriptorBufferInfo dbis[2]{};
+        bufCI.size = kMaxMaterials * sizeof(S_MaterialRecord);
+        VK_RESULT_CHECK( vmaCreateBuffer(m_api->vmaAllocator(), &bufCI, &allocCI,
+                                         &m_materialBuffers[i], &m_materialAllocs[i], &info) )
+        m_materialMapped[i] = info.pMappedData;
+
+        VkDescriptorBufferInfo dbis[3]{};
         dbis[0].buffer = m_transformBuffers[i];
         dbis[0].offset = 0;
         dbis[0].range  = VK_WHOLE_SIZE;
         dbis[1].buffer = m_paletteBuffers[i];
         dbis[1].offset = 0;
         dbis[1].range  = VK_WHOLE_SIZE;
+        dbis[2].buffer = m_materialBuffers[i];
+        dbis[2].offset = 0;
+        dbis[2].range  = VK_WHOLE_SIZE;
 
-        VkWriteDescriptorSet writes[2]{};
-        for (uint32_t b = 0; b < 2; ++b)
+        VkWriteDescriptorSet writes[3]{};
+        for (uint32_t b = 0; b < 3; ++b)
         {
             writes[b].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             writes[b].dstSet          = m_sets[i];
-            writes[b].dstBinding      = b;
+            writes[b].dstBinding      = b == 2 ? 3 : b; // materials live at binding 3
             writes[b].descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
             writes[b].descriptorCount = 1;
             writes[b].pBufferInfo     = &dbis[b];
         }
-        vkUpdateDescriptorSets(device, 2, writes, 0, nullptr);
+        vkUpdateDescriptorSets(device, 3, writes, 0, nullptr);
     }
 }
 
@@ -103,9 +137,35 @@ S_VulkanBindless::~S_VulkanBindless()
     {
         vmaDestroyBuffer(m_api->vmaAllocator(), m_transformBuffers[i], m_transformAllocs[i]);
         vmaDestroyBuffer(m_api->vmaAllocator(), m_paletteBuffers[i],   m_paletteAllocs[i]);
+        vmaDestroyBuffer(m_api->vmaAllocator(), m_materialBuffers[i],  m_materialAllocs[i]);
     }
+    vkDestroySampler(m_api->device(), m_textureSampler, S_VulkanAllocator());
     vkDestroyDescriptorPool(m_api->device(), m_pool,      S_VulkanAllocator());
     vkDestroyDescriptorSetLayout(m_api->device(), m_setLayout, S_VulkanAllocator());
+}
+
+void S_VulkanBindless::setRtShadeBuffers(const VkBuffer* buffersPerFrame)
+{
+    for (uint32_t i = 0; i < m_frameCount; ++i)
+    {
+        VkDescriptorBufferInfo dbi{ buffersPerFrame[i], 0, VK_WHOLE_SIZE };
+        VkWriteDescriptorSet write{};
+        write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write.dstSet          = m_sets[i];
+        write.dstBinding      = 5;
+        write.descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        write.descriptorCount = 1;
+        write.pBufferInfo     = &dbi;
+        vkUpdateDescriptorSets(m_api->device(), 1, &write, 0, nullptr);
+    }
+}
+
+void S_VulkanBindless::setMaterials(const std::vector<S_MaterialRecord>& records,
+                                    const std::vector<S_Texture*>& textures)
+{
+    m_materialData = records;
+    m_textureData  = textures;
+    ++m_materialVersion;
 }
 
 void S_VulkanBindless::setTlas(const VkAccelerationStructureKHR* tlasPerFrame)
@@ -144,8 +204,43 @@ void S_VulkanBindless::uploadPalettes(const glm::mat4* palettes, uint32_t count,
     vmaFlushAllocation(m_api->vmaAllocator(), m_paletteAllocs[frameIndex], 0, safeCount * sizeof(glm::mat4));
 }
 
-void S_VulkanBindless::bind(VkCommandBuffer cmd, VkPipelineLayout layout, uint32_t frameIndex) const
+void S_VulkanBindless::bind(VkCommandBuffer cmd, VkPipelineLayout layout, uint32_t frameIndex)
 {
+    // lazy material/texture refresh: this frame slot's fence has been waited,
+    // so its set and buffer are safe to rewrite here
+    if (m_setVersion[frameIndex] != m_materialVersion && !m_textureData.empty())
+    {
+        const uint32_t count = m_materialData.size() < kMaxMaterials
+                             ? static_cast<uint32_t>(m_materialData.size()) : kMaxMaterials;
+        if (count)
+        {
+            memcpy(m_materialMapped[frameIndex], m_materialData.data(), count * sizeof(S_MaterialRecord));
+            vmaFlushAllocation(m_api->vmaAllocator(), m_materialAllocs[frameIndex],
+                               0, count * sizeof(S_MaterialRecord));
+        }
+
+        VkDescriptorImageInfo imageInfos[kMaxTextures];
+        for (uint32_t t = 0; t < kMaxTextures; ++t)
+        {
+            auto* tex = static_cast<S_VulkanTexture*>(
+                t < m_textureData.size() ? m_textureData[t] : m_textureData[0]);
+            imageInfos[t].sampler     = m_textureSampler;
+            imageInfos[t].imageView   = tex->view();
+            imageInfos[t].imageLayout = tex->layout();
+        }
+
+        VkWriteDescriptorSet write{};
+        write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write.dstSet          = m_sets[frameIndex];
+        write.dstBinding      = 4;
+        write.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        write.descriptorCount = kMaxTextures;
+        write.pImageInfo      = imageInfos;
+        vkUpdateDescriptorSets(m_api->device(), 1, &write, 0, nullptr);
+
+        m_setVersion[frameIndex] = m_materialVersion;
+    }
+
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, layout,
                             1, 1, &m_sets[frameIndex], 0, nullptr);
 }
