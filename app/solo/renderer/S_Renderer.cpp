@@ -124,18 +124,43 @@ void S_Renderer::flushDraws(S_ShaderHandle shaderH, S_ShaderHandle skinnedShader
     auto* skinnedShader = getShader(skinnedShaderH);
     if( !shader ) return;
 
+    // static draws double as next frame's TLAS instances; skinned draws are
+    // captured with their palettes for the compute-skin + dynamic BLAS pre-pass
+    std::vector<S_VulkanRT::Instance>        rtInstances;
+    std::vector<S_VulkanRT::SkinnedInstance> rtSkinned;
+    rtInstances.reserve(m_queue.draws().size());
+
     std::vector<S_ResolvedDraw> staticDraws, skinnedDraws;
     staticDraws.reserve(m_queue.draws().size());
     for( const auto& draw : m_queue.draws() )
     {
         auto* mesh = getMesh(draw.mesh);
         if( !mesh ) continue;
+        if( draw.paletteOffset == S_NO_PALETTE && mesh->blasAddress() != 0 )
+            rtInstances.push_back({ mesh->blasAddress(), m_queue.transforms()[draw.instanceIndex] });
         // skinned draws fall back to the static shader (bind pose) when no skinned shader given
         if( skinnedShader && draw.paletteOffset != S_NO_PALETTE )
+        {
             skinnedDraws.push_back({ mesh, draw.instanceIndex, draw.materialID, draw.paletteOffset });
+
+            const uint32_t jointCount = mesh->skinJointCount();
+            if( jointCount && draw.paletteOffset + jointCount <= m_queue.palettes().size() )
+            {
+                S_VulkanRT::SkinnedInstance entry;
+                entry.mesh      = mesh;
+                entry.transform = m_queue.transforms()[draw.instanceIndex];
+                entry.palette.assign(m_queue.palettes().begin() + draw.paletteOffset,
+                                     m_queue.palettes().begin() + draw.paletteOffset + jointCount);
+                rtSkinned.push_back(std::move(entry));
+            }
+        }
         else
             staticDraws.push_back({ mesh, draw.instanceIndex, draw.materialID, S_NO_PALETTE });
     }
+
+    auto* vkApi = static_cast<S_VulkanRendererAPI*>(m_api.get());
+    vkApi->setRtInstances(std::move(rtInstances));
+    vkApi->setRtSkinnedInstances(std::move(rtSkinned));
 
     const auto& transforms = m_queue.transforms();
     const auto& palettes   = m_queue.palettes();

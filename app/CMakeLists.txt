@@ -82,6 +82,8 @@ set(SOURCE
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanMesh.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanPerFrame.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanBindless.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanRT.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanSkinning.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_RenderQueue.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_Animator.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/ui/S_ImGuiLayer.cpp

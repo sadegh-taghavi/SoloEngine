@@ -7,6 +7,9 @@ layout(location = 2) in vec4  inWeights;
 layout(set = 0, binding = 0) uniform PerFrame {
     mat4  VP;
     float time;
+    float rtShadows;
+    vec2  _pad;
+    vec4  lightDir;
 } perFrame;
 
 layout(set = 1, binding = 0) readonly buffer InstanceTransforms {
@@ -24,6 +27,7 @@ layout(push_constant) uniform PC {
 } pc;
 
 layout(location = 0) out vec3 outWorldPos;
+layout(location = 1) flat out vec4 outLightDirShadow;
 
 void main()
 {
@@ -35,6 +39,7 @@ void main()
     mat4 model    = transforms.data[pc.instanceIndex];
     vec4 worldPos = model * skin * vec4(inPosition, 1.0);
     outWorldPos   = worldPos.xyz;
+    outLightDirShadow = vec4(perFrame.lightDir.xyz, perFrame.rtShadows);
     gl_Position   = perFrame.VP * worldPos;
     gl_Position.y = -gl_Position.y;
 }

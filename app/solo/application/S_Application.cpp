@@ -118,8 +118,9 @@ void solo::S_Application::onCreateEvent()
 
         {
             S_PerFrameData pfd;
-            pfd.VP   = m_vCam->viewProjection();
-            pfd.time = elapsed;
+            pfd.VP        = m_vCam->viewProjection();
+            pfd.time      = elapsed;
+            pfd.rtShadows = m_rtShadows ? 1.0f : 0.0f;
             m_renderer->updatePerFrame(pfd);
         }
 
@@ -128,6 +129,7 @@ void solo::S_Application::onCreateEvent()
             ImGui::Text("%.1f fps (%.2f ms)", ImGui::GetIO().Framerate, 1000.0f / ImGui::GetIO().Framerate);
             ImGui::Text("audio voices: %u", m_audio->activeVoices());
             ImGui::Checkbox("Follow camera", &m_followCam);
+            ImGui::Checkbox("RT shadows", &m_rtShadows);
             ImGui::SeparatorText("Fox animation");
 
             auto* foxMesh = m_renderer->getMesh(m_foxMesh);

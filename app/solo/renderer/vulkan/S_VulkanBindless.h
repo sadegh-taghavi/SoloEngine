@@ -21,6 +21,7 @@ public:
 
     void uploadTransforms(const glm::mat4* transforms, uint32_t count, uint32_t frameIndex);
     void uploadPalettes(const glm::mat4* palettes, uint32_t count, uint32_t frameIndex);
+    void setTlas(const VkAccelerationStructureKHR* tlasPerFrame); // one-time write of binding 2
     void bind(VkCommandBuffer cmd, VkPipelineLayout layout, uint32_t frameIndex) const;
 
     VkDescriptorSetLayout setLayout() const { return m_setLayout; }

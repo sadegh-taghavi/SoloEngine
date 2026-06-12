@@ -1,5 +1,6 @@
 #pragma once
 #include "solo/mesh/S_Mesh.h"
+#include "S_VulkanRT.h"
 #include <vulkan/vulkan.h>
 #include <vk_mem_alloc.h>
 #include <string>
@@ -21,6 +22,7 @@ public:
     VkBuffer rtHitDataBuffer()    const { return m_rtHitDataBuffer; }
     VkBuffer skinBuffer()         const { return m_skinBuffer; }
     void     draw()               override;
+    uint64_t blasAddress()        const override { return m_blas.address; }
 
 private:
     static VkBuffer uploadBuffer(S_VulkanRendererAPI* api, const void* data, VkDeviceSize size,
@@ -38,6 +40,7 @@ private:
     VmaAllocation m_rtHitDataAlloc     = VK_NULL_HANDLE;
     VkBuffer      m_skinBuffer         = VK_NULL_HANDLE;
     VmaAllocation m_skinAlloc          = VK_NULL_HANDLE;
+    S_VulkanRT::Blas m_blas;
 };
 
 }

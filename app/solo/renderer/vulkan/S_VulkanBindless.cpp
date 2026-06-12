@@ -11,7 +11,7 @@ S_VulkanBindless::S_VulkanBindless(S_VulkanRendererAPI* api, uint32_t frameCount
 {
     VkDevice device = m_api->device();
 
-    VkDescriptorSetLayoutBinding bindings[2]{};
+    VkDescriptorSetLayoutBinding bindings[3]{};
     bindings[0].binding         = 0; // instance transforms
     bindings[0].descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     bindings[0].descriptorCount = 1;
@@ -20,21 +20,27 @@ S_VulkanBindless::S_VulkanBindless(S_VulkanRendererAPI* api, uint32_t frameCount
     bindings[1].descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     bindings[1].descriptorCount = 1;
     bindings[1].stageFlags      = VK_SHADER_STAGE_ALL_GRAPHICS;
+    bindings[2].binding         = 2; // scene TLAS for fragment ray queries
+    bindings[2].descriptorType  = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+    bindings[2].descriptorCount = 1;
+    bindings[2].stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
 
     VkDescriptorSetLayoutCreateInfo layoutCI{};
     layoutCI.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutCI.bindingCount = 2;
+    layoutCI.bindingCount = 3;
     layoutCI.pBindings    = bindings;
     VK_RESULT_CHECK( vkCreateDescriptorSetLayout(device, &layoutCI, S_VulkanAllocator(), &m_setLayout) )
 
-    VkDescriptorPoolSize poolSize{};
-    poolSize.type            = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    poolSize.descriptorCount = m_frameCount * 2;
+    VkDescriptorPoolSize poolSizes[2]{};
+    poolSizes[0].type            = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    poolSizes[0].descriptorCount = m_frameCount * 2;
+    poolSizes[1].type            = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+    poolSizes[1].descriptorCount = m_frameCount;
 
     VkDescriptorPoolCreateInfo poolCI{};
     poolCI.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolCI.poolSizeCount = 1;
-    poolCI.pPoolSizes    = &poolSize;
+    poolCI.poolSizeCount = 2;
+    poolCI.pPoolSizes    = poolSizes;
     poolCI.maxSets       = m_frameCount;
     VK_RESULT_CHECK( vkCreateDescriptorPool(device, &poolCI, S_VulkanAllocator(), &m_pool) )
 
@@ -100,6 +106,26 @@ S_VulkanBindless::~S_VulkanBindless()
     }
     vkDestroyDescriptorPool(m_api->device(), m_pool,      S_VulkanAllocator());
     vkDestroyDescriptorSetLayout(m_api->device(), m_setLayout, S_VulkanAllocator());
+}
+
+void S_VulkanBindless::setTlas(const VkAccelerationStructureKHR* tlasPerFrame)
+{
+    for (uint32_t i = 0; i < m_frameCount; ++i)
+    {
+        VkWriteDescriptorSetAccelerationStructureKHR asWrite{};
+        asWrite.sType                      = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+        asWrite.accelerationStructureCount = 1;
+        asWrite.pAccelerationStructures    = &tlasPerFrame[i];
+
+        VkWriteDescriptorSet write{};
+        write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write.pNext           = &asWrite;
+        write.dstSet          = m_sets[i];
+        write.dstBinding      = 2;
+        write.descriptorType  = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+        write.descriptorCount = 1;
+        vkUpdateDescriptorSets(m_api->device(), 1, &write, 0, nullptr);
+    }
 }
 
 void S_VulkanBindless::uploadTransforms(const glm::mat4* transforms, uint32_t count, uint32_t frameIndex)

@@ -582,6 +582,7 @@ void queryPath( std::vector<std::string> *filesPathList, std::string *filesHash,
 
     std::string vsShaderExt  = ".vert";
     std::string psShaderExt  = ".frag";
+    std::string csShaderExt  = ".comp";
     std::string gltfExt      = ".gltf";
     std::string glbExt       = ".glb";
     std::string meshBinExt   = ".mesh.bin";
@@ -601,6 +602,7 @@ void queryPath( std::vector<std::string> *filesPathList, std::string *filesHash,
 
         if (endsWith(strPath, ".vertc") || endsWith(strPath, ".fragc") ||
             endsWith(strPath, ".vertr") || endsWith(strPath, ".fragr") ||
+            endsWith(strPath, ".compc") ||
             endsWith(strPath, meshBinExt) || endsWith(strPath, ".ui.bin"))
             continue;
 
@@ -627,6 +629,25 @@ void queryPath( std::vector<std::string> *filesPathList, std::string *filesHash,
         if (endsWith(strPath, gltfBinExt))
             continue;
 
+        if (endsWith(strPath, csShaderExt))
+        {
+            // compute shaders: compile only, engine-side layouts need no reflection
+            std::string strTemp = strPath;
+#ifdef S_PLATFORM_WINDOWS
+            std::replace(strTemp.begin(), strTemp.end(), '/', '\\');
+#endif
+            std::string glslcCmd = std::string(VULKAN_SDK) + "/bin/glslc --target-env=vulkan1.2 "
+                                 + strTemp + " -o " + strTemp + "c";
+            std::cout << glslcCmd << std::endl;
+            if (system(glslcCmd.c_str()) != 0)
+            {
+                std::cout << "Compute shader compile FAILED: " << strPath << std::endl;
+                continue;
+            }
+            filesPathList->push_back(strPath + "c");
+            continue;
+        }
+
         if (endsWith(strPath, vsShaderExt) || endsWith(strPath, psShaderExt))
         {
             std::string strTemp;
@@ -639,7 +660,7 @@ void queryPath( std::vector<std::string> *filesPathList, std::string *filesHash,
                     strTemp += strPath.at(i);
             }
 
-            std::string glslcCmd = std::string(VULKAN_SDK) + "/bin/glslc " + strTemp + " -o " + strTemp + "c";
+            std::string glslcCmd = std::string(VULKAN_SDK) + "/bin/glslc --target-env=vulkan1.2 " + strTemp + " -o " + strTemp + "c";
             std::string spirvCmd = std::string(VULKAN_SDK) + "/bin/spirv-cross " + strTemp + "c --reflect > " + strTemp + "_temp";
             std::cout << glslcCmd << std::endl;
             std::cout << spirvCmd << std::endl;

@@ -39,6 +39,7 @@ private:
     std::unique_ptr<S_UI> m_ui;
     float                m_foxHeading = 0.0f;
     bool                 m_followCam  = true;
+    bool                 m_rtShadows  = true;
     std::unique_ptr<S_Physics>   m_physics;
     std::unique_ptr<S_Character> m_foxCharacter;
     std::unique_ptr<S_Audio>   m_audio;

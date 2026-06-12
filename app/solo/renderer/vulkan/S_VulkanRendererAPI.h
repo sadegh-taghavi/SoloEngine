@@ -1,6 +1,7 @@
 #pragma once
 #include "solo/renderer/S_RendererAPI.h"
 #include "S_VulkanPipeline.h"
+#include "S_VulkanRT.h"
 #include <vector>
 #include <string>
 #include "solo/debug/S_Debug.h"
@@ -95,6 +96,13 @@ public:
                                      uint32_t         paletteCount = 0);
     S_VulkanPerFrame*  perFrame()  const;
     S_VulkanBindless*  bindless()  const;
+    S_VulkanRT*        rt()        const;
+
+    // static-draw instances used to build the next frame's TLAS (one frame stale)
+    void setRtInstances(std::vector<S_VulkanRT::Instance>&& instances);
+
+    // skinned draws for the next frame's compute-skin + dynamic BLAS pre-pass
+    void setRtSkinnedInstances(std::vector<S_VulkanRT::SkinnedInstance>&& instances);
 
     VkInstance instance() const;
 
@@ -232,6 +240,10 @@ private:
     VmaAllocator m_vmaAllocator;
     std::unique_ptr<S_VulkanItemsManager> m_itemsManager;
     std::unique_ptr<S_VulkanPerFrame>     m_perFrame;
+    std::unique_ptr<S_VulkanRT>           m_rt;
+    std::unique_ptr<class S_VulkanSkinning> m_skinning;
+    std::vector<S_VulkanRT::Instance>        m_rtInstances;
+    std::vector<S_VulkanRT::SkinnedInstance> m_rtSkinned;
     std::unique_ptr<S_VulkanBindless>     m_bindless;
     std::unique_ptr<class S_ImGuiLayer>   m_imguiLayer;
     VkPhysicalDeviceProperties m_physicalDeviceProperties;

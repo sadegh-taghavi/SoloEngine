@@ -46,6 +46,7 @@ public:
     const std::vector<MeshBinPrimitive>& primitives() const;
     bool                             isSkinned()      const;
     virtual void                     draw()            {}
+    virtual uint64_t                 blasAddress() const { return 0; } // RT BLAS, 0 = not built
 
     uint32_t                            skinJointCount() const { return m_skinJointCount; }
     const std::vector<S_Joint>&         joints()         const { return m_joints; }

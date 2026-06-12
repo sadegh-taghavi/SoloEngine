@@ -12,6 +12,7 @@
 #include "S_VulkanShader.h"
 #include "S_VulkanPerFrame.h"
 #include "S_VulkanBindless.h"
+#include "S_VulkanSkinning.h"
 #include "solo/ui/S_ImGuiLayer.h"
 #include "solo/ui/S_UI.h"
 #include "solo/renderer/S_PerFrame.h"
@@ -84,7 +85,7 @@ void S_VulkanRendererAPI::createInstance()
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "Solo";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_0;
+    appInfo.apiVersion = VK_API_VERSION_1_2; // ray query needs BDA (core 1.2)
     VkInstanceCreateInfo instanceCreateInfo = {};
     instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     instanceCreateInfo.pApplicationInfo = &appInfo;
@@ -351,15 +352,38 @@ void S_VulkanRendererAPI::createDevice()
 
     VkPhysicalDeviceFeatures enableDeviceFeatures = {};
 
+    // ray tracing feature chain (targets are RT-capable by project decision)
+    VkPhysicalDeviceVulkan12Features features12 = {};
+    features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+    features12.bufferDeviceAddress = VK_TRUE;
+    features12.descriptorIndexing  = VK_TRUE;
+
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR asFeatures = {};
+    asFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+    asFeatures.accelerationStructure = VK_TRUE;
+    asFeatures.pNext = &features12;
+
+    VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures = {};
+    rayQueryFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+    rayQueryFeatures.rayQuery = VK_TRUE;
+    rayQueryFeatures.pNext = &asFeatures;
+
     VkDeviceCreateInfo deviceCreateInfo = {};
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    deviceCreateInfo.pNext = &rayQueryFeatures;
     deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
     deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
     deviceCreateInfo.pEnabledFeatures = &enableDeviceFeatures;
 
     S_VulkanItemsDeviceExtensionRequest deviceExtensions;
     deviceExtensions.addRequestItem(VK_KHR_SWAPCHAIN_EXTENSION_NAME );
+    deviceExtensions.addRequestItem(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME );
+    deviceExtensions.addRequestItem(VK_KHR_RAY_QUERY_EXTENSION_NAME );
+    deviceExtensions.addRequestItem(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME );
     deviceExtensions.queryItems( this );
+
+    if( deviceExtensions.enabledItems()->size() < 4 )
+        s_debugLayer( "WARNING: ray tracing extensions missing on this device — RT shadows will fail" );
 
     deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.enabledItems()->size());
     deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.enabledItems()->data();
@@ -383,7 +407,8 @@ void S_VulkanRendererAPI::createDevice()
     vkGetDeviceQueue(m_device, static_cast<uint32_t>( selectedQueueIndices.IndexTransfer ), 0, &m_transferQueue );
     vkGetDeviceQueue(m_device, static_cast<uint32_t>( selectedQueueIndices.IndexPresent ), 0, &m_presentQueue );
     VmaAllocatorCreateInfo allocatorInfo = {};
-    allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_0;
+    allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_2;
+    allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
     allocatorInfo.physicalDevice = m_physicalDevice;
     allocatorInfo.device = m_device;
     allocatorInfo.instance = m_instance;
@@ -999,7 +1024,17 @@ S_VulkanRendererAPI::S_VulkanRendererAPI() : S_RendererAPI (), m_nextFrameRender
     m_pipelines = std::make_unique<S_VulkanPipeline>( this );
     m_itemsManager = std::make_unique<S_VulkanItemsManager>(this);
     m_perFrame     = std::make_unique<S_VulkanPerFrame>(this, m_MAX_FRAMES_IN_FLIGHT, sizeof(S_PerFrameData));
+    m_rt           = std::make_unique<S_VulkanRT>(this, m_MAX_FRAMES_IN_FLIGHT);
+    if( m_rt->available() )
+        m_skinning = std::make_unique<S_VulkanSkinning>(this, m_MAX_FRAMES_IN_FLIGHT);
     m_bindless     = std::make_unique<S_VulkanBindless>(this, m_MAX_FRAMES_IN_FLIGHT);
+    if( m_rt->available() )
+    {
+        VkAccelerationStructureKHR tlases[m_MAX_FRAMES_IN_FLIGHT];
+        for( uint32_t i = 0; i < m_MAX_FRAMES_IN_FLIGHT; ++i )
+            tlases[i] = m_rt->tlas(i);
+        m_bindless->setTlas(tlases);
+    }
     createDepthResources();
     createFramebuffers();
     createCommandPool();
@@ -1044,6 +1079,8 @@ S_VulkanRendererAPI::~S_VulkanRendererAPI()
     destroyWindowSurface();
     m_bindless.reset();
     m_perFrame.reset();
+    m_skinning.reset();
+    m_rt.reset();
     vmaDestroyAllocator( m_vmaAllocator );
     vkDestroyDevice( m_device, S_VulkanAllocator() );
 #if defined( SOLO_ENABLE_DEBUG_LAYER ) && defined (SOLO_ENABLE_VULKAN_VALIDATION_LAYER)
@@ -1116,6 +1153,48 @@ void S_VulkanRendererAPI::drawFrame()
     m_imguiLayer->newFrame(m_swapChainExtent.width, m_swapChainExtent.height);
     if( S_UI::instance() )
         S_UI::instance()->beginFrame(m_swapChainExtent.width, m_swapChainExtent.height);
+
+    // TLAS for this frame from last frame's draw list (one frame stale); must
+    // be recorded outside the render pass. Indexed by swapchain image to match
+    // the bindless set that exposes it (binding 2).
+    if( m_rt->available() )
+    {
+        // skinned meshes: compute-skin positions, rebuild their BLASes in-cmd,
+        // then they join the TLAS like any static instance
+        std::vector<S_VulkanRT::Instance> allInstances = m_rtInstances;
+        if( !m_rtSkinned.empty() && m_skinning && m_skinning->available() )
+        {
+            m_skinning->beginFrame(m_nextSwapchainImageIndex);
+            std::vector<VkBuffer> skinnedBuffers(m_rtSkinned.size(), VK_NULL_HANDLE);
+            bool anyDispatched = false;
+            for( size_t i = 0; i < m_rtSkinned.size(); ++i )
+            {
+                auto& entry = m_rtSkinned[i];
+                skinnedBuffers[i] = m_skinning->dispatch(
+                    m_nextFrameRenderCommandBuffer, static_cast<S_VulkanMesh*>(entry.mesh),
+                    entry.palette.data(), static_cast<uint32_t>(entry.palette.size()),
+                    m_nextSwapchainImageIndex);
+                anyDispatched = anyDispatched || skinnedBuffers[i] != VK_NULL_HANDLE;
+            }
+            if( anyDispatched )
+            {
+                m_skinning->barrierToAsBuild(m_nextFrameRenderCommandBuffer);
+                for( size_t i = 0; i < m_rtSkinned.size(); ++i )
+                {
+                    if( skinnedBuffers[i] == VK_NULL_HANDLE ) continue;
+                    auto* mesh = static_cast<S_VulkanMesh*>(m_rtSkinned[i].mesh);
+                    VkDeviceAddress addr = m_rt->buildDynamicBlas(
+                        m_nextFrameRenderCommandBuffer, mesh, skinnedBuffers[i],
+                        mesh->vertexCount(), mesh->indexBuffer(), mesh->indexCount(),
+                        m_nextSwapchainImageIndex);
+                    if( addr )
+                        allInstances.push_back({ addr, m_rtSkinned[i].transform });
+                }
+                m_rt->barrierBlasToTlas(m_nextFrameRenderCommandBuffer);
+            }
+        }
+        m_rt->buildTlas(m_nextFrameRenderCommandBuffer, allInstances, m_nextSwapchainImageIndex);
+    }
 
     vkCmdBeginRenderPass( m_nextFrameRenderCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE );
 
@@ -1244,6 +1323,21 @@ S_VulkanBindless* S_VulkanRendererAPI::bindless() const  { return m_bindless.get
 uint32_t S_VulkanRendererAPI::graphicsQueueFamilyIndex()
 {
     return static_cast<uint32_t>( findQueueFamilies(m_physicalDevice).IndexGraphics );
+}
+
+S_VulkanRT* S_VulkanRendererAPI::rt() const
+{
+    return m_rt.get();
+}
+
+void S_VulkanRendererAPI::setRtInstances(std::vector<S_VulkanRT::Instance>&& instances)
+{
+    m_rtInstances = std::move(instances);
+}
+
+void S_VulkanRendererAPI::setRtSkinnedInstances(std::vector<S_VulkanRT::SkinnedInstance>&& instances)
+{
+    m_rtSkinned = std::move(instances);
 }
 
 uint32_t S_VulkanRendererAPI::swapchainImageCount() const

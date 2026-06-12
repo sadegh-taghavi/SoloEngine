@@ -93,14 +93,18 @@ S_VulkanMesh::S_VulkanMesh(S_VulkanRendererAPI* api, const std::string& path)
 
     const uint8_t* d = fileData.data();
 
+    constexpr VkBufferUsageFlags kAsInputUsage =
+        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
+        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
     m_indexBuffer = uploadBuffer(api, d + header.indexOffset,
         header.indexCount * sizeof(uint32_t),
-        VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | kAsInputUsage,
         m_indexAlloc);
 
     m_positionBuffer = uploadBuffer(api, d + header.positionOffset,
         header.vertexCount * sizeof(MeshBinPosition),
-        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | kAsInputUsage,
         m_positionAlloc);
 
     m_rasterAttribBuffer = uploadBuffer(api, d + header.rasterAttribOffset,
@@ -122,6 +126,10 @@ S_VulkanMesh::S_VulkanMesh(S_VulkanRendererAPI* api, const std::string& path)
     }
 
     loadAnimationData(d, header);
+
+    if (api->rt() && api->rt()->available())
+        m_blas = api->rt()->buildBlas(m_positionBuffer, header.vertexCount,
+                                      m_indexBuffer, header.indexCount);
 }
 
 void S_VulkanMesh::draw()
@@ -140,6 +148,7 @@ void S_VulkanMesh::draw()
 S_VulkanMesh::~S_VulkanMesh()
 {
     auto vma = m_api->vmaAllocator();
+    if (m_blas.as && m_api->rt()) m_api->rt()->destroyBlas(m_blas);
     if (m_indexBuffer)        vmaDestroyBuffer(vma, m_indexBuffer,        m_indexAlloc);
     if (m_positionBuffer)     vmaDestroyBuffer(vma, m_positionBuffer,     m_positionAlloc);
     if (m_rasterAttribBuffer) vmaDestroyBuffer(vma, m_rasterAttribBuffer, m_rasterAttribAlloc);

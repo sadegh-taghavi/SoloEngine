@@ -1,0 +1,48 @@
+#version 460
+
+// palette skinning of the padded position stream into a per-frame buffer the
+// RT BLAS rebuild consumes; mirrors skinned.vert exactly (mesh-space output,
+// instance transform stays in the TLAS instance)
+layout(local_size_x = 64) in;
+
+struct Pos { float x, y, z, pad; };
+
+layout(set = 0, binding = 0) readonly buffer SrcPositions {
+    Pos data[];
+} src;
+
+// MeshBinSkinVertex: uint8 joints[4] + uint8 weights[4] = one uvec2
+layout(set = 0, binding = 1) readonly buffer SkinVertices {
+    uvec2 data[];
+} skinv;
+
+layout(set = 0, binding = 2) readonly buffer Palettes {
+    mat4 data[];
+} palettes;
+
+layout(set = 0, binding = 3) writeonly buffer DstPositions {
+    Pos data[];
+} dst;
+
+layout(push_constant) uniform PC {
+    uint vertexCount;
+    uint paletteBase;
+} pc;
+
+void main()
+{
+    uint i = gl_GlobalInvocationID.x;
+    if (i >= pc.vertexCount)
+        return;
+
+    uvec2 sk = skinv.data[i];
+    vec4  w  = unpackUnorm4x8(sk.y);
+
+    mat4 skin = w.x * palettes.data[pc.paletteBase + ( sk.x         & 0xFFu)]
+              + w.y * palettes.data[pc.paletteBase + ((sk.x >>  8u) & 0xFFu)]
+              + w.z * palettes.data[pc.paletteBase + ((sk.x >> 16u) & 0xFFu)]
+              + w.w * palettes.data[pc.paletteBase + ((sk.x >> 24u) & 0xFFu)];
+
+    vec4 p = skin * vec4(src.data[i].x, src.data[i].y, src.data[i].z, 1.0);
+    dst.data[i] = Pos(p.x, p.y, p.z, 0.0);
+}
