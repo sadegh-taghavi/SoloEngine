@@ -90,7 +90,9 @@ public:
     virtual void    flushRenderQueue(S_Shader* shader,
                                      const std::vector<S_ResolvedDraw>& draws,
                                      const glm::mat4* transforms,
-                                     uint32_t instanceCount);
+                                     uint32_t instanceCount,
+                                     const glm::mat4* palettes     = nullptr,
+                                     uint32_t         paletteCount = 0);
     S_VulkanPerFrame*  perFrame()  const;
     S_VulkanBindless*  bindless()  const;
 
@@ -111,6 +113,10 @@ public:
     VkRenderPass renderPass() const;
 
     VkExtent2D swapChainExtent() const;
+
+    uint32_t graphicsQueueFamilyIndex();
+
+    uint32_t swapchainImageCount() const;
 
     VkPhysicalDeviceMemoryProperties *physicalDeviceMemoryProperties();
 
@@ -227,6 +233,7 @@ private:
     std::unique_ptr<S_VulkanItemsManager> m_itemsManager;
     std::unique_ptr<S_VulkanPerFrame>     m_perFrame;
     std::unique_ptr<S_VulkanBindless>     m_bindless;
+    std::unique_ptr<class S_ImGuiLayer>   m_imguiLayer;
     VkPhysicalDeviceProperties m_physicalDeviceProperties;
 
     VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);

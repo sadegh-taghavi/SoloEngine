@@ -50,7 +50,9 @@ public:
     void              updatePerFrame(const S_PerFrameData& data);
     uint32_t          createMaterial();
     void              submitDraw(S_MeshHandle mesh, const glm::mat4& transform, uint32_t materialID = 0);
-    void              flushDraws(S_ShaderHandle shader);
+    void              submitDraw(S_MeshHandle mesh, const glm::mat4& transform, uint32_t materialID,
+                                 const std::vector<glm::mat4>& jointPalette);
+    void              flushDraws(S_ShaderHandle shader, S_ShaderHandle skinnedShader = S_ShaderHandle());
     void              clearDraws();
 
     void createGraphicsPipeline(const std::vector<S_PipelineDescriptor> &descriptors);

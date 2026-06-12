@@ -77,6 +77,12 @@ S_VulkanMesh::S_VulkanMesh(S_VulkanRendererAPI* api, const std::string& path)
         return;
     }
 
+    if (header.version != MESH_BIN_VERSION)
+    {
+        s_debugLayer("S_VulkanMesh: unsupported version", path, header.version);
+        return;
+    }
+
     m_vertexCount = header.vertexCount;
     m_indexCount  = header.indexCount;
     m_flags       = header.flags;
@@ -111,10 +117,11 @@ S_VulkanMesh::S_VulkanMesh(S_VulkanRendererAPI* api, const std::string& path)
     {
         m_skinBuffer = uploadBuffer(api, d + header.skinOffset,
             header.vertexCount * sizeof(MeshBinSkinVertex),
-            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
             m_skinAlloc);
     }
 
+    loadAnimationData(d, header);
 }
 
 void S_VulkanMesh::draw()
@@ -122,6 +129,8 @@ void S_VulkanMesh::draw()
     VkCommandBuffer cmd    = m_api->nextFrameRenderCommandBuffer();
     VkDeviceSize    offset = 0;
     vkCmdBindVertexBuffers(cmd, 0, 1, &m_positionBuffer, &offset);
+    if (m_skinBuffer) // binding 1 feeds the skinned pipeline; unused bindings are ignored
+        vkCmdBindVertexBuffers(cmd, 1, 1, &m_skinBuffer, &offset);
     vkCmdBindIndexBuffer(cmd, m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
     for (const auto& prim : m_primitives)
         vkCmdDrawIndexed(cmd, prim.indexCount, 1, prim.indexOffset,

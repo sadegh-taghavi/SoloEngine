@@ -23,6 +23,7 @@ struct S_ResolvedDraw
     S_Mesh*  mesh;
     uint32_t instanceIndex;
     uint32_t materialID;
+    uint32_t paletteOffset; // index into uploaded palette buffer, S_NO_PALETTE for static
 };
 
 class S_RendererAPI
@@ -41,7 +42,9 @@ public:
     virtual void    flushRenderQueue(S_Shader* shader,
                                      const std::vector<S_ResolvedDraw>& draws,
                                      const glm::mat4* transforms,
-                                     uint32_t instanceCount) = 0;
+                                     uint32_t instanceCount,
+                                     const glm::mat4* palettes     = nullptr,
+                                     uint32_t         paletteCount = 0) = 0;
 
     virtual void createGraphicsPipeline(const std::vector<S_PipelineDescriptor> &descriptors) = 0;
     void setRenderCallback(std::function<void()> callback) { m_renderCallback = std::move(callback); }

@@ -130,18 +130,18 @@ void S_VulkanPipeline::create( const std::vector<S_PipelineDescriptor> *descript
         }
 
         uint32_t location = 0;
-        auto fillVertexBindingsAndAttributes = [&attributeDescriptions, &bindingDescriptions, i, &location](const S_VertexBufferDescriptorArray &descriptorArray, bool instance)
+        auto fillVertexBindingsAndAttributes = [&attributeDescriptions, &bindingDescriptions, i, &location](const S_VertexBufferDescriptorArray &descriptorArray, uint32_t binding, VkVertexInputRate inputRate)
         {
             VkVertexInputBindingDescription vertexInputBindingDescription;
 
-            vertexInputBindingDescription.binding = instance ? 1 : 0;
-            vertexInputBindingDescription.inputRate = instance ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
+            vertexInputBindingDescription.binding = binding;
+            vertexInputBindingDescription.inputRate = inputRate;
             vertexInputBindingDescription.stride = descriptorArray.stride();
 
             bindingDescriptions.at(i).push_back( vertexInputBindingDescription );
 
             VkVertexInputAttributeDescription vertexInputAttributeDescription = {};
-            vertexInputAttributeDescription.binding = instance ? 1 : 0;
+            vertexInputAttributeDescription.binding = binding;
             for(const auto vertexBufferDesriptor: *descriptorArray.descriptors() )
             {
                 vertexInputAttributeDescription.format = static_cast<VkFormat>(vertexBufferDesriptor.Format);
@@ -152,9 +152,11 @@ void S_VulkanPipeline::create( const std::vector<S_PipelineDescriptor> *descript
             }
         };
 
-        fillVertexBindingsAndAttributes( m_descriptors.at(i).VertexBufferDescriptorArray, false );
+        fillVertexBindingsAndAttributes( m_descriptors.at(i).VertexBufferDescriptorArray, 0, VK_VERTEX_INPUT_RATE_VERTEX );
         if(m_descriptors.at(i).InstanceBufferDescriptorArray.stride() > 0 )
-            fillVertexBindingsAndAttributes( m_descriptors.at(i).InstanceBufferDescriptorArray, true );
+            fillVertexBindingsAndAttributes( m_descriptors.at(i).InstanceBufferDescriptorArray, 1, VK_VERTEX_INPUT_RATE_INSTANCE );
+        if(m_descriptors.at(i).SkinBufferDescriptorArray.stride() > 0 )
+            fillVertexBindingsAndAttributes( m_descriptors.at(i).SkinBufferDescriptorArray, 1, VK_VERTEX_INPUT_RATE_VERTEX );
 
         vertexInputInfos[i].sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         vertexInputInfos[i].vertexBindingDescriptionCount = static_cast<uint32_t>( bindingDescriptions.at(i).size() );
@@ -255,7 +257,7 @@ void S_VulkanPipeline::create( const std::vector<S_PipelineDescriptor> *descript
         VkPushConstantRange pcRange{};
         pcRange.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
         pcRange.offset     = 0;
-        pcRange.size       = 8;
+        pcRange.size       = 16; // instanceIndex, materialID, paletteOffset, pad
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
         pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;

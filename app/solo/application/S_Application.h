@@ -2,6 +2,8 @@
 #include "solo/platforms/S_BaseApplication.h"
 #include "solo/renderer/S_Renderer.h"
 #include "solo/renderer/S_Scene.h"
+#include "solo/renderer/S_Animator.h"
+#include "solo/ui/S_UI.h"
 #include "solo/pack/S_Pack.h"
 #include <chrono>
 #include <memory>
@@ -31,7 +33,12 @@ private:
     S_TextureHandle      m_vTexture;
     S_SamplerHandle      m_vSampler;
     S_ShaderHandle       m_meshShader;
+    S_ShaderHandle       m_skinnedShader;
     S_Scene              m_scene;
+    S_MeshHandle         m_foxMesh;
+    std::unique_ptr<S_Animator> m_foxAnimator;
+    uint32_t             m_foxNode = 0;
+    std::unique_ptr<S_UI> m_ui;
     std::shared_ptr<class S_CameraPerspective> m_vCam;
     std::shared_ptr<class S_FirstPersonCameraController> m_vCamController;
     std::chrono::steady_clock::time_point m_startTime;

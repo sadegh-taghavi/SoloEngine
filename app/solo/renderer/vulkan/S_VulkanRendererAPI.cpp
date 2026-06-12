@@ -12,6 +12,8 @@
 #include "S_VulkanShader.h"
 #include "S_VulkanPerFrame.h"
 #include "S_VulkanBindless.h"
+#include "solo/ui/S_ImGuiLayer.h"
+#include "solo/ui/S_UI.h"
 #include "solo/renderer/S_PerFrame.h"
 #include "solo/renderer/S_RendererAPI.h"
 #include "solo/platforms/S_Window.h"
@@ -735,6 +737,10 @@ void S_VulkanRendererAPI::recreateSwapChain()
     createFramebuffers();
     createCommandBuffers();
     m_imagesInFlight.assign( m_swapChainImages.size(), nullptr );
+
+    m_imguiLayer.reset(); // render pass changed — lazily re-initialized next frame
+    if( S_UI::instance() )
+        S_UI::instance()->onSwapchainRecreated();
 }
 
 VkFormat S_VulkanRendererAPI::findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
@@ -1024,6 +1030,7 @@ void S_VulkanRendererAPI::cleanupSwapChain()
 S_VulkanRendererAPI::~S_VulkanRendererAPI()
 {
     vkDeviceWaitIdle( m_device );
+    m_imguiLayer.reset(); // must release its Vulkan objects before the device goes away
     m_itemsManager->destroy();
     cleanupSwapChain();
     for ( size_t i = 0; i < m_MAX_FRAMES_IN_FLIGHT; ++i )
@@ -1052,6 +1059,8 @@ void S_VulkanRendererAPI::drawFrame()
         return;
     if( m_pipelines->pipelines()->empty() )
         return;
+    if( !m_imguiLayer )
+        m_imguiLayer = std::make_unique<S_ImGuiLayer>(this);
     static S_ElapsedTime et;
     //    s_debug( "ELAPSSSSSED:", et.restart() / 1000 );
 //    S_Thread::sleep( 10 );
@@ -1104,10 +1113,19 @@ void S_VulkanRendererAPI::drawFrame()
     renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
     renderPassInfo.pClearValues = clearValues.data();
 
+    m_imguiLayer->newFrame(m_swapChainExtent.width, m_swapChainExtent.height);
+    if( S_UI::instance() )
+        S_UI::instance()->beginFrame(m_swapChainExtent.width, m_swapChainExtent.height);
+
     vkCmdBeginRenderPass( m_nextFrameRenderCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE );
 
     if( m_renderCallback )
         m_renderCallback();
+
+    if( S_UI::instance() )
+        S_UI::instance()->record(m_nextFrameRenderCommandBuffer, m_nextSwapchainImageIndex);
+
+    m_imguiLayer->render(m_nextFrameRenderCommandBuffer);
 
     vkCmdEndRenderPass( m_nextFrameRenderCommandBuffer );
     VK_RESULT_CHECK( vkEndCommandBuffer( m_nextFrameRenderCommandBuffer ) );
@@ -1223,10 +1241,22 @@ VkDescriptorSet S_VulkanRendererAPI::currentPerFrameSet() const
 S_VulkanPerFrame* S_VulkanRendererAPI::perFrame() const  { return m_perFrame.get(); }
 S_VulkanBindless* S_VulkanRendererAPI::bindless() const  { return m_bindless.get(); }
 
+uint32_t S_VulkanRendererAPI::graphicsQueueFamilyIndex()
+{
+    return static_cast<uint32_t>( findQueueFamilies(m_physicalDevice).IndexGraphics );
+}
+
+uint32_t S_VulkanRendererAPI::swapchainImageCount() const
+{
+    return static_cast<uint32_t>( m_swapChainImages.size() );
+}
+
 void S_VulkanRendererAPI::flushRenderQueue(S_Shader* shader,
                                             const std::vector<S_ResolvedDraw>& draws,
                                             const glm::mat4* transforms,
-                                            uint32_t instanceCount)
+                                            uint32_t instanceCount,
+                                            const glm::mat4* palettes,
+                                            uint32_t paletteCount)
 {
     if( draws.empty() ) return;
 
@@ -1234,12 +1264,14 @@ void S_VulkanRendererAPI::flushRenderQueue(S_Shader* shader,
     VkCommandBuffer cmd = m_nextFrameRenderCommandBuffer;
 
     m_bindless->uploadTransforms(transforms, instanceCount, m_nextSwapchainImageIndex);
+    if( palettes && paletteCount )
+        m_bindless->uploadPalettes(palettes, paletteCount, m_nextSwapchainImageIndex);
     m_bindless->bind(cmd, vkShader->pipelineLayout(), m_nextSwapchainImageIndex);
 
     for( const auto& draw : draws )
     {
-        struct PC { uint32_t instanceIndex; uint32_t materialID; };
-        PC pc = { draw.instanceIndex, draw.materialID };
+        struct PC { uint32_t instanceIndex; uint32_t materialID; uint32_t paletteOffset; uint32_t pad; };
+        PC pc = { draw.instanceIndex, draw.materialID, draw.paletteOffset, 0 };
         vkCmdPushConstants(cmd, vkShader->pipelineLayout(), VK_SHADER_STAGE_ALL_GRAPHICS,
                            0, sizeof(PC), &pc);
         static_cast<S_VulkanMesh*>( draw.mesh )->draw();

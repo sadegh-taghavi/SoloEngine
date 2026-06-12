@@ -110,26 +110,52 @@ void S_Renderer::submitDraw(S_MeshHandle mesh, const glm::mat4& transform, uint3
     m_queue.submit(mesh, transform, materialID);
 }
 
-void S_Renderer::flushDraws(S_ShaderHandle shaderH)
+void S_Renderer::submitDraw(S_MeshHandle mesh, const glm::mat4& transform, uint32_t materialID,
+                            const std::vector<glm::mat4>& jointPalette)
+{
+    m_queue.submit(mesh, transform, materialID,
+                   jointPalette.data(), static_cast<uint32_t>(jointPalette.size()));
+}
+
+void S_Renderer::flushDraws(S_ShaderHandle shaderH, S_ShaderHandle skinnedShaderH)
 {
     if( m_queue.empty() ) return;
-    auto* shader = getShader(shaderH);
+    auto* shader        = getShader(shaderH);
+    auto* skinnedShader = getShader(skinnedShaderH);
     if( !shader ) return;
 
-    shader->bind();
-    shader->commit();
-
-    std::vector<S_ResolvedDraw> resolved;
-    resolved.reserve(m_queue.draws().size());
+    std::vector<S_ResolvedDraw> staticDraws, skinnedDraws;
+    staticDraws.reserve(m_queue.draws().size());
     for( const auto& draw : m_queue.draws() )
     {
         auto* mesh = getMesh(draw.mesh);
-        if( mesh ) resolved.push_back({ mesh, draw.instanceIndex, draw.materialID });
+        if( !mesh ) continue;
+        // skinned draws fall back to the static shader (bind pose) when no skinned shader given
+        if( skinnedShader && draw.paletteOffset != S_NO_PALETTE )
+            skinnedDraws.push_back({ mesh, draw.instanceIndex, draw.materialID, draw.paletteOffset });
+        else
+            staticDraws.push_back({ mesh, draw.instanceIndex, draw.materialID, S_NO_PALETTE });
     }
 
-    m_api->flushRenderQueue(shader, resolved,
-                             m_queue.transforms().data(),
-                             static_cast<uint32_t>(m_queue.transforms().size()));
+    const auto& transforms = m_queue.transforms();
+    const auto& palettes   = m_queue.palettes();
+
+    if( !staticDraws.empty() )
+    {
+        shader->bind();
+        shader->commit();
+        m_api->flushRenderQueue(shader, staticDraws,
+                                 transforms.data(), static_cast<uint32_t>(transforms.size()));
+    }
+
+    if( skinnedShader && !skinnedDraws.empty() )
+    {
+        skinnedShader->bind();
+        skinnedShader->commit();
+        m_api->flushRenderQueue(skinnedShader, skinnedDraws,
+                                 transforms.data(), static_cast<uint32_t>(transforms.size()),
+                                 palettes.data(),   static_cast<uint32_t>(palettes.size()));
+    }
 }
 
 void S_Renderer::clearDraws()

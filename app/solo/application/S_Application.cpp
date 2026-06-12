@@ -9,6 +9,8 @@
 #include "solo/renderer/S_PerFrame.h"
 #include "solo/renderer/S_Camera.h"
 #include "solo/renderer/S_CameraController.h"
+#include "solo/renderer/vulkan/S_VulkanRendererAPI.h"
+#include <imgui.h>
 #include <list>
 
 using namespace solo;
@@ -65,13 +67,42 @@ void solo::S_Application::onCreateEvent()
     meshPd.Shader           = m_renderer->getShader(m_meshShader);
     meshPd.UseEngineGlobals = true;
 
-    m_renderer->createGraphicsPipeline({ pd, meshPd });
+    m_skinnedShader = m_renderer->createShader("shaders/skinned", "shaders/mesh", "", "");
+
+    std::vector<S_VertexBufferDescriptor> skinDescs(2);
+    skinDescs[0].Size   = static_cast<uint32_t>(sizeof(uint8_t) * 4);
+    skinDescs[0].Offset = static_cast<uint32_t>(offsetof(MeshBinSkinVertex, joints));
+    skinDescs[0].Format = S_VertexBufferDescriptorFormat::R8G8B8A8_UINT;
+    skinDescs[1].Size   = static_cast<uint32_t>(sizeof(uint8_t) * 4);
+    skinDescs[1].Offset = static_cast<uint32_t>(offsetof(MeshBinSkinVertex, weights));
+    skinDescs[1].Format = S_VertexBufferDescriptorFormat::R8G8B8A8_UNORM;
+
+    S_PipelineDescriptor skinnedPd;
+    skinnedPd.VertexBufferDescriptorArray = S_VertexBufferDescriptorArray(static_cast<uint32_t>(sizeof(MeshBinPosition)), meshPosDescs);
+    skinnedPd.SkinBufferDescriptorArray   = S_VertexBufferDescriptorArray(static_cast<uint32_t>(sizeof(MeshBinSkinVertex)), skinDescs);
+    skinnedPd.Shader           = m_renderer->getShader(m_skinnedShader);
+    skinnedPd.UseEngineGlobals = true;
+
+    m_renderer->createGraphicsPipeline({ pd, meshPd, skinnedPd });
 
     S_MeshHandle shotgun    = m_renderer->createMesh("models/scene.mesh.bin");
     uint32_t     shotgunMat = m_renderer->createMaterial();
     glm::mat4 shotgunTransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 1.0f, 0.0f))
                                * glm::scale(glm::mat4(1.0f), glm::vec3(10.0f));
     m_scene.addNode(shotgun, shotgunTransform, shotgunMat);
+
+    m_foxMesh           = m_renderer->createMesh("models/Fox.mesh.bin");
+    uint32_t     foxMat = m_renderer->createMaterial();
+    glm::mat4 foxTransform = glm::translate(glm::mat4(1.0f), glm::vec3(8.0f, 0.0f, 0.0f))
+                           * glm::scale(glm::mat4(1.0f), glm::vec3(0.05f));
+    m_foxNode = m_scene.addNode(m_foxMesh, foxTransform, foxMat);
+
+    m_foxAnimator = std::make_unique<S_Animator>(m_renderer->getMesh(m_foxMesh));
+    if (!m_foxAnimator->setClip("Run"))
+        m_foxAnimator->setClip(0u);
+
+    m_ui = std::make_unique<S_UI>(static_cast<S_VulkanRendererAPI*>(m_renderer->api()),
+                                  "fonts/Roboto-Regular.ui.bin");
 
     m_vVB = m_renderer->createVertexBuffer(24, 36, 1600,
         std::make_unique<S_VertexBufferDescriptorArray>(static_cast<uint32_t>(sizeof(Vertex)),   vertexDescs),
@@ -224,10 +255,60 @@ void solo::S_Application::onCreateEvent()
             m_renderer->updatePerFrame(pfd);
         }
 
+        {
+            ImGui::Begin("Solo Debug");
+            ImGui::Text("%.1f fps (%.2f ms)", ImGui::GetIO().Framerate, 1000.0f / ImGui::GetIO().Framerate);
+            ImGui::SeparatorText("Fox animation");
+
+            auto* foxMesh = m_renderer->getMesh(m_foxMesh);
+            if (foxMesh && !foxMesh->animations().empty())
+            {
+                int clip = m_foxAnimator->clip();
+                if (ImGui::BeginCombo("Clip", clip >= 0 ? foxMesh->animations()[clip].name.c_str() : "<none>"))
+                {
+                    for (int i = 0; i < static_cast<int>(foxMesh->animations().size()); ++i)
+                        if (ImGui::Selectable(foxMesh->animations()[i].name.c_str(), i == clip))
+                            m_foxAnimator->setClip(static_cast<uint32_t>(i));
+                    ImGui::EndCombo();
+                }
+                static float speed = 1.0f;
+                if (ImGui::SliderFloat("Speed", &speed, 0.0f, 3.0f))
+                    m_foxAnimator->setSpeed(speed);
+                ImGui::Text("time %.2f / %.2f s", m_foxAnimator->time(), m_foxAnimator->duration());
+            }
+            ImGui::End();
+        }
+
+        // native UI demo: anchored bottom panel, SDF text, animated 9-slice button
+        {
+            auto* foxMesh = m_renderer->getMesh(m_foxMesh);
+            glm::vec4 r = m_ui->anchoredRect(0.5f, 1.0f, 0.0f, -95.0f, 430.0f, 150.0f);
+            m_ui->panel(r.x, r.y, r.z, r.w);
+            m_ui->text("SOLO ENGINE", r.x + r.z * 0.5f, r.y + 16.0f, 28.0f,
+                       S_UI::rgba(235, 240, 255), true);
+
+            if (foxMesh && !foxMesh->animations().empty())
+            {
+                int  clip = m_foxAnimator->clip();
+                int  next = (clip + 1) % static_cast<int>(foxMesh->animations().size());
+                if (m_ui->button("nextClip", "Play: " + foxMesh->animations()[next].name,
+                                 r.x + r.z * 0.5f - 120.0f, r.y + 62.0f, 240.0f, 56.0f))
+                    m_foxAnimator->setClip(static_cast<uint32_t>(next));
+            }
+        }
+
+        m_foxAnimator->update(static_cast<float>(m_renderer->elapsedTimeUs()) / 1000000.0f);
+
         m_renderer->clearDraws();
-        for (const auto& node : m_scene.nodes())
-            m_renderer->submitDraw(node.mesh, node.transform, node.materialID);
-        m_renderer->flushDraws(m_meshShader);
+        for (uint32_t n = 0; n < static_cast<uint32_t>(m_scene.nodes().size()); ++n)
+        {
+            const auto& node = m_scene.nodes()[n];
+            if (n == m_foxNode)
+                m_renderer->submitDraw(node.mesh, node.transform, node.materialID, m_foxAnimator->palette());
+            else
+                m_renderer->submitDraw(node.mesh, node.transform, node.materialID);
+        }
+        m_renderer->flushDraws(m_meshShader, m_skinnedShader);
     });
 
     S_BaseApplication::onCreateEvent();

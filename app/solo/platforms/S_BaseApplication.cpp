@@ -10,6 +10,8 @@
 #endif
 
 #include "solo/debug/S_Debug.h"
+#include "solo/ui/S_ImGuiLayer.h"
+#include "solo/ui/S_UI.h"
 #include <stdint.h>
 
 using namespace solo;
@@ -41,12 +43,18 @@ const S_InputState *S_BaseApplication::inputState() const
 void S_BaseApplication::onMouseEvent(const S_MouseEvent *event )
 {
     m_inputState.updateState( event );
+    if( auto* imgui = S_ImGuiLayer::instance() )
+        imgui->onMouseEvent( event );
+    if( auto* ui = S_UI::instance() )
+        ui->onMouseEvent( event );
     s_debugLayer( "onMouseEvent", event->x(), event->y(), event->z(),
                   static_cast<uint32_t>( event->button() ), static_cast<uint32_t>( event->state() ) );
 }
 
 void S_BaseApplication::onTouchEvent(const S_TouchEvent *event)
 {
+    if( auto* ui = S_UI::instance() )
+        ui->onTouchEvent( event );
     s_debugLayer( "onTouchEvent", event->activeCount() );
 }
 

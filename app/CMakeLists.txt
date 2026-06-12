@@ -32,6 +32,8 @@ include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/ktx/lib
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/mimalloc332/include
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/VMA330/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/imgui
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/stb
         )
 
 set(SOURCE
@@ -75,6 +77,15 @@ set(SOURCE
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanPerFrame.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanBindless.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_RenderQueue.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_Animator.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/ui/S_ImGuiLayer.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/ui/S_UI.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/imgui/imgui.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/imgui/imgui_draw.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/imgui/imgui_tables.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/imgui/imgui_widgets.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/imgui/imgui_demo.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/imgui/imgui_impl_vulkan.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/application/S_Application.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/ktx/lib/checkheader.c
