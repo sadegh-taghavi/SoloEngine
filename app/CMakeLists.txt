@@ -75,8 +75,6 @@ set(SOURCE
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_Shader.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_Texture.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_TextureSampler.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_Model.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_Scene.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/pack/S_Pack.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/mesh/S_Mesh.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanMesh.cpp
@@ -98,7 +96,6 @@ set(SOURCE
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/imgui/imgui_draw.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/imgui/imgui_tables.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/imgui/imgui_widgets.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/imgui/imgui_demo.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/3rdparty/imgui/imgui_impl_vulkan.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/application/S_Application.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
@@ -124,7 +121,6 @@ set(HEADERS
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/thread/S_Thread.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/utility/S_ElapsedTime.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/utility/S_Animation.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/utility/S_Behavior.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/debug/S_Debug.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/platforms/S_SystemDetect.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/platforms/S_Event.h
@@ -154,8 +150,6 @@ set(HEADERS
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_Shader.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_Texture.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_TextureSampler.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_Model.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_Scene.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/pack/S_Pack.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_Handle.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/mesh/S_MeshBin.h
@@ -165,7 +159,6 @@ set(HEADERS
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/vulkan/S_VulkanBindless.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_PerFrame.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_RenderQueue.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/solo/renderer/S_MaterialPool.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/application/S_Application.h
         ${CMAKE_CURRENT_SOURCE_DIR}/solo/Solo.h
 )

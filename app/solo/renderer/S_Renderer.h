@@ -7,7 +7,6 @@
 #include "solo/renderer/S_Handle.h"
 #include "solo/renderer/S_PerFrame.h"
 #include "solo/renderer/S_RenderQueue.h"
-#include "solo/renderer/S_MaterialPool.h"
 #include "solo/renderer/S_VertexBuffer.h"
 #include "solo/renderer/S_TextureSampler.h"
 #include "solo/renderer/S_PipelineDescriptor.h"
@@ -74,9 +73,10 @@ public:
     void              clearDraws();
 
     void createGraphicsPipeline(const std::vector<S_PipelineDescriptor> &descriptors);
+    // standard static + skinned pipelines for mesh.bin content; the vertex
+    // layouts live here, next to the format, instead of in every app
+    void createMeshPipelines(S_ShaderHandle meshShader, S_ShaderHandle skinnedShader);
     void setRenderCallback(std::function<void()> callback);
-    void beginScene(std::shared_ptr<S_Scene> scene);
-    void endScene();
     void drawFrame();
     void resize( uint32_t width, uint32_t height );
     void active(bool active);
@@ -122,7 +122,6 @@ private:
     std::unordered_map<std::string, S_MeshHandle>    m_meshCache;
 
     S_RenderQueue  m_queue;
-    S_MaterialPool m_materialPool;
 
     void syncMaterials();
     std::vector<S_MaterialRecord> m_materialRecords;

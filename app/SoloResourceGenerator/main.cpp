@@ -96,9 +96,13 @@ static bool writeKtxRgba16fMips(const std::string& path,
     return f.good();
 }
 
-// minimal KTX1 (RGBA8, single mip) — loadable by libktx on the engine side
+// KTX1 RGBA8 with a full box-filtered mip chain — loadable by libktx
 static bool writeKtxRgba8(const std::string& path, const uint8_t* pixels, uint32_t w, uint32_t h)
 {
+    uint32_t mipCount = 1;
+    for (uint32_t mw = w, mh = h; mw > 1 || mh > 1; mw = mw > 1 ? mw / 2 : 1, mh = mh > 1 ? mh / 2 : 1)
+        ++mipCount;
+
     static const uint8_t ident[12] = { 0xAB,0x4B,0x54,0x58,0x20,0x31,0x31,0xBB,0x0D,0x0A,0x1A,0x0A };
     const uint32_t hdr[13] = {
         0x04030201, // endianness
@@ -109,16 +113,38 @@ static bool writeKtxRgba8(const std::string& path, const uint8_t* pixels, uint32
         0x1908,     // glBaseInternalFormat
         w, h,
         0, 0,       // depth, arrayElements
-        1, 1,       // faces, mipLevels
+        1, mipCount,
         0           // keyValue bytes
     };
     std::ofstream f(path, std::ios::binary);
     if (!f) return false;
     f.write(reinterpret_cast<const char*>(ident), 12);
     f.write(reinterpret_cast<const char*>(hdr), sizeof(hdr));
-    const uint32_t imageSize = w * h * 4;
-    f.write(reinterpret_cast<const char*>(&imageSize), 4);
-    f.write(reinterpret_cast<const char*>(pixels), imageSize);
+
+    std::vector<uint8_t> cur(pixels, pixels + static_cast<size_t>(w) * h * 4);
+    uint32_t cw = w, ch = h;
+    for (uint32_t m = 0; m < mipCount; ++m)
+    {
+        const uint32_t imageSize = cw * ch * 4;
+        f.write(reinterpret_cast<const char*>(&imageSize), 4);
+        f.write(reinterpret_cast<const char*>(cur.data()), imageSize);
+
+        if (m + 1 == mipCount) break;
+        const uint32_t nw = cw > 1 ? cw / 2 : 1, nh = ch > 1 ? ch / 2 : 1;
+        std::vector<uint8_t> next(static_cast<size_t>(nw) * nh * 4);
+        for (uint32_t y = 0; y < nh; ++y)
+            for (uint32_t x = 0; x < nw; ++x)
+                for (uint32_t c = 0; c < 4; ++c)
+                {
+                    const uint32_t x0 = x * 2, y0 = y * 2;
+                    const uint32_t x1 = cw > 1 ? x0 + 1 : x0, y1 = ch > 1 ? y0 + 1 : y0;
+                    const uint32_t sum = cur[(y0 * cw + x0) * 4 + c] + cur[(y0 * cw + x1) * 4 + c]
+                                       + cur[(y1 * cw + x0) * 4 + c] + cur[(y1 * cw + x1) * 4 + c];
+                    next[(y * nw + x) * 4 + c] = static_cast<uint8_t>(sum / 4);
+                }
+        cur.swap(next);
+        cw = nw; ch = nh;
+    }
     return f.good();
 }
 

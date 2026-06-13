@@ -5,7 +5,6 @@
 #include "solo/renderer/S_Shader.h"
 #include "solo/renderer/S_Texture.h"
 #include "solo/mesh/S_Mesh.h"
-#include "solo/renderer/S_Scene.h"
 #include "solo/renderer/S_PerFrame.h"
 #include "solo/renderer/S_Camera.h"
 #include "solo/renderer/S_CameraController.h"
@@ -28,54 +27,9 @@ void solo::S_Application::onCreateEvent()
     m_pack->open("resources.spk");
     m_renderer = std::make_unique<S_Renderer>();
 
-    m_meshShader = m_renderer->createShader("shaders/mesh", "shaders/mesh", "", "");
-
-    std::vector<S_VertexBufferDescriptor> meshPosDescs(1);
-    meshPosDescs[0].Size   = static_cast<uint32_t>(sizeof(float) * 3);
-    meshPosDescs[0].Offset = 0;
-    meshPosDescs[0].Format = S_VertexBufferDescriptorFormat::R32G32B32_SFLOAT;
-
-    // raster attribs stream: uv, packed normal+tangentSign, packed tangent, color
-    std::vector<S_VertexBufferDescriptor> attribDescs(4);
-    attribDescs[0].Size   = static_cast<uint32_t>(sizeof(float) * 2);
-    attribDescs[0].Offset = static_cast<uint32_t>(offsetof(MeshBinRasterAttrib, uv));
-    attribDescs[0].Format = S_VertexBufferDescriptorFormat::R32G32_SFLOAT;
-    attribDescs[1].Size   = 4;
-    attribDescs[1].Offset = static_cast<uint32_t>(offsetof(MeshBinRasterAttrib, normal));
-    attribDescs[1].Format = S_VertexBufferDescriptorFormat::R8G8B8A8_SNORM;
-    attribDescs[2].Size   = 4;
-    attribDescs[2].Offset = static_cast<uint32_t>(offsetof(MeshBinRasterAttrib, tangent));
-    attribDescs[2].Format = S_VertexBufferDescriptorFormat::R8G8B8A8_SNORM;
-    attribDescs[3].Size   = 4;
-    attribDescs[3].Offset = static_cast<uint32_t>(offsetof(MeshBinRasterAttrib, color));
-    attribDescs[3].Format = S_VertexBufferDescriptorFormat::R8G8B8A8_UNORM;
-    S_VertexBufferDescriptorArray attribArray(static_cast<uint32_t>(sizeof(MeshBinRasterAttrib)), attribDescs);
-
-    S_PipelineDescriptor meshPd;
-    meshPd.VertexBufferDescriptorArray   = S_VertexBufferDescriptorArray(static_cast<uint32_t>(sizeof(MeshBinPosition)), meshPosDescs);
-    meshPd.InstanceBufferDescriptorArray = S_VertexBufferDescriptorArray();
-    meshPd.AttribBufferDescriptorArray   = attribArray;
-    meshPd.Shader           = m_renderer->getShader(m_meshShader);
-    meshPd.UseEngineGlobals = true;
-
+    m_meshShader    = m_renderer->createShader("shaders/mesh", "shaders/mesh", "", "");
     m_skinnedShader = m_renderer->createShader("shaders/skinned", "shaders/mesh", "", "");
-
-    std::vector<S_VertexBufferDescriptor> skinDescs(2);
-    skinDescs[0].Size   = static_cast<uint32_t>(sizeof(uint8_t) * 4);
-    skinDescs[0].Offset = static_cast<uint32_t>(offsetof(MeshBinSkinVertex, joints));
-    skinDescs[0].Format = S_VertexBufferDescriptorFormat::R8G8B8A8_UINT;
-    skinDescs[1].Size   = static_cast<uint32_t>(sizeof(uint8_t) * 4);
-    skinDescs[1].Offset = static_cast<uint32_t>(offsetof(MeshBinSkinVertex, weights));
-    skinDescs[1].Format = S_VertexBufferDescriptorFormat::R8G8B8A8_UNORM;
-
-    S_PipelineDescriptor skinnedPd;
-    skinnedPd.VertexBufferDescriptorArray = S_VertexBufferDescriptorArray(static_cast<uint32_t>(sizeof(MeshBinPosition)), meshPosDescs);
-    skinnedPd.SkinBufferDescriptorArray   = S_VertexBufferDescriptorArray(static_cast<uint32_t>(sizeof(MeshBinSkinVertex)), skinDescs);
-    skinnedPd.AttribBufferDescriptorArray = attribArray;
-    skinnedPd.Shader           = m_renderer->getShader(m_skinnedShader);
-    skinnedPd.UseEngineGlobals = true;
-
-    m_renderer->createGraphicsPipeline({ meshPd, skinnedPd });
+    m_renderer->createMeshPipelines(m_meshShader, m_skinnedShader);
 
     S_MeshHandle shotgunMesh = m_renderer->createMesh("models/scene.mesh.bin");
     S_EntityID shotgun = m_scene.create("shotgun");
