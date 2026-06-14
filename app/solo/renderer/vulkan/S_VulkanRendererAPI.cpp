@@ -759,6 +759,7 @@ void S_VulkanRendererAPI::recreateSwapChain()
     createImageViews();
     createRenderPass();
     m_pipelines->recreate();
+    buildSkyPipeline(); // render pass handle changed; rebuild against the new one
     createDepthResources();
     createFramebuffers();
     createCommandBuffers();
@@ -974,6 +975,151 @@ void S_VulkanRendererAPI::createGraphicsPipeline(const std::vector<S_PipelineDes
     m_pipelines->create(&descriptors);
 }
 
+void S_VulkanRendererAPI::setEnvironmentCube(S_Texture* env)
+{
+    m_bindless->setEnvCube(env);
+}
+
+void S_VulkanRendererAPI::createSkybox()
+{
+    if( m_skyShader )
+        return; // already created
+    m_skyShader = m_itemsManager->createShader("shaders/sky", "shaders/sky", "", "");
+    if( !m_skyShader )
+    {
+        s_debugLayer("createSkybox: failed to create sky shader");
+        return;
+    }
+    buildSkyPipeline();
+}
+
+void S_VulkanRendererAPI::buildSkyPipeline()
+{
+    if( !m_skyShader )
+        return;
+
+    VkShaderModule vsModule = m_skyShader->shaderModule(S_ShaderStage::VertexShader);
+    VkShaderModule fsModule = m_skyShader->shaderModule(S_ShaderStage::FragmentShader);
+    if( !vsModule || !fsModule )
+    {
+        s_debugLayer("buildSkyPipeline: sky shader modules missing");
+        return;
+    }
+
+    // Reuse the engine-global descriptor set layouts: set 0 = perFrame (VP/cameraPos),
+    // set 1 = bindless (env sampled from uTextures[1]). Layout has no dependency on the
+    // render pass, so it is created once and kept across swapchain recreations.
+    if( m_skyPipelineLayout == VK_NULL_HANDLE )
+    {
+        VkDescriptorSetLayout setLayouts[2] = { m_perFrame->setLayout(), m_bindless->setLayout() };
+        VkPipelineLayoutCreateInfo plci{};
+        plci.sType          = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        plci.setLayoutCount = 2;
+        plci.pSetLayouts    = setLayouts;
+        VK_RESULT_CHECK( vkCreatePipelineLayout(m_device, &plci, S_VulkanAllocator(), &m_skyPipelineLayout) )
+    }
+
+    VkPipelineShaderStageCreateInfo stages[2]{};
+    stages[0].sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    stages[0].stage  = VK_SHADER_STAGE_VERTEX_BIT;
+    stages[0].module = vsModule;
+    stages[0].pName  = m_skyShader->shaderReflection(S_ShaderStage::VertexShader)->Reflection.EntryPointName;
+    stages[1].sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    stages[1].stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
+    stages[1].module = fsModule;
+    stages[1].pName  = m_skyShader->shaderReflection(S_ShaderStage::FragmentShader)->Reflection.EntryPointName;
+
+    VkPipelineVertexInputStateCreateInfo vertexInput{}; // fullscreen triangle, no vertex buffers
+    vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+
+    VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
+    inputAssembly.sType    = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+    VkViewport viewport{};
+    viewport.width    = static_cast<float>(m_swapChainExtent.width);
+    viewport.height   = static_cast<float>(m_swapChainExtent.height);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    VkRect2D scissor{ {0, 0}, m_swapChainExtent };
+
+    VkPipelineViewportStateCreateInfo viewportState{};
+    viewportState.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewportState.viewportCount = 1;
+    viewportState.pViewports    = &viewport;
+    viewportState.scissorCount  = 1;
+    viewportState.pScissors     = &scissor;
+
+    VkPipelineRasterizationStateCreateInfo rasterizer{};
+    rasterizer.sType       = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+    rasterizer.cullMode    = VK_CULL_MODE_NONE; // winding irrelevant for the fullscreen tri
+    rasterizer.frontFace   = VK_FRONT_FACE_CLOCKWISE;
+    rasterizer.lineWidth   = 1.0f;
+
+    VkPipelineMultisampleStateCreateInfo multisampling{};
+    multisampling.sType                = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    multisampling.minSampleShading     = 1.0f;
+
+    // far-plane fill: draw only where no geometry is closer, and never write depth
+    VkPipelineDepthStencilStateCreateInfo depthStencil{};
+    depthStencil.sType            = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencil.depthTestEnable  = VK_TRUE;
+    depthStencil.depthWriteEnable = VK_FALSE;
+    depthStencil.depthCompareOp   = VK_COMPARE_OP_LESS_OR_EQUAL;
+    depthStencil.maxDepthBounds   = 1.0f;
+
+    VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+    colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
+                                        | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    colorBlendAttachment.blendEnable = VK_FALSE;
+
+    VkPipelineColorBlendStateCreateInfo colorBlending{};
+    colorBlending.sType           = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colorBlending.attachmentCount = 1;
+    colorBlending.pAttachments    = &colorBlendAttachment;
+
+    VkGraphicsPipelineCreateInfo pci{};
+    pci.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pci.stageCount          = 2;
+    pci.pStages             = stages;
+    pci.pVertexInputState   = &vertexInput;
+    pci.pInputAssemblyState = &inputAssembly;
+    pci.pViewportState      = &viewportState;
+    pci.pRasterizationState = &rasterizer;
+    pci.pMultisampleState   = &multisampling;
+    pci.pDepthStencilState  = &depthStencil;
+    pci.pColorBlendState    = &colorBlending;
+    pci.layout              = m_skyPipelineLayout;
+    pci.renderPass          = m_renderPass;
+    pci.subpass             = 0;
+    pci.basePipelineIndex   = -1;
+
+    VK_RESULT_CHECK( vkCreateGraphicsPipelines(m_device, nullptr, 1, &pci, S_VulkanAllocator(), &m_skyPipeline) )
+}
+
+void S_VulkanRendererAPI::destroySkyPipeline()
+{
+    if( m_skyPipeline != VK_NULL_HANDLE )
+    {
+        vkDestroyPipeline(m_device, m_skyPipeline, S_VulkanAllocator());
+        m_skyPipeline = VK_NULL_HANDLE;
+    }
+}
+
+void S_VulkanRendererAPI::drawSky(VkCommandBuffer cmd, uint32_t imageIndex)
+{
+    if( m_skyPipeline == VK_NULL_HANDLE )
+        return;
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_skyPipeline);
+    VkDescriptorSet set0 = m_perFrame->set(imageIndex);
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_skyPipelineLayout,
+                            0, 1, &set0, 0, nullptr);       // set 0 = perFrame (VP/cameraPos)
+    m_bindless->bind(cmd, m_skyPipelineLayout, imageIndex); // set 1 = bindless (env at uTextures[1])
+    vkCmdDraw(cmd, 3, 1, 0, 0);
+}
+
 VmaAllocator S_VulkanRendererAPI::vmaAllocator() const
 {
     return m_vmaAllocator;
@@ -1060,6 +1206,7 @@ void S_VulkanRendererAPI::cleanupSwapChain()
 
     vkFreeCommandBuffers( m_device, m_commandPoolTransfers, 1, &m_commandBufferVertexTransfer );
     m_pipelines->destroy();
+    destroySkyPipeline();
     vkDestroyRenderPass( m_device, m_renderPass, S_VulkanAllocator() );
 
     for ( size_t i = 0; i < m_swapChainImageViews.size(); ++i )
@@ -1074,6 +1221,8 @@ S_VulkanRendererAPI::~S_VulkanRendererAPI()
     m_imguiLayer.reset(); // must release its Vulkan objects before the device goes away
     m_itemsManager->destroy();
     cleanupSwapChain();
+    if( m_skyPipelineLayout != VK_NULL_HANDLE )
+        vkDestroyPipelineLayout( m_device, m_skyPipelineLayout, S_VulkanAllocator() );
     for ( size_t i = 0; i < m_MAX_FRAMES_IN_FLIGHT; ++i )
     {
         vkDestroySemaphore( m_device, m_renderFinishedSemaphores[i], S_VulkanAllocator() );
@@ -1216,6 +1365,10 @@ void S_VulkanRendererAPI::drawFrame()
 
     if( m_renderCallback )
         m_renderCallback();
+
+    // background skybox: fills pixels no geometry covered, using this frame's
+    // perFrame (VP/cameraPos) that the render callback just updated
+    drawSky(m_nextFrameRenderCommandBuffer, m_nextSwapchainImageIndex);
 
     if( S_UI::instance() )
         S_UI::instance()->record(m_nextFrameRenderCommandBuffer, m_nextSwapchainImageIndex);

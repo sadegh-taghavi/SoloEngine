@@ -8,6 +8,8 @@
 #include <algorithm>
 #include <cstring>
 #include <cmath>
+#include <array>
+#include <thread>
 #include "solo/platforms/S_SystemDetect.h"
 #include "solo/renderer/vulkan/S_VulkanShaderReflection.h"
 #include "rapidjson/document.h"
@@ -96,6 +98,54 @@ static bool writeKtxRgba16fMips(const std::string& path,
     return f.good();
 }
 
+// KTX1 cubemap with RGBA16F mips. mipFaces[mip][face] holds 3 floats/texel; faces
+// are in Vulkan/KTX order (+X,-X,+Y,-Y,+Z,-Z). imageSize per the KTX1 spec is the
+// size of ONE face (RGBA16F is 4-byte aligned, so no cube/mip padding is needed).
+static bool writeKtxCubeRgba16fMips(const std::string& path,
+                                    const std::vector<std::vector<std::vector<float>>>& mipFaces,
+                                    uint32_t baseW, uint32_t baseH)
+{
+    static const uint8_t ident[12] = { 0xAB,0x4B,0x54,0x58,0x20,0x31,0x31,0xBB,0x0D,0x0A,0x1A,0x0A };
+    const uint32_t hdr[13] = {
+        0x04030201,
+        0x140B,     // glType GL_HALF_FLOAT
+        2,          // glTypeSize
+        0x1908,     // glFormat GL_RGBA
+        0x881A,     // glInternalFormat GL_RGBA16F
+        0x1908,     // glBaseInternalFormat
+        baseW, baseH,
+        0, 0, 6,    // depth, arrayElements, numberOfFaces (6 = cubemap)
+        static_cast<uint32_t>(mipFaces.size()),
+        0
+    };
+    std::ofstream f(path, std::ios::binary);
+    if (!f) return false;
+    f.write(reinterpret_cast<const char*>(ident), 12);
+    f.write(reinterpret_cast<const char*>(hdr), sizeof(hdr));
+
+    uint32_t w = baseW, h = baseH;
+    for (const auto& faces : mipFaces)
+    {
+        const uint32_t faceSize = w * h * 8; // RGBA16F bytes for one face
+        f.write(reinterpret_cast<const char*>(&faceSize), 4);
+        for (const auto& faceRGB : faces) // 6 faces
+        {
+            std::vector<uint16_t> half(static_cast<size_t>(w) * h * 4);
+            for (uint32_t t = 0; t < w * h; ++t)
+            {
+                half[t * 4 + 0] = floatToHalf(faceRGB[t * 3 + 0]);
+                half[t * 4 + 1] = floatToHalf(faceRGB[t * 3 + 1]);
+                half[t * 4 + 2] = floatToHalf(faceRGB[t * 3 + 2]);
+                half[t * 4 + 3] = floatToHalf(1.0f);
+            }
+            f.write(reinterpret_cast<const char*>(half.data()), faceSize);
+        }
+        w = w > 1 ? w / 2 : 1;
+        h = h > 1 ? h / 2 : 1;
+    }
+    return f.good();
+}
+
 // KTX1 RGBA8 with a full box-filtered mip chain — loadable by libktx
 static bool writeKtxRgba8(const std::string& path, const uint8_t* pixels, uint32_t w, uint32_t h)
 {
@@ -171,11 +221,24 @@ static glm::vec3 sampleBilinear(const Img& img, float u, float v)
                     glm::mix(texel(x0, y0 + 1), texel(x0 + 1, y0 + 1), tx), ty);
 }
 
-static glm::vec3 dirFromEquirect(float u, float v)
+// World direction for a cube-face texel. s,t in [0,1] with t increasing downward
+// (row 0 = top). Standard Vulkan/D3D cube convention, inverted from the sampler's
+// major-axis selection so generation matches hardware sampling exactly.
+static glm::vec3 dirFromCubeFace(int face, float s, float t)
 {
-    const float theta = (u - 0.5f) * 2.0f * 3.14159265f;
-    const float phi   = v * 3.14159265f;
-    return { std::sin(phi) * std::cos(theta), std::cos(phi), std::sin(phi) * std::sin(theta) };
+    const float sc = 2.0f * s - 1.0f;
+    const float tc = 2.0f * t - 1.0f;
+    glm::vec3 d;
+    switch (face)
+    {
+        case 0: d = glm::vec3( 1.0f,  -tc,  -sc); break; // +X
+        case 1: d = glm::vec3(-1.0f,  -tc,   sc); break; // -X
+        case 2: d = glm::vec3(  sc,  1.0f,   tc); break; // +Y
+        case 3: d = glm::vec3(  sc, -1.0f,  -tc); break; // -Y
+        case 4: d = glm::vec3(  sc,  -tc,  1.0f); break; // +Z
+        default:d = glm::vec3( -sc,  -tc, -1.0f); break; // -Z
+    }
+    return glm::normalize(d);
 }
 
 static glm::vec2 equirectFromDir(const glm::vec3& d)
@@ -201,69 +264,170 @@ static void basis(const glm::vec3& n, glm::vec3& t, glm::vec3& b)
     b = glm::cross(n, t);
 }
 
-static Img prefilterGGX(const Img& src, uint32_t w, uint32_t h, float roughness, uint32_t samples)
+// Renders one square cube face (dim x dim, 3 floats/texel) by evaluating shade(N)
+// at the world direction of each texel center.
+template <class Shade>
+static std::vector<float> renderCubeFace(int face, uint32_t dim, Shade&& shade)
 {
-    Img out; out.w = w; out.h = h; out.rgb.resize(static_cast<size_t>(w) * h * 3);
+    std::vector<float> out(static_cast<size_t>(dim) * dim * 3);
+    for (uint32_t y = 0; y < dim; ++y)
+        for (uint32_t x = 0; x < dim; ++x)
+        {
+            const glm::vec3 N = dirFromCubeFace(face, (x + 0.5f) / dim, (y + 0.5f) / dim);
+            const glm::vec3 c = shade(N);
+            out[(static_cast<size_t>(y) * dim + x) * 3 + 0] = c.x;
+            out[(static_cast<size_t>(y) * dim + x) * 3 + 1] = c.y;
+            out[(static_cast<size_t>(y) * dim + x) * 3 + 2] = c.z;
+        }
+    return out;
+}
+
+// Renders all six faces concurrently (each face is independent; shade() only reads
+// shared source data). Faces returned in +X,-X,+Y,-Y,+Z,-Z order.
+template <class Shade>
+static std::array<std::vector<float>, 6> renderCubeFaces(uint32_t dim, Shade&& shade)
+{
+    std::array<std::vector<float>, 6> faces;
+    std::array<std::thread, 6> th;
+    for (int f = 0; f < 6; ++f)
+        th[f] = std::thread([&faces, dim, f, &shade]() { faces[f] = renderCubeFace(f, dim, shade); });
+    for (auto& t : th) t.join();
+    return faces;
+}
+
+// A cubemap held CPU-side as six square faces (3 floats/texel).
+struct CubeImg { uint32_t dim = 0; std::vector<float> faces[6]; };
+
+// Resample the equirect source into a sharp cube (mip 0 of the prefilter source).
+static CubeImg buildCube(const Img& eq, uint32_t dim)
+{
+    CubeImg c; c.dim = dim;
+    auto out = renderCubeFaces(dim, [&](const glm::vec3& N) {
+        const glm::vec2 uv = equirectFromDir(N);
+        return sampleBilinear(eq, uv.x, uv.y);
+    });
+    for (int f = 0; f < 6; ++f) c.faces[f] = std::move(out[f]);
+    return c;
+}
+
+// Per-face box-filtered mip chain down to 1x1 (matches GPU generateMips: faces are
+// filtered independently). Karis importance sampling reads from these levels.
+static std::vector<CubeImg> buildCubeMipChain(const CubeImg& base)
+{
+    std::vector<CubeImg> mips;
+    mips.push_back(base);
+    while (mips.back().dim > 1)
+    {
+        const CubeImg& s = mips.back();
+        CubeImg d; d.dim = std::max(1u, s.dim / 2);
+        for (int f = 0; f < 6; ++f)
+        {
+            d.faces[f].resize(static_cast<size_t>(d.dim) * d.dim * 3);
+            for (uint32_t y = 0; y < d.dim; ++y)
+                for (uint32_t x = 0; x < d.dim; ++x)
+                {
+                    const uint32_t x0 = x * 2, y0 = y * 2;
+                    const uint32_t x1 = std::min(x0 + 1, s.dim - 1), y1 = std::min(y0 + 1, s.dim - 1);
+                    for (int ch = 0; ch < 3; ++ch)
+                        d.faces[f][(static_cast<size_t>(y) * d.dim + x) * 3 + ch] = 0.25f *
+                            (s.faces[f][(static_cast<size_t>(y0) * s.dim + x0) * 3 + ch] + s.faces[f][(static_cast<size_t>(y0) * s.dim + x1) * 3 + ch]
+                           + s.faces[f][(static_cast<size_t>(y1) * s.dim + x0) * 3 + ch] + s.faces[f][(static_cast<size_t>(y1) * s.dim + x1) * 3 + ch]);
+                }
+        }
+        mips.push_back(std::move(d));
+    }
+    return mips;
+}
+
+// Bilinear cube sample: select the major-axis face (inverse of dirFromCubeFace),
+// then bilinear within the face (clamp-to-edge).
+static glm::vec3 sampleCubeBilinear(const CubeImg& c, const glm::vec3& d)
+{
+    const float ax = std::fabs(d.x), ay = std::fabs(d.y), az = std::fabs(d.z);
+    int face; float sc, tc, ma;
+    if (ax >= ay && ax >= az) { ma = ax; if (d.x >= 0.f) { face = 0; sc = -d.z; tc = -d.y; } else { face = 1; sc =  d.z; tc = -d.y; } }
+    else if (ay >= az)        { ma = ay; if (d.y >= 0.f) { face = 2; sc =  d.x; tc =  d.z; } else { face = 3; sc =  d.x; tc = -d.z; } }
+    else                      { ma = az; if (d.z >= 0.f) { face = 4; sc =  d.x; tc = -d.y; } else { face = 5; sc = -d.x; tc = -d.y; } }
+    const int   dim = static_cast<int>(c.dim);
+    const float s = 0.5f * (sc / ma + 1.0f), t = 0.5f * (tc / ma + 1.0f);
+    const float fx = s * c.dim - 0.5f, fy = t * c.dim - 0.5f;
+    const int   x0 = static_cast<int>(std::floor(fx)), y0 = static_cast<int>(std::floor(fy));
+    const float txf = fx - x0, tyf = fy - y0;
+    auto cl = [dim](int v) { return v < 0 ? 0 : (v >= dim ? dim - 1 : v); };
+    auto px = [&](int x, int y) { const float* p = &c.faces[face][(static_cast<size_t>(cl(y)) * dim + cl(x)) * 3]; return glm::vec3(p[0], p[1], p[2]); };
+    return glm::mix(glm::mix(px(x0, y0), px(x0 + 1, y0), txf), glm::mix(px(x0, y0 + 1), px(x0 + 1, y0 + 1), txf), tyf);
+}
+
+static glm::vec3 sampleCubeLod(const std::vector<CubeImg>& mips, const glm::vec3& d, float lod)
+{
+    const int maxm = static_cast<int>(mips.size()) - 1;
+    lod = lod < 0.f ? 0.f : (lod > static_cast<float>(maxm) ? static_cast<float>(maxm) : lod);
+    const int   m0 = static_cast<int>(std::floor(lod));
+    const int   m1 = std::min(m0 + 1, maxm);
+    const float f  = lod - static_cast<float>(m0);
+    return glm::mix(sampleCubeBilinear(mips[m0], d), sampleCubeBilinear(mips[m1], d), f);
+}
+
+// GGX-prefiltered radiance for direction N (V = N), Karis importance sampling the
+// cube mip chain. saTexel uses 6 faces, matching Qt/hdreditor's computeLod.
+static glm::vec3 prefilterDir(const std::vector<CubeImg>& mips, const glm::vec3& N, float roughness, uint32_t samples)
+{
     const float a = roughness * roughness;
-    for (uint32_t y = 0; y < h; ++y)
-        for (uint32_t x = 0; x < w; ++x)
-        {
-            const glm::vec3 N = dirFromEquirect((x + 0.5f) / w, (y + 0.5f) / h);
-            glm::vec3 T, B; basis(N, T, B);
-            glm::vec3 sum(0.0f); float wsum = 0.0f;
-            for (uint32_t s = 0; s < samples; ++s)
-            {
-                const float u1 = (s + 0.5f) / samples, u2 = radicalInverse(s);
-                const float phi      = 2.0f * 3.14159265f * u1;
-                const float cosTheta = std::sqrt((1.0f - u2) / (1.0f + (a * a - 1.0f) * u2));
-                const float sinTheta = std::sqrt(1.0f - cosTheta * cosTheta);
-                const glm::vec3 Hl(sinTheta * std::cos(phi), sinTheta * std::sin(phi), cosTheta);
-                const glm::vec3 H = T * Hl.x + B * Hl.y + N * Hl.z;
-                const glm::vec3 L = glm::normalize(2.0f * glm::dot(N, H) * H - N); // V = N
-                const float NdotL = glm::dot(N, L);
-                if (NdotL <= 0.0f) continue;
-                const glm::vec2 uv = equirectFromDir(L);
-                sum  += sampleBilinear(src, uv.x, uv.y) * NdotL;
-                wsum += NdotL;
-            }
-            const glm::vec3 c = wsum > 0.0f ? sum / wsum : sampleBilinear(src, (x + 0.5f) / w, (y + 0.5f) / h);
-            out.rgb[(static_cast<size_t>(y) * w + x) * 3 + 0] = c.x;
-            out.rgb[(static_cast<size_t>(y) * w + x) * 3 + 1] = c.y;
-            out.rgb[(static_cast<size_t>(y) * w + x) * 3 + 2] = c.z;
-        }
-    return out;
+    glm::vec3 T, B; basis(N, T, B);
+    glm::vec3 sum(0.0f); float wsum = 0.0f;
+    // Matches hdreditor/Qt prefilter.frag computeLod = 0.5*log2(6*res^2/(N*pdf)):
+    // omits the 4pi of textbook Karis omegaP on purpose, biasing each sample to a
+    // blurrier source mip so an intense sun is pre-averaged instead of ringing.
+    const float saTexel = 1.0f / (6.0f * static_cast<float>(mips[0].dim) * static_cast<float>(mips[0].dim));
+    for (uint32_t s = 0; s < samples; ++s)
+    {
+        const float u1 = (s + 0.5f) / samples, u2 = radicalInverse(s);
+        const float phi      = 2.0f * 3.14159265f * u1;
+        const float cosTheta = std::sqrt((1.0f - u2) / (1.0f + (a * a - 1.0f) * u2));
+        const float sinTheta = std::sqrt(1.0f - cosTheta * cosTheta);
+        const glm::vec3 Hl(sinTheta * std::cos(phi), sinTheta * std::sin(phi), cosTheta);
+        const glm::vec3 H = T * Hl.x + B * Hl.y + N * Hl.z;
+        const glm::vec3 L = glm::normalize(2.0f * glm::dot(N, H) * H - N); // V = N
+        const float NdotL = glm::dot(N, L);
+        if (NdotL <= 0.0f) continue;
+        const float NoH = cosTheta;
+        const float D   = (a * a) / (3.14159265f * std::pow(NoH * NoH * (a * a - 1.0f) + 1.0f, 2.0f) + 1e-8f);
+        const float saSample = 1.0f / (static_cast<float>(samples) * (D * 0.25f) + 1e-8f);
+        const float lod = roughness <= 0.0f ? 0.0f : std::max(0.0f, 0.5f * std::log2(saSample / saTexel));
+        sum  += sampleCubeLod(mips, L, lod) * NdotL;
+        wsum += NdotL;
+    }
+    if (wsum > 0.0f) return sum / wsum;
+    return sampleCubeLod(mips, N, 0.0f);
 }
 
-static Img irradiance(const Img& src, uint32_t w, uint32_t h, uint32_t samples)
+// Cosine-weighted diffuse irradiance for direction N (Lambertian distribution),
+// same Karis importance sampling against the cube mip chain.
+static glm::vec3 irradianceDir(const std::vector<CubeImg>& mips, const glm::vec3& N, uint32_t samples)
 {
-    Img out; out.w = w; out.h = h; out.rgb.resize(static_cast<size_t>(w) * h * 3);
-    for (uint32_t y = 0; y < h; ++y)
-        for (uint32_t x = 0; x < w; ++x)
-        {
-            const glm::vec3 N = dirFromEquirect((x + 0.5f) / w, (y + 0.5f) / h);
-            glm::vec3 T, B; basis(N, T, B);
-            glm::vec3 sum(0.0f);
-            for (uint32_t s = 0; s < samples; ++s)
-            {
-                const float u1 = (s + 0.5f) / samples, u2 = radicalInverse(s);
-                const float phi = 2.0f * 3.14159265f * u1;
-                const float ct  = std::sqrt(1.0f - u2); // cosine-weighted
-                const float st  = std::sqrt(u2);
-                const glm::vec3 L = glm::normalize(T * (st * std::cos(phi)) + B * (st * std::sin(phi)) + N * ct);
-                const glm::vec2 uv = equirectFromDir(L);
-                sum += sampleBilinear(src, uv.x, uv.y);
-            }
-            const glm::vec3 c = sum / static_cast<float>(samples);
-            out.rgb[(static_cast<size_t>(y) * w + x) * 3 + 0] = c.x;
-            out.rgb[(static_cast<size_t>(y) * w + x) * 3 + 1] = c.y;
-            out.rgb[(static_cast<size_t>(y) * w + x) * 3 + 2] = c.z;
-        }
-    return out;
+    glm::vec3 T, B; basis(N, T, B);
+    glm::vec3 sum(0.0f);
+    // Matches hdreditor/Qt prefilter.frag computeLod = 0.5*log2(6*res^2/(N*pdf)):
+    // omits the 4pi of textbook Karis omegaP on purpose, biasing each sample to a
+    // blurrier source mip so an intense sun is pre-averaged instead of ringing.
+    const float saTexel = 1.0f / (6.0f * static_cast<float>(mips[0].dim) * static_cast<float>(mips[0].dim));
+    for (uint32_t s = 0; s < samples; ++s)
+    {
+        const float u1 = (s + 0.5f) / samples, u2 = radicalInverse(s);
+        const float phi = 2.0f * 3.14159265f * u1;
+        const float ct  = std::sqrt(1.0f - u2); // cosine-weighted
+        const float st  = std::sqrt(u2);
+        const glm::vec3 L = glm::normalize(T * (st * std::cos(phi)) + B * (st * std::sin(phi)) + N * ct);
+        const float pdf = ct / 3.14159265f + 1e-8f;
+        const float saSample = 1.0f / (static_cast<float>(samples) * pdf);
+        const float lod = std::max(0.0f, 0.5f * std::log2(saSample / saTexel));
+        sum += sampleCubeLod(mips, L, lod);
+    }
+    return sum / static_cast<float>(samples);
 }
 }
 
-static bool bakeEnvironment(const std::string& hdrPath,
-                            const std::string& outPrefiltered, const std::string& outIrradiance)
+static bool bakeEnvironment(const std::string& hdrPath, const std::string& outProbe)
 {
     int w = 0, h = 0, comp = 0;
     float* data = stbi_loadf(hdrPath.c_str(), &w, &h, &comp, 3);
@@ -291,27 +455,47 @@ static bool bakeEnvironment(const std::string& hdrPath,
         std::cout << "  env auto-exposure: avg " << avgLum << " -> scale " << scale << std::endl;
     }
 
-    // prefiltered chain: 256x128 base, 6 mips, roughness 0..1
-    constexpr uint32_t kBaseW = 256, kBaseH = 128, kMips = 6;
-    std::vector<std::vector<float>> mips;
+    // Unified environment probe cube (Qt / hdreditor layout): one RGBA16F cubemap
+    // whose mip chain holds everything. The Karis prefilter reads from a CUBE source
+    // (equirect -> sharp cube -> per-face mip chain) for uniform per-texel solid
+    // angle, matching Qt's createEnvironmentMap / hdreditor's prefilter.frag.
+    //   mip 0           = sharp mirror (skybox + sharp reflections)
+    //   mips 1..kMips-2 = GGX specular, roughness = mip/(kMips-2) -> 0..1
+    //   mip kMips-1     = Lambertian diffuse irradiance (last, smallest mip)
+    // Consumers: specular lod = roughness*(kMips-2), irradiance lod = kMips-1, sky lod = 0.
+    constexpr uint32_t kBase = 512, kMips = 6, kSamples = 1024; // mip5 (16x16) = irradiance
+    const envbake::CubeImg              base     = envbake::buildCube(src, kBase);
+    const std::vector<envbake::CubeImg> cubeMips = envbake::buildCubeMipChain(base);
+
+    std::vector<std::vector<std::vector<float>>> mipFaces(kMips);
     for (uint32_t m = 0; m < kMips; ++m)
     {
-        const uint32_t mw = kBaseW >> m, mh = kBaseH >> m;
-        const float    roughness = static_cast<float>(m) / (kMips - 1);
-        envbake::Img mip = m == 0
-            ? envbake::prefilterGGX(src, mw, mh, 0.02f, 16)
-            : envbake::prefilterGGX(src, mw, mh, roughness, 96);
-        mips.push_back(std::move(mip.rgb));
+        const uint32_t dim = std::max(1u, kBase >> m);
+        if (m == 0) // sharp mirror = the base cube itself (skybox + sharp reflections)
+        {
+            mipFaces[0] = { base.faces[0], base.faces[1], base.faces[2],
+                            base.faces[3], base.faces[4], base.faces[5] };
+            continue;
+        }
+        std::array<std::vector<float>, 6> faces;
+        if (m == kMips - 1) // diffuse irradiance in the last mip
+            faces = envbake::renderCubeFaces(dim, [&](const glm::vec3& N) {
+                return envbake::irradianceDir(cubeMips, N, kSamples);
+            });
+        else
+        {
+            const float roughness = static_cast<float>(m) / static_cast<float>(kMips - 2); // .25,.5,.75,1
+            faces = envbake::renderCubeFaces(dim, [&](const glm::vec3& N) {
+                return envbake::prefilterDir(cubeMips, N, roughness, kSamples);
+            });
+        }
+        mipFaces[m] = { faces[0], faces[1], faces[2], faces[3], faces[4], faces[5] };
     }
-    if (!writeKtxRgba16fMips(outPrefiltered, mips, kBaseW, kBaseH))
+    if (!writeKtxCubeRgba16fMips(outProbe, mipFaces, kBase, kBase))
         return false;
 
-    envbake::Img irr = envbake::irradiance(src, 32, 16, 256);
-    std::vector<std::vector<float>> irrMips{ std::move(irr.rgb) };
-    if (!writeKtxRgba16fMips(outIrradiance, irrMips, 32, 16))
-        return false;
-
-    std::cout << "Baked environment: " << outPrefiltered << " + " << outIrradiance << std::endl;
+    std::cout << "Baked environment probe cube (cube-source Karis, " << kSamples << " spp): "
+              << outProbe << std::endl;
     return true;
 }
 
@@ -456,9 +640,8 @@ static void compileMesh(const std::string& gltfPath, const std::string& outputPa
                 skinData.push_back(sk);
             }
 
-            // glTF front faces are CCW; engine convention is CW, so swap each
-            // triangle's last two indices while emitting
-            uint32_t indexCount = 0;
+            // Gather source triangles in their original winding (i0,i1,i2 each).
+            std::vector<uint32_t> tri;
             if (prim.indices >= 0)
             {
                 auto& acc = model.accessors[prim.indices];
@@ -474,23 +657,44 @@ static void compileMesh(const std::string& gltfPath, const std::string& outputPa
                     }
                     return 0;
                 };
+                tri.reserve(acc.count);
                 for (size_t ii = 0; ii + 2 < acc.count; ii += 3)
-                {
-                    indices.push_back(vertexBase + readIdx(ii));
-                    indices.push_back(vertexBase + readIdx(ii + 2));
-                    indices.push_back(vertexBase + readIdx(ii + 1));
-                    indexCount += 3;
-                }
+                    { tri.push_back(readIdx(ii)); tri.push_back(readIdx(ii + 1)); tri.push_back(readIdx(ii + 2)); }
             }
             else
             {
+                tri.reserve(vertCount);
                 for (uint32_t ii = 0; ii + 2 < vertCount; ii += 3)
+                    { tri.push_back(ii); tri.push_back(ii + 1); tri.push_back(ii + 2); }
+            }
+
+            // The engine renders clockwise-front: the emitted winding must have its
+            // geometric normal pointing OPPOSITE the surface normal. glTF is CCW so
+            // this is normally a swap — but solo-gen emits CW spheres, so detect the
+            // actual source winding from the authored normals and only swap CCW input.
+            long vote = 0;
+            if (normAttr.valid())
+                for (size_t t = 0; t + 2 < tri.size(); t += 3)
                 {
-                    indices.push_back(vertexBase + ii);
-                    indices.push_back(vertexBase + ii + 2);
-                    indices.push_back(vertexBase + ii + 1);
-                    indexCount += 3;
+                    const MeshBinPosition& A = positions[vertexBase + tri[t]];
+                    const MeshBinPosition& B = positions[vertexBase + tri[t + 1]];
+                    const MeshBinPosition& C = positions[vertexBase + tri[t + 2]];
+                    const float e1x=B.x-A.x, e1y=B.y-A.y, e1z=B.z-A.z;
+                    const float e2x=C.x-A.x, e2y=C.y-A.y, e2z=C.z-A.z;
+                    const float gx=e1y*e2z-e1z*e2y, gy=e1z*e2x-e1x*e2z, gz=e1x*e2y-e1y*e2x;
+                    const float* n0=normAttr.f3(tri[t]); const float* n1=normAttr.f3(tri[t+1]); const float* n2=normAttr.f3(tri[t+2]);
+                    const float d = gx*(n0[0]+n1[0]+n2[0]) + gy*(n0[1]+n1[1]+n2[1]) + gz*(n0[2]+n1[2]+n2[2]);
+                    if (d > 0.f) ++vote; else if (d < 0.f) --vote;
                 }
+            const bool swap = vote >= 0; // CCW source (or no normals) -> swap to engine CW-front
+
+            uint32_t indexCount = 0;
+            for (size_t t = 0; t + 2 < tri.size(); t += 3)
+            {
+                indices.push_back(vertexBase + tri[t]);
+                if (swap) { indices.push_back(vertexBase + tri[t + 2]); indices.push_back(vertexBase + tri[t + 1]); }
+                else      { indices.push_back(vertexBase + tri[t + 1]); indices.push_back(vertexBase + tri[t + 2]); }
+                indexCount += 3;
             }
 
             MeshBinPrimitive pout{};
@@ -994,14 +1198,10 @@ void queryPath( std::vector<std::string> *filesPathList, std::string *filesHash,
 
         if (endsWith(strPath, ".hdr"))
         {
-            const std::string base = strPath.substr(0, strPath.rfind('.'));
-            const std::string pre  = base + ".ktx";
-            const std::string irr  = base + "_irr.ktx";
-            if (bakeEnvironment(strPath, pre, irr))
-            {
-                filesPathList->push_back(pre);
-                filesPathList->push_back(irr);
-            }
+            const std::string base  = strPath.substr(0, strPath.rfind('.'));
+            const std::string probe = base + ".ktx";
+            if (bakeEnvironment(strPath, probe))
+                filesPathList->push_back(probe);
             continue; // the source .hdr itself is not packed
         }
 

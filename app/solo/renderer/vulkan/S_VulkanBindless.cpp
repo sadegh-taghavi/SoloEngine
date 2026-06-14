@@ -12,7 +12,7 @@ S_VulkanBindless::S_VulkanBindless(S_VulkanRendererAPI* api, uint32_t frameCount
 {
     VkDevice device = m_api->device();
 
-    VkDescriptorSetLayoutBinding bindings[6]{};
+    VkDescriptorSetLayoutBinding bindings[7]{};
     bindings[0].binding         = 0; // instance transforms
     bindings[0].descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     bindings[0].descriptorCount = 1;
@@ -37,10 +37,14 @@ S_VulkanBindless::S_VulkanBindless(S_VulkanRendererAPI* api, uint32_t frameCount
     bindings[5].descriptorType  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     bindings[5].descriptorCount = 1;
     bindings[5].stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
+    bindings[6].binding         = 6; // unified HDR environment probe cube (IBL + skybox)
+    bindings[6].descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    bindings[6].descriptorCount = 1;
+    bindings[6].stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
 
     VkDescriptorSetLayoutCreateInfo layoutCI{};
     layoutCI.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutCI.bindingCount = 6;
+    layoutCI.bindingCount = 7;
     layoutCI.pBindings    = bindings;
     VK_RESULT_CHECK( vkCreateDescriptorSetLayout(device, &layoutCI, S_VulkanAllocator(), &m_setLayout) )
 
@@ -50,7 +54,7 @@ S_VulkanBindless::S_VulkanBindless(S_VulkanRendererAPI* api, uint32_t frameCount
     poolSizes[1].type            = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
     poolSizes[1].descriptorCount = m_frameCount;
     poolSizes[2].type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[2].descriptorCount = m_frameCount * kMaxTextures;
+    poolSizes[2].descriptorCount = m_frameCount * (kMaxTextures + 1); // +1 env probe cube (binding 6)
 
     VkDescriptorPoolCreateInfo poolCI{};
     poolCI.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -184,6 +188,27 @@ void S_VulkanBindless::setTlas(const VkAccelerationStructureKHR* tlasPerFrame)
         write.dstBinding      = 2;
         write.descriptorType  = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
         write.descriptorCount = 1;
+        vkUpdateDescriptorSets(m_api->device(), 1, &write, 0, nullptr);
+    }
+}
+
+void S_VulkanBindless::setEnvCube(S_Texture* env)
+{
+    if (!env) return;
+    auto* vt = static_cast<S_VulkanTexture*>(env);
+    for (uint32_t i = 0; i < m_frameCount; ++i)
+    {
+        VkDescriptorImageInfo info{};
+        info.sampler     = m_textureSampler;
+        info.imageView   = vt->view();
+        info.imageLayout = vt->layout();
+        VkWriteDescriptorSet write{};
+        write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write.dstSet          = m_sets[i];
+        write.dstBinding      = 6;
+        write.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        write.descriptorCount = 1;
+        write.pImageInfo      = &info;
         vkUpdateDescriptorSets(m_api->device(), 1, &write, 0, nullptr);
     }
 }

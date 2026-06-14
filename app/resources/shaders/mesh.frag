@@ -32,6 +32,10 @@ layout(set = 1, binding = 3) readonly buffer Materials {
 
 layout(set = 1, binding = 4) uniform sampler2D uTextures[64];
 
+// Unified HDR environment probe cube (Qt/hdreditor layout): mip0 = sharp mirror,
+// mips 1..4 = GGX roughness 0.25..1.0, last mip (5) = Lambertian diffuse irradiance.
+layout(set = 1, binding = 6) uniform samplerCube uEnv;
+
 // RT hit shading: per-instance geometry access through buffer references.
 // rtHitData is 5 uints per vertex: uv.xy (floats), packed normal, packed
 // tangent, materialID — the stream the mesh format carries for exactly this.
@@ -91,21 +95,16 @@ float shadowRay(vec3 origin, vec3 n, vec3 L)
          ? 1.0 : 0.0;
 }
 
-// equirect HDR environment at pinned texture slots 1 (prefiltered) and 2 (irradiance)
-vec2 dirToEquirect(vec3 d)
-{
-    return vec2(atan(d.z, d.x) / (2.0 * PI) + 0.5,
-                acos(clamp(d.y, -1.0, 1.0)) / PI);
-}
-
+// Sample the unified probe cube along the world-space direction. Specular maps
+// roughness 0..1 onto mips 0..4; diffuse irradiance lives in the last mip (5).
 vec3 envSpecularSample(vec3 R, float roughness)
 {
-    return textureLod(uTextures[1], dirToEquirect(R), roughness * 5.0).rgb;
+    return textureLod(uEnv, R, roughness * 4.0).rgb; // kMips-2 = 4
 }
 
 vec3 envIrradianceSample(vec3 N)
 {
-    return textureLod(uTextures[2], dirToEquirect(N), 0.0).rgb;
+    return textureLod(uEnv, N, 5.0).rgb; // kMips-1 = 5 (irradiance mip)
 }
 
 // Karis split-sum approximation, replaces the BRDF LUT

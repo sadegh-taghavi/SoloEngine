@@ -13,11 +13,13 @@ S_Renderer::S_Renderer()
 {
     m_api = std::make_unique<S_VulkanRendererAPI>();
 
-    // pinned bindless texture slots the shader addresses directly:
-    // 0 = white, 1 = prefiltered HDR environment, 2 = irradiance
+    // slot 0 of the bindless 2D material array = default white
     textureSlot("textures/white.ktx");
-    textureSlot("textures/env.ktx");
-    textureSlot("textures/env_irr.ktx");
+
+    // Unified HDR environment probe cube (Qt/hdreditor layout) bound to bindless
+    // binding 6: mip0 = sky, GGX roughness mips, last mip = diffuse irradiance.
+    S_Texture* env = getTexture(createTexture("textures/env.ktx"));
+    static_cast<S_VulkanRendererAPI*>(m_api.get())->setEnvironmentCube(env);
 }
 
 S_RendererAPI *S_Renderer::api() const
@@ -279,6 +281,11 @@ void S_Renderer::clearDraws()
 void S_Renderer::createGraphicsPipeline(const std::vector<S_PipelineDescriptor> &descriptors)
 {
     m_api->createGraphicsPipeline(descriptors);
+}
+
+void S_Renderer::createSkybox()
+{
+    static_cast<S_VulkanRendererAPI*>(m_api.get())->createSkybox();
 }
 
 void S_Renderer::setRenderCallback(std::function<void()> callback)

@@ -30,6 +30,7 @@ void solo::S_Application::onCreateEvent()
     m_meshShader    = m_renderer->createShader("shaders/mesh", "shaders/mesh", "", "");
     m_skinnedShader = m_renderer->createShader("shaders/skinned", "shaders/mesh", "", "");
     m_renderer->createMeshPipelines(m_meshShader, m_skinnedShader);
+    m_renderer->createSkybox(); // equirect HDR background sampling the pinned env map
 
     S_MeshHandle shotgunMesh = m_renderer->createMesh("models/scene.mesh.bin");
     S_EntityID shotgun = m_scene.create("shotgun");

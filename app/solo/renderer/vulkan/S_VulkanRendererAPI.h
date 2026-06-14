@@ -86,6 +86,15 @@ public:
 
     virtual S_TextureSampler *createTextureSampler(const S_TextureSamplerDescriptor &descriptor);
     virtual S_Mesh *createMesh(const std::string &path);
+
+    // Builds the background skybox shader + pipeline. Call once after the engine
+    // globals (perFrame/bindless) are ready; the sky is read from the env sky cube.
+    void            createSkybox();
+
+    // Binds the unified HDR environment probe cube to the bindless set (binding 6):
+    // mip0 = sharp sky, mips 1..4 = GGX roughness, last mip = diffuse irradiance.
+    void            setEnvironmentCube(S_Texture* env);
+
     virtual void    updatePerFrame(const void* data, size_t size);
     VkDescriptorSet currentPerFrameSet() const;
     virtual void    flushRenderQueue(S_Shader* shader,
@@ -192,6 +201,9 @@ private:
     void createDepthResources();
     void createRenderPass();
     void createGraphicsPipeline();
+    void buildSkyPipeline();   // (re)creates m_skyPipeline against the current render pass
+    void destroySkyPipeline(); // tears down m_skyPipeline (keeps shader + layout)
+    void drawSky(VkCommandBuffer cmd, uint32_t imageIndex);
     void createFramebuffers();
     void createCommandPool();
     void createCommandBuffers();
@@ -249,6 +261,11 @@ private:
     std::vector<S_VulkanRT::SkinnedInstance> m_rtSkinned;
     std::unique_ptr<S_VulkanBindless>     m_bindless;
     std::unique_ptr<class S_ImGuiLayer>   m_imguiLayer;
+
+    // background equirect HDR skybox (shader owned by m_itemsManager)
+    class S_VulkanShader* m_skyShader         = nullptr;
+    VkPipeline            m_skyPipeline        = VK_NULL_HANDLE;
+    VkPipelineLayout      m_skyPipelineLayout  = VK_NULL_HANDLE;
     VkPhysicalDeviceProperties m_physicalDeviceProperties;
 
     VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);

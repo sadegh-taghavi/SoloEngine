@@ -28,6 +28,8 @@ public:
     void uploadPalettes(const glm::mat4* palettes, uint32_t count, uint32_t frameIndex);
     void setTlas(const VkAccelerationStructureKHR* tlasPerFrame); // one-time write of binding 2
     void setRtShadeBuffers(const VkBuffer* buffersPerFrame);      // one-time write of binding 5
+    // one-time write of the unified HDR environment probe cube (binding 6)
+    void setEnvCube(S_Texture* env);
 
     // material table + texture array; descriptors refresh lazily per frame slot
     void setMaterials(const std::vector<S_MaterialRecord>& records,

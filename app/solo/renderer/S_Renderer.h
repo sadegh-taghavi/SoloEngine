@@ -76,6 +76,8 @@ public:
     // standard static + skinned pipelines for mesh.bin content; the vertex
     // layouts live here, next to the format, instead of in every app
     void createMeshPipelines(S_ShaderHandle meshShader, S_ShaderHandle skinnedShader);
+    // background equirect HDR skybox sampling the pinned env (bindless slot 1)
+    void createSkybox();
     void setRenderCallback(std::function<void()> callback);
     void drawFrame();
     void resize( uint32_t width, uint32_t height );
