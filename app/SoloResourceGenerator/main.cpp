@@ -463,7 +463,12 @@ static bool bakeEnvironment(const std::string& hdrPath, const std::string& outPr
     //   mips 1..kMips-2 = GGX specular, roughness = mip/(kMips-2) -> 0..1
     //   mip kMips-1     = Lambertian diffuse irradiance (last, smallest mip)
     // Consumers: specular lod = roughness*(kMips-2), irradiance lod = kMips-1, sky lod = 0.
-    constexpr uint32_t kBase = 512, kMips = 6, kSamples = 1024; // mip5 (16x16) = irradiance
+    // Qt-style face size: ~half the equirect source height, min 512 (matches Qt's
+    // createEnvironmentMap). For a 2K source this is 512 — already at the source's
+    // resolution, so a genuinely crisper sky needs a higher-res env.hdr; a 4K source
+    // auto-yields a 1024 probe. Mip count stays 6 (the shader reads it dynamically).
+    const     uint32_t kBase    = std::max(512u, src.h / 2u);
+    constexpr uint32_t kMips    = 6, kSamples = 1024; // mip (kMips-1) = irradiance
     const envbake::CubeImg              base     = envbake::buildCube(src, kBase);
     const std::vector<envbake::CubeImg> cubeMips = envbake::buildCubeMipChain(base);
 

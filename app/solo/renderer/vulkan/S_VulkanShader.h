@@ -42,7 +42,7 @@ public:
 private:
     void setShader(S_ShaderStage stage, const std::string &name );
     void clearPendingDescriptorState();
-    VkDescriptorPool m_descriptorsPool;
+    VkDescriptorPool m_descriptorsPool = VK_NULL_HANDLE;
     uint32_t m_maxUniformSetInStages;
     uint32_t m_maxTextureSetInStages;
     uint32_t m_commitsCount;

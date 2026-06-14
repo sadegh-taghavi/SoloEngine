@@ -95,27 +95,28 @@ float shadowRay(vec3 origin, vec3 n, vec3 L)
          ? 1.0 : 0.0;
 }
 
-// Sample the unified probe cube along the world-space direction. Specular maps
-// roughness 0..1 onto mips 0..4; diffuse irradiance lives in the last mip (5).
+// Sample the unified probe cube along a world-space direction. The mip layout is
+// read from the texture itself (textureQueryLevels) so it tracks whatever the
+// baker produced — no hardcoded mip-count constants: specular maps roughness 0..1
+// onto mips 0..(N-2), diffuse irradiance is the last mip (N-1), the sky is mip 0.
 vec3 envSpecularSample(vec3 R, float roughness)
 {
-    return textureLod(uEnv, R, roughness * 4.0).rgb; // kMips-2 = 4
+    return textureLod(uEnv, R, roughness * float(textureQueryLevels(uEnv) - 2)).rgb;
 }
 
 vec3 envIrradianceSample(vec3 N)
 {
-    return textureLod(uEnv, N, 5.0).rgb; // kMips-1 = 5 (irradiance mip)
+    return textureLod(uEnv, N, float(textureQueryLevels(uEnv) - 1)).rgb;
 }
 
-// Split-sum BRDF term from the precomputed DFG LUT (pinned at material slot 1):
-// R = scale, G = bias, indexed by (NdotV, roughness). uv is clamped to texel
-// centres so the REPEAT bindless sampler never wraps at the edges.
-vec3 envBRDF(vec3 F0, float roughness, float NdotV)
+// Precomputed split-sum BRDF (DFG) LUT (pinned at material slot 1): R = scale,
+// G = bias, indexed by (NdotV, roughness). Size is queried from the texture; uv is
+// clamped to texel centres so the REPEAT bindless sampler never wraps at the edges.
+vec2 envDFG(float roughness, float NdotV)
 {
-    const float lutSize = 256.0; // must match brdf_lut.ktx in the generator
-    vec2 uv  = clamp(vec2(NdotV, roughness), 0.5 / lutSize, 1.0 - 0.5 / lutSize);
-    vec2 dfg = textureLod(uTextures[1], uv, 0.0).rg;
-    return F0 * dfg.x + dfg.y;
+    float lutSize = float(textureSize(uTextures[1], 0).x);
+    vec2  uv = clamp(vec2(NdotV, roughness), 0.5 / lutSize, 1.0 - 0.5 / lutSize);
+    return textureLod(uTextures[1], uv, 0.0).rg;
 }
 
 // trace a reflection ray and shade the hit using the rtHitData stream
@@ -217,16 +218,24 @@ void main()
 
     vec3 color = (kd * albedo / PI + spec) * lightColor * NdotL * shadow;
 
-    // image-based ambient: irradiance diffuse + prefiltered specular
-    color += albedo * envIrradianceSample(N) * (1.0 - metallic);
-
+    // Image-based lighting with Fdez-Aguera multiple-scattering energy compensation:
+    // single-scatter GGX loses energy at high roughness (rough metals go dark), so
+    // the FmsEms term feeds the lost energy back, tinted by the average Fresnel.
     vec3 R = reflect(-V, N);
     vec3 specEnv;
     if (inLightDirShadow.w > 0.5 && roughness < 0.35)
         specEnv = reflectionRay(inWorldPos, normalize(inNormal), R, L); // sharp: trace the scene
     else
         specEnv = envSpecularSample(R, roughness);                      // glossy: prefiltered env
-    color += specEnv * envBRDF(F0, roughness, NdotV);
+
+    vec3  irradiance = envIrradianceSample(N);
+    vec2  dfg    = envDFG(roughness, NdotV);
+    vec3  FssEss = F0 * dfg.x + dfg.y;                     // single-scatter specular
+    float Ems    = 1.0 - (dfg.x + dfg.y);                  // energy missing after one bounce
+    vec3  Favg   = F0 + (1.0 - F0) * (1.0 / 21.0);         // average Fresnel
+    vec3  FmsEms = (Ems * FssEss * Favg) / (1.0 - Favg * Ems);
+    vec3  kD     = albedo * (1.0 - metallic) * (1.0 - FssEss - FmsEms);
+    color += FssEss * specEnv + (FmsEms + kD) * irradiance;
 
     color = 1.0 - exp(-color * 0.9); // filmic-ish exposure curve
     outColor = vec4(color, baseColor.a);

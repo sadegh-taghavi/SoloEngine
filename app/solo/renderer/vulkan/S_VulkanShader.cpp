@@ -23,18 +23,13 @@ S_VulkanShader::S_VulkanShader(S_VulkanRendererAPI *api, const std::string &vert
     m_uniformBuffers(VK_NULL_HANDLE), m_uniformBuffersAllocation(VK_NULL_HANDLE), m_uniformBuffersMappedData(nullptr), m_api( api )
 
 {
-    std::array< VkDescriptorPoolSize, 2> poolSizes;
-    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount = (m_api->maxFramesInFlight() + 1) * kMaxDrawsPerSlot * kMaxSetsPerShader;
-    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = (m_api->maxFramesInFlight() + 1) * kMaxDrawsPerSlot * kMaxSetsPerShader;
-    VkDescriptorPoolCreateInfo poolInfo = {};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-    poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = (m_api->maxFramesInFlight() + 1) * kMaxDrawsPerSlot * kMaxSetsPerShader;
-    VK_RESULT_CHECK( vkCreateDescriptorPool(m_api->device(), &poolInfo, S_VulkanAllocator(), &m_descriptorsPool) );
-
+    // NOTE: the per-draw, per-shader descriptor path (updateUniformValue /
+    // updateTextureValue feeding per-shader sets) is unused — every pipeline renders
+    // through the engine-global bindless sets (set 0 = perFrame, set 1 = bindless),
+    // bound in commit()/flushRenderQueue. So we build the reflected set LAYOUTS (the
+    // pipeline still needs them for sets >= 2) but allocate NO per-shader descriptor
+    // pool, sets, or uniform buffer. The old allocation over-subscribed the pool
+    // (a 64-texture set x 256 draws x frames) and only worked by luck on some drivers.
     m_bufferAlignment = glm::max( (uint64_t)1, (uint64_t)m_api->physicalDeviceProperties()->limits.minUniformBufferOffsetAlignment );
     for( size_t i = 0; i < static_cast<int>(S_ShaderStage::Count); ++i )
         m_shaderModules[i] = nullptr;
@@ -93,48 +88,20 @@ S_VulkanShader::S_VulkanShader(S_VulkanRendererAPI *api, const std::string &vert
         }
     }
 
-    if( m_uniformsMemorySize )
-    {
-        VkBufferCreateInfo uniformBufInfo = {};
-        uniformBufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        uniformBufInfo.size = static_cast<VkDeviceSize>(m_uniformsMemorySize) * (m_api->maxFramesInFlight() + 1) * kMaxDrawsPerSlot * ( m_maxUniformSetInStages + 1 );
-        uniformBufInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-        uniformBufInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-        VmaAllocationCreateInfo uniformAllocInfo = {};
-        uniformAllocInfo.usage = VMA_MEMORY_USAGE_AUTO;
-        uniformAllocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-
-        VmaAllocationInfo allocInfo;
-        VK_RESULT_CHECK( vmaCreateBuffer( m_api->vmaAllocator(), &uniformBufInfo, &uniformAllocInfo, &m_uniformBuffers, &m_uniformBuffersAllocation, &allocInfo ) )
-        m_uniformBuffersMappedData = allocInfo.pMappedData;
-    }
-
+    // Build only the reflected descriptor set LAYOUTS — the pipeline reads them for
+    // sets >= 2 (sets 0/1 are replaced by the engine globals). No pool, sets, or
+    // uniform buffer are allocated; the per-draw path that used them is unused.
     m_descriptorSetLayouts.resize( allStagesSetsCount, nullptr );
-
-    std::vector<VkDescriptorSetLayout> layouts( (m_api->maxFramesInFlight() + 1) * kMaxDrawsPerSlot * allStagesSetsCount );
-
     for( uint32_t i = 0; i < allStagesSetsCount; ++i )
     {
         VkDescriptorSetLayoutCreateInfo layoutInfo = {};
         layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         layoutInfo.bindingCount = static_cast<unsigned int>( layoutBindingList.at(i).size() );
         layoutInfo.pBindings = layoutBindingList.at(i).data();
-
         VK_RESULT_CHECK( vkCreateDescriptorSetLayout(m_api->device(), &layoutInfo, S_VulkanAllocator(), &m_descriptorSetLayouts.at(i)) )
-        std::fill_n( layouts.begin() + (m_api->maxFramesInFlight() + 1) * kMaxDrawsPerSlot * i, (m_api->maxFramesInFlight() + 1) * kMaxDrawsPerSlot, m_descriptorSetLayouts.at(i) );
     }
 
-    VkDescriptorSetAllocateInfo allocInfo = {};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = m_descriptorsPool;
-    allocInfo.descriptorSetCount = static_cast<uint32_t>( layouts.size() );
-    allocInfo.pSetLayouts = layouts.data();
-    m_descriptorSets.resize( (m_api->maxFramesInFlight() + 1) * kMaxDrawsPerSlot * allStagesSetsCount );
-    VK_RESULT_CHECK( vkAllocateDescriptorSets( m_api->device(), &allocInfo, m_descriptorSets.data() ) );
-
     m_aboutToUseDescriptorSets.resize( allStagesSetsCount, nullptr );
-
 }
 
 S_VulkanShader::~S_VulkanShader()
