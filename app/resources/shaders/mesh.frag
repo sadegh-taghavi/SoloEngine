@@ -107,15 +107,15 @@ vec3 envIrradianceSample(vec3 N)
     return textureLod(uEnv, N, 5.0).rgb; // kMips-1 = 5 (irradiance mip)
 }
 
-// Karis split-sum approximation, replaces the BRDF LUT
-vec3 envBRDFApprox(vec3 F0, float roughness, float NdotV)
+// Split-sum BRDF term from the precomputed DFG LUT (pinned at material slot 1):
+// R = scale, G = bias, indexed by (NdotV, roughness). uv is clamped to texel
+// centres so the REPEAT bindless sampler never wraps at the edges.
+vec3 envBRDF(vec3 F0, float roughness, float NdotV)
 {
-    const vec4 c0 = vec4(-1.0, -0.0275, -0.572, 0.022);
-    const vec4 c1 = vec4( 1.0,  0.0425,  1.04, -0.04);
-    vec4 r = roughness * c0 + c1;
-    float a004 = min(r.x * r.x, exp2(-9.28 * NdotV)) * r.x + r.y;
-    vec2 AB = vec2(-1.04, 1.04) * a004 + r.zw;
-    return F0 * AB.x + AB.y;
+    const float lutSize = 256.0; // must match brdf_lut.ktx in the generator
+    vec2 uv  = clamp(vec2(NdotV, roughness), 0.5 / lutSize, 1.0 - 0.5 / lutSize);
+    vec2 dfg = textureLod(uTextures[1], uv, 0.0).rg;
+    return F0 * dfg.x + dfg.y;
 }
 
 // trace a reflection ray and shade the hit using the rtHitData stream
@@ -226,7 +226,7 @@ void main()
         specEnv = reflectionRay(inWorldPos, normalize(inNormal), R, L); // sharp: trace the scene
     else
         specEnv = envSpecularSample(R, roughness);                      // glossy: prefiltered env
-    color += specEnv * envBRDFApprox(F0, roughness, NdotV);
+    color += specEnv * envBRDF(F0, roughness, NdotV);
 
     color = 1.0 - exp(-color * 0.9); // filmic-ish exposure curve
     outColor = vec4(color, baseColor.a);

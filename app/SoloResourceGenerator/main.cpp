@@ -499,6 +499,74 @@ static bool bakeEnvironment(const std::string& hdrPath, const std::string& outPr
     return true;
 }
 
+// Split-sum BRDF (DFG) integration: returns (scale, bias) so specular IBL =
+// prefilteredColor * (F0*scale + bias). Standard Karis/Khronos integration using
+// the SAME GGX importance sampling (alpha = roughness^2) as the prefilter, with the
+// IBL geometry remap k = roughness^2/2. Env-independent — purely a function of
+// (NdotV, roughness).
+static glm::vec2 integrateBRDF(float NdotV, float roughness, uint32_t samples)
+{
+    NdotV = std::max(NdotV, 1e-4f);
+    const glm::vec3 V(std::sqrt(1.0f - NdotV * NdotV), 0.0f, NdotV);
+    const float a = roughness * roughness;          // alpha (GGX sampling)
+    const float k = (roughness * roughness) / 2.0f; // IBL geometry term
+    float A = 0.0f, B = 0.0f;
+    for (uint32_t i = 0; i < samples; ++i)
+    {
+        const float u1 = (i + 0.5f) / samples, u2 = envbake::radicalInverse(i);
+        const float phi  = 2.0f * 3.14159265f * u1;
+        const float cosT = std::sqrt((1.0f - u2) / (1.0f + (a * a - 1.0f) * u2));
+        const float sinT = std::sqrt(1.0f - cosT * cosT);
+        const glm::vec3 H(sinT * std::cos(phi), sinT * std::sin(phi), cosT);
+        const glm::vec3 L = 2.0f * glm::dot(V, H) * H - V;
+        const float NdotL = std::max(L.z, 0.0f);
+        const float NdotH = std::max(H.z, 0.0f);
+        const float VdotH = std::max(glm::dot(V, H), 0.0f);
+        if (NdotL > 0.0f)
+        {
+            const float gv   = NdotV / (NdotV * (1.0f - k) + k);
+            const float gl   = NdotL / (NdotL * (1.0f - k) + k);
+            const float gVis = (gv * gl * VdotH) / (NdotH * NdotV);
+            const float Fc   = std::pow(1.0f - VdotH, 5.0f);
+            A += (1.0f - Fc) * gVis;
+            B += Fc * gVis;
+        }
+    }
+    return glm::vec2(A / static_cast<float>(samples), B / static_cast<float>(samples));
+}
+
+// Bakes the env-independent BRDF LUT to a 2D RGBA16F KTX (R=scale, G=bias),
+// indexed by (NdotV on X, roughness on Y). Rows split across threads.
+static bool bakeBrdfLut(const std::string& outPath)
+{
+    constexpr uint32_t kSize = 256, kSamples = 1024;
+    std::vector<float> rgb(static_cast<size_t>(kSize) * kSize * 3, 0.0f);
+    const unsigned nthreads = std::max(1u, std::thread::hardware_concurrency());
+    std::vector<std::thread> pool;
+    auto worker = [&](uint32_t y0, uint32_t y1) {
+        for (uint32_t y = y0; y < y1; ++y)
+            for (uint32_t x = 0; x < kSize; ++x)
+            {
+                const glm::vec2 ab = integrateBRDF((x + 0.5f) / kSize, (y + 0.5f) / kSize, kSamples);
+                rgb[(static_cast<size_t>(y) * kSize + x) * 3 + 0] = ab.x;
+                rgb[(static_cast<size_t>(y) * kSize + x) * 3 + 1] = ab.y;
+            }
+    };
+    const uint32_t chunk = (kSize + nthreads - 1) / nthreads;
+    for (uint32_t t = 0; t < nthreads; ++t)
+    {
+        const uint32_t y0 = t * chunk, y1 = std::min(kSize, y0 + chunk);
+        if (y0 < y1) pool.emplace_back(worker, y0, y1);
+    }
+    for (auto& th : pool) th.join();
+
+    std::vector<std::vector<float>> mips{ std::move(rgb) };
+    if (!writeKtxRgba16fMips(outPath, mips, kSize, kSize))
+        return false;
+    std::cout << "Baked BRDF LUT: " << outPath << std::endl;
+    return true;
+}
+
 static int8_t packSnorm8(float v)
 {
     v = v < -1.f ? -1.f : (v > 1.f ? 1.f : v);
@@ -1202,6 +1270,10 @@ void queryPath( std::vector<std::string> *filesPathList, std::string *filesHash,
             const std::string probe = base + ".ktx";
             if (bakeEnvironment(strPath, probe))
                 filesPathList->push_back(probe);
+            // split-sum BRDF (DFG) LUT — env-independent, baked once beside the probe
+            const std::string lut = strPath.substr(0, strPath.find_last_of("/\\") + 1) + "brdf_lut.ktx";
+            if (bakeBrdfLut(lut))
+                filesPathList->push_back(lut);
             continue; // the source .hdr itself is not packed
         }
 

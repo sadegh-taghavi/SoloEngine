@@ -15,6 +15,8 @@ S_Renderer::S_Renderer()
 
     // slot 0 of the bindless 2D material array = default white
     textureSlot("textures/white.ktx");
+    // slot 1 = precomputed split-sum BRDF (DFG) LUT, sampled by mesh.frag's envBRDF
+    textureSlot("textures/brdf_lut.ktx");
 
     // Unified HDR environment probe cube (Qt/hdreditor layout) bound to bindless
     // binding 6: mip0 = sky, GGX roughness mips, last mip = diffuse irradiance.
